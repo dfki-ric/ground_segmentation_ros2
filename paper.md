@@ -23,7 +23,7 @@ Ground segmentation in pointcloud data is the process of separating the points i
 
 <figure>
   <img src="figures/ground_segmentation_pipeline.png" alt="Figure 1" width="600"/>
-  <figcaption>Figure 4: Basic principle of the ground segmentation task [6].</figcaption>
+  <figcaption>Figure 1: Basic principle of the ground segmentation task [6].</figcaption>
 </figure>
 
 <figure>
