@@ -26,6 +26,11 @@ Ground segmentation in pointcloud data is the process of separating the points i
   <figcaption>Figure 4: Basic principle of the ground segmentation task [6].</figcaption>
 </figure>
 
+<figure>
+  <img src="figures/ground_detection_road_surface.png" alt="Figure 2" width="600"/>
+  <figcaption>Figure 2: Proposed solution on KITTI dataset for road surface detection.</figcaption>
+</figure>
+
 # Statement of need
 
 - Detection of ground points is a necessary precursor step for extraction of useful information from pointcloud data for downstream tasks in mobile robot navigation [6,8]
