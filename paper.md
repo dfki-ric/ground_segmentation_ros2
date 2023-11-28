@@ -28,7 +28,7 @@ Ground segmentation in pointcloud data is the process of separating the points i
 
 <figure>
   <img src="figures/ground_detection_road_surface.png" alt="Figure 2" width="600"/>
-  <figcaption>Figure 2: Proposed solution on KITTI dataset for road surface detection.</figcaption>
+  <figcaption>Figure 2: Proposed solution on KITTI dataset for road surface detection. White (non-ground points), Blue(ground points)</figcaption>
 </figure>
 
 # Statement of need
