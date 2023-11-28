@@ -19,6 +19,12 @@ bibliography: paper.bib
 
 # Summary
 
+Ground segmentation in pointcloud data is the process of separating the points into ground and non-ground. It is a binary classification problem and many approaches have been published in literature. One approach to ground segmentation is to subdivide a large pointcloud into smaller cells and analyze each cell by fitting a model. It is common practice to fit a planar model to the points. Although the existing solutions produce good results in certain scenarios based on certain assumptions about the robot environment, yet there is no solution which provides a general purpose solution for outdoor applications in mobile robotics. In this work, we provide such a solution for rough terrain indoor and outdoor mobile robot applications. 
+
+<figure>
+  <img src="figures/ground_segmentation_pipeline.png" alt="Figure 1" width="600"/>
+  <figcaption>Figure 4: Basic principle of the ground segmentation task [6].</figcaption>
+</figure>
 
 # Statement of need
 
