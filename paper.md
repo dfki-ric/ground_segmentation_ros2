@@ -35,8 +35,8 @@ detected and removed. Additionally, the computational burden is reduced by proce
 
 # Core Components 
 
-**Component 1** 
-**Component 2** 
+- Component 1
+- Component 2 
 
 # Current Capabilities and applications 
 
