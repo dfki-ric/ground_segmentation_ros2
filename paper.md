@@ -35,7 +35,7 @@ Ground segmentation in pointcloud data is the process of separating the points i
 
 - Detection of ground points is a necessary precursor step for extraction of useful information from pointcloud data for downstream tasks in mobile robot navigation [6,8]
 - Object and obstacle detection algorithms detect ground points as false positives. The detection can be improved when ground points are
-detected and removed. Additionally, the computational burden is reduced by processing only non-ground points.
+detected and removed. Additionally, the computational burden is reduced by processing only non-ground points [9].
 - Ground points can be used for traversability analysis, navigation, and static map generation.
 
 <figure>
