@@ -94,9 +94,7 @@ public:
     PointCloudGrid(const GridConfig& config);
     void clear();
     void setInputCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr input, const Eigen::Quaterniond& R_body2World);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr extractGroundPoints();
-    pcl::PointCloud<pcl::PointXYZ>::Ptr extractNonGroundPoints();
-    //pcl::PointCloud<pcl::PointXYZ>::Ptr extractHoles();
+    std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr,pcl::PointCloud<pcl::PointXYZ>::Ptr> segmentPoints();
 
 private:
 

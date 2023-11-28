@@ -356,42 +356,30 @@ void PointCloudGrid::setInputCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr input, co
 }
 
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr PointCloudGrid::extractGroundPoints() {
+std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr,pcl::PointCloud<pcl::PointXYZ>::Ptr> PointCloudGrid::segmentPoints() {
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr ground_points(new pcl::PointCloud<pcl::PointXYZ>());
-    pcl::PointCloud<pcl::PointXYZ>::Ptr inlier_points(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::PointCloud<pcl::PointXYZ>::Ptr ground_inliers(new pcl::PointCloud<pcl::PointXYZ>());
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr non_ground_points(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::PointCloud<pcl::PointXYZ>::Ptr non_ground_inliers(new pcl::PointCloud<pcl::PointXYZ>());
 
     // Extract points based on indices
-    pcl::ExtractIndices<pcl::PointXYZ> extract;
-    extract.setNegative (false);
+    pcl::ExtractIndices<pcl::PointXYZ> extract_ground;
 
     for (auto& cell : ground_cells){
-        extract.setInputCloud(cell.points);
-        extract.setIndices(cell.inliers);
-        extract.filter(*inlier_points);
-        for (pcl::PointCloud<pcl::PointXYZ>::iterator it = inlier_points->begin(); it != inlier_points->end(); ++it)
+        extract_ground.setNegative (false);
+        extract_ground.setInputCloud(cell.points);
+        extract_ground.setIndices(cell.inliers);
+        extract_ground.filter(*ground_inliers);
+        for (pcl::PointCloud<pcl::PointXYZ>::iterator it = ground_inliers->begin(); it != ground_inliers->end(); ++it)
         {
             ground_points->points.push_back(*it);
         }
-    }
-    return ground_points;
-}
-
-
-pcl::PointCloud<pcl::PointXYZ>::Ptr PointCloudGrid::extractNonGroundPoints(){
-
-    pcl::PointCloud<pcl::PointXYZ>::Ptr non_ground_points(new pcl::PointCloud<pcl::PointXYZ>());
-    pcl::PointCloud<pcl::PointXYZ>::Ptr inlier_points(new pcl::PointCloud<pcl::PointXYZ>());
-
-    // Extract points based on indices
-    pcl::ExtractIndices<pcl::PointXYZ> extract;
-    extract.setNegative (true);
-
-    for (auto& cell : ground_cells){
-        extract.setInputCloud(cell.points);
-        extract.setIndices(cell.inliers);
-        extract.filter(*inlier_points);
-        for (pcl::PointCloud<pcl::PointXYZ>::iterator it = inlier_points->begin(); it != inlier_points->end(); ++it)
+        
+        extract_ground.setNegative(true);
+        extract_ground.filter(*non_ground_inliers);
+        for (pcl::PointCloud<pcl::PointXYZ>::iterator it = non_ground_inliers->begin(); it != non_ground_inliers->end(); ++it)
         {
             non_ground_points->points.push_back(*it);
         }
@@ -403,8 +391,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr PointCloudGrid::extractNonGroundPoints(){
             non_ground_points->points.push_back(*it);
         }
     }
-
-    return non_ground_points;
+    return std::make_pair(ground_points, non_ground_points);
 }
 
 //pcl::PointCloud<pcl::PointXYZ>::Ptr PointCloudGrid::extractHoles(){

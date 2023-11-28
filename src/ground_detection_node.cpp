@@ -43,8 +43,10 @@ private:
         ground_detection->setInputCloud(pcl_cloud_ptr, orientation);
 
 
-        pcl::PointCloud<pcl::PointXYZ>::Ptr ground_points = ground_detection->extractGroundPoints();
-        pcl::PointCloud<pcl::PointXYZ>::Ptr non_ground_points = ground_detection->extractNonGroundPoints();
+        std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr,pcl::PointCloud<pcl::PointXYZ>::Ptr> result = ground_detection->segmentPoints();
+
+        pcl::PointCloud<pcl::PointXYZ>::Ptr ground_points = result.first;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr non_ground_points = result.second;
 
         // Convert PCL PointCloud to ROS PointCloud2 message
         pcl::toROSMsg(*ground_points, *gp);
