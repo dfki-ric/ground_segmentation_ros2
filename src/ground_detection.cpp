@@ -122,7 +122,7 @@ int PointCloudGrid::countGroundNeighbors(const GridCell& cell){
             neighborZ >= -grid_config.gridSizeZ  && neighborZ < grid_config.gridSizeZ){
 
             GridCell neighbor = gridCells[neighborX][neighborY][neighborZ];
-            if (neighbor.isGround && neighbor.points->size() > 5 && !neighbor.isFrontier){
+            if (neighbor.terrain_type == TerrainType::GROUND && neighbor.points->size() > 5){
                 neighbors++;
             }
         }
@@ -168,6 +168,9 @@ bool PointCloudGrid::fitPlane(GridCell& cell){
     Eigen::Vector4d centroid;
     pcl::compute3DCentroid(*(cell.points), centroid);
     cell.centroid = centroid;
+
+    std::cout << "Inliera count: " << inliers->indices.size() << std::endl;
+
     if (inliers->indices.size() > 5) {
         cell.inliers = inliers;
         Eigen::Vector3d normal(coefficients->values[0], coefficients->values[1], coefficients->values[2]);
@@ -240,19 +243,22 @@ std::vector<GridCell> PointCloudGrid::getGroundCells() {
                 GridCell& cell = heightPair.second;
 
                 if (cell.points->size() < 5) {
+                    cell.terrain_type = TerrainType::UNDEFINED;
                     continue;
                 }
 
                 if (fitPlane(cell)){
-
                     if (cell.slope < (grid_config.slopeThresholdDegrees * (M_PI / 180)) ){
-                        cell.isGround = true;
+                        cell.terrain_type = TerrainType::GROUND;
                         selectStartCell(cell);
                     }
                     else{
-                        cell.isGround = false;
+                        cell.terrain_type = TerrainType::OBSTACLE;
                         non_ground_cells.push_back(cell);
                     }
+                }
+                else{
+                    cell.terrain_type = TerrainType::OBSTACLE;    
                 }
             }
         }
@@ -326,7 +332,7 @@ std::vector<GridCell> PointCloudGrid::getGroundCells() {
 
                 GridCell neighbor = gridCells[neighborX][neighborY][neighborZ];
 
-                if (neighbor.isGround && !neighbor.expanded){
+                if (neighbor.terrain_type == TerrainType::GROUND && !neighbor.expanded){
                     Index3D n;
                     n.x = neighbor.row;
                     n.y = neighbor.col;
@@ -336,7 +342,6 @@ std::vector<GridCell> PointCloudGrid::getGroundCells() {
             }
         }
     }
-
     return ground_cells;
 }
 

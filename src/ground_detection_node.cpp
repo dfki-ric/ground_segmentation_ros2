@@ -4,6 +4,7 @@
 #include "pcl_conversions/pcl_conversions.h"
 #include "ground_detection/ground_detection.hpp"
 #include <Eigen/Dense>
+#include <memory>
 
 class PointCloudSubscriberNode : public rclcpp::Node {
 public:
@@ -19,13 +20,13 @@ public:
         config.cellSizeY = 1;
         config.cellSizeZ = 0.5;
 
-        ground_detection = new PointCloudGrid(config);
+        ground_detection = std::make_unique<PointCloudGrid>(config);
 
     }
 
 private:
 
-    PointCloudGrid* ground_detection;
+    std::unique_ptr<PointCloudGrid> ground_detection;
 
     GridConfig config;
 

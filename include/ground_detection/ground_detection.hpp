@@ -17,13 +17,18 @@ struct Point {
     double z;
 };
 
+enum TerrainType {
+    UNDEFINED,
+    GROUND,
+    OBSTACLE
+};
+
 struct GridCell {
     int row;
     int col;
     double height;
-    bool isGround;
-    bool isFrontier;
     bool expanded;
+    TerrainType terrain_type;
     std::vector<GridCell> neighbors;
     Eigen::Vector4d centroid;
     pcl::PointIndices::Ptr source_indices;
@@ -45,7 +50,7 @@ struct GridCell {
      * Precomputed for performance reasons */
     double slopeDirectionAtan2;
 
-    GridCell() : isGround(false), points(new pcl::PointCloud<pcl::PointXYZ>), source_indices(new pcl::PointIndices), inliers(new pcl::PointIndices){
+    GridCell() : points(new pcl::PointCloud<pcl::PointXYZ>), source_indices(new pcl::PointIndices), inliers(new pcl::PointIndices){
         row = 0;
         col = 0;
         height = 0;
@@ -82,7 +87,7 @@ struct GridConfig{
 
         startCellDistanceThreshold = 20; // meters
         slopeThresholdDegrees = 30; //degrees
-        groundInlierThreshold = 0.05; // meters
+        groundInlierThreshold = 0.1; // meters
     }
 
 };
