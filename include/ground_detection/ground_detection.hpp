@@ -77,16 +77,16 @@ struct GridConfig{
 
 
     GridConfig(){
-        cellSizeX = 0.5;
-        cellSizeY = 0.5;
-        cellSizeZ = 0.5;
+        cellSizeX = 1;
+        cellSizeY = 1;
+        cellSizeZ = 2;
 
         gridSizeX = 100;
         gridSizeY = 100;
         gridSizeZ = 100;
 
         startCellDistanceThreshold = 20; // meters
-        slopeThresholdDegrees = 30; //degrees
+        slopeThresholdDegrees = 45; //degrees
         groundInlierThreshold = 0.1; // meters
     }
 
@@ -113,6 +113,7 @@ private:
     GridCell cellClosestToMeanHeight(const std::vector<GridCell>& cells, const int mean_height);
     bool fitPlane(GridCell& cell);
     void selectStartCell(GridCell& cell);
+    double computeDistance(const Eigen::Vector4d& centroid1, const Eigen::Vector4d& centroid2);
 
     std::vector<Index3D> indices;
     std::map<int, std::map<int, std::map<int, GridCell>>> gridCells;
@@ -124,10 +125,6 @@ private:
     std::vector<GridCell> selected_cells_second_quadrant;
     std::vector<GridCell> selected_cells_third_quadrant;
     std::vector<GridCell> selected_cells_fourth_quadrant;
-
-    pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud;
     Eigen::Quaterniond orientation;
-
     GridCell robot_cell;
-
 };

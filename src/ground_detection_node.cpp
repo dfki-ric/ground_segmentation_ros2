@@ -18,7 +18,7 @@ public:
 
         config.cellSizeX = 1;
         config.cellSizeY = 1;
-        config.cellSizeZ = 0.5;
+        config.cellSizeZ = 2;
 
         ground_detection = std::make_unique<PointCloudGrid>(config);
 
@@ -54,10 +54,10 @@ private:
         pcl::toROSMsg(*non_ground_points, *ngp);
 
         // Set the frame ID and timestamp
-        gp->header.frame_id = "velo_link";
+        gp->header.frame_id = "husky/base_link/front_laser";
         gp->header.stamp = this->now();
         // Set the frame ID and timestamp
-        ngp->header.frame_id = "velo_link";
+        ngp->header.frame_id = "husky/base_link/front_laser";
         ngp->header.stamp = this->now();
 
         // Publish the message

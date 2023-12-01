@@ -30,14 +30,14 @@ PointCloudGrid::PointCloudGrid(const GridConfig& config){
 
     for (int dx = -1; dx <= 1; ++dx) {
         for (int dy = -1; dy <= 1; ++dy) {
-            for (int dz = -1; dz <= 1; ++dz) {
+            //for (int dz = -1; dz <= 1; ++dz) {
                 Index3D idx;
 
                 idx.x = dx;
                 idx.y = dy;
-                idx.z = dz;
+                idx.z = 0;
                 indices.push_back(idx);
-            }
+            //}
         }
     }
 }
@@ -111,10 +111,11 @@ int PointCloudGrid::calculateMeanHeight(const std::vector<GridCell> cells){
 int PointCloudGrid::countGroundNeighbors(const GridCell& cell){
 
     int neighbors{0};
-    for (int i = 0; i < 26; ++i){
+    for (int i = 0; i < 9; ++i){
         int neighborX = cell.row + indices[i].x;
         int neighborY = cell.col + indices[i].y;
-        int neighborZ = cell.height + indices[i].z;
+       // int neighborZ = cell.height + indices[i].z;
+        int neighborZ = cell.height;
 
         // Check if the neighbor is within the grid boundaries
         if (neighborX >= -grid_config.gridSizeX  && neighborX < grid_config.gridSizeX &&
@@ -165,13 +166,9 @@ bool PointCloudGrid::fitPlane(GridCell& cell){
     seg.setDistanceThreshold(grid_config.groundInlierThreshold); // Adjust this threshold based on your needs
     seg.segment(*inliers, *coefficients);
 
-    Eigen::Vector4d centroid;
-    pcl::compute3DCentroid(*(cell.points), centroid);
-    cell.centroid = centroid;
+    pcl::compute3DCentroid(*(cell.points), cell.centroid);
 
-    std::cout << "Inliera count: " << inliers->indices.size() << std::endl;
-
-    if (inliers->indices.size() > 5) {
+    if (inliers->indices.size() / cell.points->size() > 0.9) {
         cell.inliers = inliers;
         Eigen::Vector3d normal(coefficients->values[0], coefficients->values[1], coefficients->values[2]);
         normal.normalize();
@@ -245,6 +242,7 @@ std::vector<GridCell> PointCloudGrid::getGroundCells() {
                 }
                 else{
                     cell.terrain_type = TerrainType::OBSTACLE;    
+                    non_ground_cells.push_back(cell);
                 }
             }
         }
@@ -304,12 +302,12 @@ std::vector<GridCell> PointCloudGrid::getGroundCells() {
 
         GridCell current_cell = gridCells[idx.x][idx.y][idx.z];
         ground_cells.emplace_back(current_cell);
-
-        for (int i = 0; i < 26; ++i) {
+        //std::cout << "Current Cell: " << current_cell.row << " " << current_cell.col << " " << current_cell.height<< std::endl;
+        for (int i = 0; i < 9; ++i) {
 
             int neighborX = current_cell.row + indices[i].x;
             int neighborY = current_cell.col + indices[i].y;
-            int neighborZ = current_cell.height + indices[i].z;
+            int neighborZ = current_cell.height;
 
             // Check if the neighbor is within the grid boundaries
             if (neighborX >= -grid_config.gridSizeX  && neighborX < grid_config.gridSizeX &&
@@ -317,6 +315,10 @@ std::vector<GridCell> PointCloudGrid::getGroundCells() {
                 neighborZ >= -grid_config.gridSizeZ  && neighborZ < grid_config.gridSizeZ) {
 
                 GridCell neighbor = gridCells[neighborX][neighborY][neighborZ];
+
+                if(neighbor.points->size() == 0){
+                    continue;
+                }
 
                 if (neighbor.terrain_type == TerrainType::GROUND && !neighbor.expanded){
                     Index3D n;
@@ -331,13 +333,17 @@ std::vector<GridCell> PointCloudGrid::getGroundCells() {
     return ground_cells;
 }
 
+double PointCloudGrid::computeDistance(const Eigen::Vector4d& centroid1, const Eigen::Vector4d& centroid2) {
+    Eigen::Vector3d diff = centroid1.head<3>() - centroid2.head<3>();
+    return diff.norm();
+}
+
 void PointCloudGrid::setInputCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr input, const Eigen::Quaterniond& R_body2World){
 
     this->clear();
-    input_cloud = input;
     orientation = R_body2World;
     unsigned int index = 0;
-    for (pcl::PointCloud<pcl::PointXYZ>::iterator it = input_cloud->begin(); it != input_cloud->end(); ++it)
+    for (pcl::PointCloud<pcl::PointXYZ>::iterator it = input->begin(); it != input->end(); ++it)
     {
         this->addPoint(*it,index);
         index++;
@@ -345,7 +351,6 @@ void PointCloudGrid::setInputCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr input, co
 
     ground_cells = getGroundCells();
 }
-
 
 std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr,pcl::PointCloud<pcl::PointXYZ>::Ptr> PointCloudGrid::segmentPoints() {
 
