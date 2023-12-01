@@ -177,20 +177,6 @@ bool PointCloudGrid::fitPlane(GridCell& cell){
         normal.normalize();
         double distToOrigin = coefficients->values[3];
         cell.plane = Eigen::Hyperplane<double, 3>(normal, distToOrigin);
-
-        //adjust height of patch
-        Eigen::ParametrizedLine<double, 3> line(Eigen::Vector3d::Zero(), Eigen::Vector3d::UnitZ());
-        Eigen::Vector3d newPos =  line.intersectionPoint(cell.plane);
-        if(newPos.x() > 0.0001 || newPos.y() > 0.0001)
-        {
-            std::cout << "TraversabilityGenerator3d: Error, adjustement height calculation is weird" << std::endl;
-            return false;
-        }
-
-        if(newPos.allFinite())
-        {
-            //cell.height = newPos.z();
-        }
         const Eigen::Vector3d slopeDir = computeSlopeDirection(cell.plane);
         cell.slope = computeSlope(cell.plane);
         cell.slopeDirection = slopeDir;
