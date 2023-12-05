@@ -46,7 +46,7 @@ void PointCloudGrid::clear(){
     gridCells.clear();
 }
 
-void PointCloudGrid::addPoint(const pcl::PointXYZ& point, const unsigned int index) {
+void PointCloudGrid::addPoint(const pcl::PointXYZ& point) {
     int row = static_cast<int>(std::floor(point.x / grid_config.cellSizeX));
     int col = static_cast<int>(std::floor(point.y / grid_config.cellSizeY));
     int height = static_cast<int>(std::floor(point.z / grid_config.cellSizeZ));
@@ -61,7 +61,6 @@ void PointCloudGrid::addPoint(const pcl::PointXYZ& point, const unsigned int ind
     gridCells[row][col][height].col = col;
     gridCells[row][col][height].height = height;
     gridCells[row][col][height].points->push_back(point);
-    gridCells[row][col][height].source_indices->indices.push_back(index);
 }
 
 double PointCloudGrid::computeSlope(const Eigen::Hyperplane< double, int(3) >& plane) const
@@ -165,11 +164,23 @@ bool PointCloudGrid::fitPlane(GridCell& cell){
     seg.setInputCloud(cell.points);
     seg.setDistanceThreshold(grid_config.groundInlierThreshold); // Adjust this threshold based on your needs
     seg.segment(*inliers, *coefficients);
-
+    cell.inliers = inliers;
     pcl::compute3DCentroid(*(cell.points), cell.centroid);
 
-    if (inliers->indices.size() / cell.points->size() > 0.9) {
-        cell.inliers = inliers;
+    // Extract points based on indices
+
+    /*
+    pcl::ExtractIndices<pcl::PointXYZ> extract_ground;
+    extract_ground.setInputCloud(cell.points);
+    extract_ground.setIndices(cell.inliers);
+    extract_ground.setNegative(false);
+    extract_ground.filter(*cell.inlier_pts);
+
+    extract_ground.setNegative(true);
+    extract_ground.filter(*cell.outlier_pts);
+    */
+
+    if (inliers->indices.size() / cell.points->size() > 0.95) {
         Eigen::Vector3d normal(coefficients->values[0], coefficients->values[1], coefficients->values[2]);
         normal.normalize();
         double distToOrigin = coefficients->values[3];
@@ -178,6 +189,11 @@ bool PointCloudGrid::fitPlane(GridCell& cell){
         cell.slope = computeSlope(cell.plane);
         cell.slopeDirection = slopeDir;
         cell.slopeDirectionAtan2 = std::atan2(slopeDir.y(), slopeDir.x());
+
+        // Save the outliers of ground cells
+        //GridCell temp;
+        //temp.outlier_pts = cell.outlier_pts;
+        //non_ground_cells.push_back(temp);
 
         return true;
     }
@@ -202,7 +218,6 @@ void PointCloudGrid::selectStartCell(GridCell& cell){
         else if (cell.row >= 0 && cell.col > 0) {
             selected_cells_fourth_quadrant.push_back(cell);
         }
-
     }
 }
 
@@ -290,7 +305,7 @@ std::vector<GridCell> PointCloudGrid::getGroundCells() {
         q.push(q4);
     }
 
-    while (!q.empty()) {
+    while (!q.empty()){
 
         Index3D& idx = q.front();
         q.pop();
@@ -299,11 +314,9 @@ std::vector<GridCell> PointCloudGrid::getGroundCells() {
             continue;
         }
         gridCells[idx.x][idx.y][idx.z].expanded = true;
-
-        GridCell current_cell = gridCells[idx.x][idx.y][idx.z];
-        ground_cells.emplace_back(current_cell);
-        //std::cout << "Current Cell: " << current_cell.row << " " << current_cell.col << " " << current_cell.height<< std::endl;
-        for (int i = 0; i < 9; ++i) {
+        GridCell& current_cell = gridCells[idx.x][idx.y][idx.z];
+      
+        for (int i = 0; i < 9; ++i){
 
             int neighborX = current_cell.row + indices[i].x;
             int neighborY = current_cell.col + indices[i].y;
@@ -316,19 +329,63 @@ std::vector<GridCell> PointCloudGrid::getGroundCells() {
 
                 GridCell neighbor = gridCells[neighborX][neighborY][neighborZ];
 
-                if(neighbor.points->size() == 0){
+                //if (computeDistance(current_cell.centroid, neighbor.centroid) > 5){
+                //    std::cout << "Ignored neighbor" << std::endl;
+                //    continue;
+                //}
+
+                if(neighbor.points->size() == 0 || neighbor.expanded){
                     continue;
                 }
 
-                if (neighbor.terrain_type == TerrainType::GROUND && !neighbor.expanded){
+                if (neighbor.terrain_type == TerrainType::GROUND){
                     Index3D n;
                     n.x = neighbor.row;
                     n.y = neighbor.col;
                     n.z = neighbor.height;
                     q.push(n);
                 }
+                /*
+                else if (neighbor.terrain_type == TerrainType::OBSTACLE || neighbor.terrain_type == TerrainType::UNDEFINED){
+
+                    // Define min and max variables
+                    pcl::PointXYZ min_pt, max_pt;
+
+                    // Get min and max points along the z-axis (height)
+                    pcl::getMinMax3D(*current_cell.inlier_pts, min_pt, max_pt);
+
+                    pcl::PointIndices::Ptr temp_inliers(new pcl::PointIndices);
+
+                    for (std::size_t i = 0; i < neighbor.inlier_pts->size(); ++i) {
+                        const pcl::PointXYZ& point = neighbor.inlier_pts->points.at(i);
+
+                        //this would only work on a flat surface
+                        if (point.x >= min_pt.x && point.x <= max_pt.x &&
+                            point.y >= min_pt.y && point.y <= max_pt.y &&
+                            point.z >= min_pt.z && point.z <= max_pt.z ) {
+                            //current_cell.inlier_pts->points.push_back(point);
+                            //current_cell.inliers->indices.push_back(static_cast<int>(current_cell.inliers->indices.size() + i));
+                            //temp_inliers->indices.push_back(static_cast<int>(i));
+                        }
+                    }
+                    if (temp_inliers->indices.size() > 0){
+
+                        // Extract points based on indices
+                        pcl::ExtractIndices<pcl::PointXYZ> extract_ground;
+
+                        extract_ground.setInputCloud(neighbor.inlier_pts);
+                        extract_ground.setIndices(temp_inliers);
+
+                        extract_ground.setNegative(true);
+                        extract_ground.filter(*neighbor.inlier_pts);
+                    }
+                    
+                    non_ground_cells.push_back(neighbor);
+                } 
+                */               
             }
         }
+        ground_cells.emplace_back(current_cell);
     }
     return ground_cells;
 }
@@ -345,10 +402,9 @@ void PointCloudGrid::setInputCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr input, co
     unsigned int index = 0;
     for (pcl::PointCloud<pcl::PointXYZ>::iterator it = input->begin(); it != input->end(); ++it)
     {
-        this->addPoint(*it,index);
+        this->addPoint(*it);
         index++;
     }
-
     ground_cells = getGroundCells();
 }
 
@@ -363,29 +419,42 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr,pcl::PointCloud<pcl::PointXYZ>::Pt
     // Extract points based on indices
     pcl::ExtractIndices<pcl::PointXYZ> extract_ground;
 
-    for (auto& cell : ground_cells){
-        extract_ground.setNegative (false);
+    for (const auto& cell : ground_cells){
+
+        /*
         extract_ground.setInputCloud(cell.points);
         extract_ground.setIndices(cell.inliers);
+
+        extract_ground.setNegative(false);
         extract_ground.filter(*ground_inliers);
-        for (pcl::PointCloud<pcl::PointXYZ>::iterator it = ground_inliers->begin(); it != ground_inliers->end(); ++it)
+
+        extract_ground.setNegative(true);
+        extract_ground.filter(*non_ground_inliers);
+        */
+        for (pcl::PointCloud<pcl::PointXYZ>::iterator it = cell.points->begin(); it != cell.points->end(); ++it)
         {
             ground_points->points.push_back(*it);
         }
-        
-        extract_ground.setNegative(true);
-        extract_ground.filter(*non_ground_inliers);
+        /*
         for (pcl::PointCloud<pcl::PointXYZ>::iterator it = non_ground_inliers->begin(); it != non_ground_inliers->end(); ++it)
         {
             non_ground_points->points.push_back(*it);
         }
+        */
     }
 
-    for (auto& cell : non_ground_cells){
+    for (const auto& cell : non_ground_cells){
         for (pcl::PointCloud<pcl::PointXYZ>::iterator it = cell.points->begin(); it != cell.points->end(); ++it)
         {
             non_ground_points->points.push_back(*it);
         }
+        /*
+        for (pcl::PointCloud<pcl::PointXYZ>::iterator it = cell.outlier_pts->begin(); it != cell.outlier_pts->end(); ++it)
+        {
+            non_ground_points->points.push_back(*it);
+        }
+        */
+
     }
     return std::make_pair(ground_points, non_ground_points);
 }

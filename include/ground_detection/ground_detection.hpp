@@ -4,6 +4,7 @@
 #include <pcl/common/centroid.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/common/common.h>
 
 #include <vector>
 #include <cmath>
@@ -31,11 +32,12 @@ struct GridCell {
     TerrainType terrain_type;
     std::vector<GridCell> neighbors;
     Eigen::Vector4d centroid;
-    pcl::PointIndices::Ptr source_indices;
     pcl::PointIndices::Ptr inliers;
 
     /** The points in the Grid Cell */
     pcl::PointCloud<pcl::PointXYZ>::Ptr points;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr inlier_pts;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr outlier_pts;
 
     /** The plane that has been fitted to the mls at the location of this node */
     Eigen::Hyperplane<double, 3> plane;
@@ -50,7 +52,10 @@ struct GridCell {
      * Precomputed for performance reasons */
     double slopeDirectionAtan2;
 
-    GridCell() : points(new pcl::PointCloud<pcl::PointXYZ>), source_indices(new pcl::PointIndices), inliers(new pcl::PointIndices){
+    GridCell() : points(new pcl::PointCloud<pcl::PointXYZ>), 
+                 inlier_pts(new pcl::PointCloud<pcl::PointXYZ>),
+                 outlier_pts(new pcl::PointCloud<pcl::PointXYZ>),
+                 inliers(new pcl::PointIndices){
         row = 0;
         col = 0;
         height = 0;
@@ -85,8 +90,8 @@ struct GridConfig{
         gridSizeY = 100;
         gridSizeZ = 100;
 
-        startCellDistanceThreshold = 20; // meters
-        slopeThresholdDegrees = 45; //degrees
+        startCellDistanceThreshold = 4; // meters
+        slopeThresholdDegrees = 30; //degrees
         groundInlierThreshold = 0.1; // meters
     }
 
@@ -103,7 +108,7 @@ public:
 
 private:
 
-    void addPoint(const pcl::PointXYZ& point, const unsigned int index);
+    void addPoint(const pcl::PointXYZ& point);
     std::vector<GridCell> getGroundCells();
     double computeSlope(const Eigen::Hyperplane< double, int(3) >& plane) const;
     Eigen::Vector3d computeSlopeDirection(const Eigen::Hyperplane< double, int(3) >& plane) const;
