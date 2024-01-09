@@ -6,6 +6,8 @@ tags:
   - PCL
   - Autonomous Driving
 authors:
+  - name: Steffen Planthaber
+    affiliation: 1
   - name: Muhammad Haider Khan Lodhi
     affiliation: 1
 
