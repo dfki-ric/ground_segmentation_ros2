@@ -15,34 +15,19 @@ find_package(pcl_conversions REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(PkgConfig REQUIRED)
 
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+pkg_check_modules(pointcloud_obstacle_detection IMPORTED_TARGET REQUIRED pointcloud_obstacle_detection)
 
-# Create a library target
-add_library(ground_detection src/ground_detection.cpp)
-
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
-target_link_libraries(ground_detection PUBLIC ${PCL_LIBRARIES} Eigen3::Eigen)
-
-target_include_directories(ground_detection PUBLIC
-                                            ${CMAKE_SOURCE_DIR}/include
-                                            ${PCL_INCLUDE_DIRS}
-                                            ${EIGEN_INCLUDE_DIR})
+message(${pointcloud_obstacle_detection_INCLUDE_DIRS})
 
 add_executable(ground_detection_node src/ground_detection_node.cpp)
-
 target_include_directories(ground_detection_node PUBLIC
         ${pcl_conversions_INCLUDE_DIRS}
 )
 
-
 target_link_libraries(ground_detection_node
-        ground_detection
+        PkgConfig::pointcloud_obstacle_detection
         rclcpp::rclcpp
         tf2_ros::tf2_ros
         ${PCL_LIBRARIES}
@@ -51,7 +36,7 @@ target_link_libraries(ground_detection_node
         tf2_eigen::tf2_eigen
 )
 
-install(TARGETS ground_detection_node ground_detection
+install(TARGETS ground_detection_node
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

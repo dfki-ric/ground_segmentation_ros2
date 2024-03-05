@@ -2,9 +2,13 @@
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "pcl/point_types.h"
 #include "pcl_conversions/pcl_conversions.h"
-#include "ground_detection/ground_detection.hpp"
 #include <Eigen/Dense>
 #include <memory>
+
+#include <pointcloud_obstacle_detection/ground_detection.hpp>
+
+using namespace pointcloud_obstacle_detection;
+
 
 class PointCloudSubscriberNode : public rclcpp::Node {
 public:
@@ -16,38 +20,38 @@ public:
         publisher1_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("ground_points", 10);
         publisher2_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("non_ground_points", 10);
 
-        config.cellSizeX = 1;
-        config.cellSizeY = 1;
-        config.cellSizeZ = 2;
+        //config.radialCellSize = 2;
+        //config.angularCellSize = 0.785398;
+        //config.cellSizeZ = 1;
 
         ground_detection = std::make_unique<PointCloudGrid>(config);
 
     }
 
 private:
-
     std::unique_ptr<PointCloudGrid> ground_detection;
-
     GridConfig config;
-
     void PointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
-
-      sensor_msgs::msg::PointCloud2::SharedPtr gp = std::make_shared<sensor_msgs::msg::PointCloud2>();
-      sensor_msgs::msg::PointCloud2::SharedPtr ngp = std::make_shared<sensor_msgs::msg::PointCloud2>();
-
+        sensor_msgs::msg::PointCloud2::SharedPtr gp = std::make_shared<sensor_msgs::msg::PointCloud2>();
+        sensor_msgs::msg::PointCloud2::SharedPtr ngp = std::make_shared<sensor_msgs::msg::PointCloud2>();
         // Convert the ROS 2 PointCloud2 message to a PCL PointCloud
         pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
         pcl::fromROSMsg(*msg, pcl_cloud);
         Eigen::Quaterniond orientation(1.0, 0.0, 0.0, 0.0);
 
-        pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_ptr = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>(pcl_cloud);
+        CloudXYZ pcl_cloud_ptr = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>(pcl_cloud);
+
+        std::cout << "Input Cloud: " << pcl_cloud_ptr->points.size() << std::endl;
+
         ground_detection->setInputCloud(pcl_cloud_ptr, orientation);
 
 
-        std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr,pcl::PointCloud<pcl::PointXYZ>::Ptr> result = ground_detection->segmentPoints();
+        CloudPair result = ground_detection->segmentPoints();
+        CloudXYZ ground_points = result.first;
+        CloudXYZ non_ground_points = result.second;
 
-        pcl::PointCloud<pcl::PointXYZ>::Ptr ground_points = result.first;
-        pcl::PointCloud<pcl::PointXYZ>::Ptr non_ground_points = result.second;
+        std::cout << "GN Cloud: " << result.first->points.size() << std::endl;
+        std::cout << "NG Cloud: " << result.second->points.size() << std::endl;
 
         // Convert PCL PointCloud to ROS PointCloud2 message
         pcl::toROSMsg(*ground_points, *gp);
