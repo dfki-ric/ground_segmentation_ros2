@@ -36,23 +36,7 @@ target_link_libraries(ground_detection_node
         tf2_eigen::tf2_eigen
 )
 
-add_executable(ground_points_filter src/ground_points_filter.cpp)
-target_include_directories(ground_points_filter PUBLIC
-        ${pcl_conversions_INCLUDE_DIRS}
-)
-
-target_link_libraries(ground_points_filter
-        PkgConfig::pointcloud_obstacle_detection
-        rclcpp::rclcpp
-        tf2_ros::tf2_ros
-        ${PCL_LIBRARIES}
-        ${sensor_msgs_TARGETS}
-        ${std_srvs_TARGETS}
-        tf2_eigen::tf2_eigen
-)
-
-
-install(TARGETS ground_detection_node ground_points_filter
+install(TARGETS ground_detection_node
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
