@@ -20,7 +20,7 @@ using namespace pointcloud_obstacle_detection;
 
 class GroundSegmentatioNode : public rclcpp::Node {
 public:
-    GroundSegmentatioNode() : Node("ground_segmentation") {
+    GroundSegmentatioNode(rclcpp::NodeOptions options) : Node("ground_segmentation",options) {
 
         subscription = this->create_subscription<sensor_msgs::msg::PointCloud2>(
             "/ground_segmentation/input", 10, std::bind(&GroundSegmentatioNode::PointCloudCallback, this, std::placeholders::_1)
@@ -58,33 +58,41 @@ private:
         sensor_msgs::msg::PointCloud2::SharedPtr ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr obstacle_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         // Convert the ROS 2 PointCloud2 message to a PCL PointCloud
-        pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
+        pcl::PointCloud<pcl::PointXYZ> input_cloud;
         pcl::PointCloud<pcl::PointXYZ> transformed_cloud;
-        pcl::fromROSMsg(*msg, pcl_cloud);
+        pcl::fromROSMsg(*msg, input_cloud);
 
-        try {
-            // Lookup transform from lidar frame to base_link frame
-            const geometry_msgs::msg::TransformStamped transformStamped = buffer->lookupTransform(
-                "base_link", msg->header.frame_id, tf2::TimePointZero);
+        std::string target_frame = this->get_parameter("target_frame").as_string();
 
-            // Transform each point
-            pcl_ros::transformPointCloud(pcl_cloud, transformed_cloud, transformStamped);
+        CloudXYZ input_cloud_ptr;
+        if (target_frame != msg->header.frame_id){
+            try {
+                // Lookup transform from lidar frame to base_link frame
+                const geometry_msgs::msg::TransformStamped transformStamped = buffer->lookupTransform(
+                    target_frame, msg->header.frame_id, tf2::TimePointZero);
 
-            // Process transformed point cloud
-            // Your processing logic here
-        } catch (tf2::TransformException &ex) {
-            RCLCPP_ERROR(this->get_logger(), "Transform exception: %s", ex.what());
-            return;
-        }        
+                // Transform each point
+                pcl_ros::transformPointCloud(input_cloud, transformed_cloud, transformStamped);
+
+                // Process transformed point cloud
+                // Your processing logic here
+            } catch (tf2::TransformException &ex) {
+                RCLCPP_ERROR(this->get_logger(), "Transform exception: %s", ex.what());
+                return;
+            }        
+            input_cloud_ptr = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>(transformed_cloud);
+        }
+        else{
+            input_cloud_ptr = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>(input_cloud);
+        }
         
+        //TODO: Read robot orientation
         Eigen::Quaterniond orientation(1.0, 0.0, 0.0, 0.0);
 
-        CloudXYZ pcl_cloud_ptr = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>(transformed_cloud);
-
-        std::cout << "Input Cloud Points: " << pcl_cloud_ptr->points.size() << std::endl;
+        std::cout << "Input Cloud Points: " << input_cloud_ptr->points.size() << std::endl;
 
         //PRE
-        pre_processor->setInputCloud(pcl_cloud_ptr, orientation);
+        pre_processor->setInputCloud(input_cloud_ptr, orientation);
         CloudPair pre_result = pre_processor->segmentPoints();
         CloudXYZ pre_ground_points = pre_result.first;
         CloudXYZ pre_non_ground_points = pre_result.second;
@@ -126,7 +134,10 @@ private:
 
 int main(int argc, char** argv) {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<GroundSegmentatioNode>());
+    rclcpp::NodeOptions options;
+    options.allow_undeclared_parameters(true);
+    options.automatically_declare_parameters_from_overrides(true);
+    rclcpp::spin(std::make_shared<GroundSegmentatioNode>(options));
     rclcpp::shutdown();
     return 0;
 }
