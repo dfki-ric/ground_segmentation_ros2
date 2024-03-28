@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(ground_detection)
+project(ground_segmentation)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -15,44 +15,43 @@ find_package(pcl_conversions REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(PkgConfig REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+pkg_check_modules(pointcloud_obstacle_detection IMPORTED_TARGET REQUIRED pointcloud_obstacle_detection)
 
-# Create a library target
-add_library(ground_detection src/ground_detection.cpp)
-
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
-target_link_libraries(ground_detection PUBLIC ${PCL_LIBRARIES} Eigen3::Eigen)
-
-target_include_directories(ground_detection PUBLIC
-                                            ${CMAKE_SOURCE_DIR}/include
-                                            ${PCL_INCLUDE_DIRS}
-                                            ${EIGEN_INCLUDE_DIR})
-
-add_executable(ground_detection_node src/ground_detection_node.cpp)
-
-target_include_directories(ground_detection_node PUBLIC
+add_executable(ground_segmentation_node src/ground_segmentation_node.cpp)
+target_include_directories(ground_segmentation_node PUBLIC
         ${pcl_conversions_INCLUDE_DIRS}
 )
 
-
-target_link_libraries(ground_detection_node
-        ground_detection
-        rclcpp::rclcpp
-        tf2_ros::tf2_ros
-        ${PCL_LIBRARIES}
-        ${sensor_msgs_TARGETS}
-        ${std_srvs_TARGETS}
-        tf2_eigen::tf2_eigen
+set(dependencies
+  geometry_msgs
+  rclcpp
+  sensor_msgs
+  std_msgs
+  std_srvs
+  tf2
+  tf2_geometry_msgs
+  tf2_ros
 )
 
-install(TARGETS ground_detection_node ground_detection
+ament_target_dependencies(ground_segmentation_node
+  ${dependencies}
+)
+
+target_link_libraries(ground_segmentation_node
+        PkgConfig::pointcloud_obstacle_detection
+        ${PCL_LIBRARIES}
+)
+
+install(TARGETS ground_segmentation_node
   DESTINATION lib/${PROJECT_NAME})
+
+install(DIRECTORY launch config
+  DESTINATION share/${PROJECT_NAME})
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
