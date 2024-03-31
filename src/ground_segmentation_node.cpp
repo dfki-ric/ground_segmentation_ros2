@@ -28,6 +28,7 @@ public:
 
         publisher_ground_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/ground_points", 10);
         publisher_obstacle_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/obstacle_points", 10);
+        publisher_raw_ground_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/ground_points_raw", 10);
         pre_processor = std::make_unique<PointCloudGrid>(pre_processor_config);
 
         post_processor_config.cellSizeX = 2;
@@ -53,6 +54,7 @@ private:
     GridConfig pre_processor_config;
     GridConfig post_processor_config;
     void PointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+        sensor_msgs::msg::PointCloud2::SharedPtr raw_ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr obstacle_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         // Convert the ROS 2 PointCloud2 message to a PCL PointCloud
@@ -110,21 +112,27 @@ private:
         std::cout << "Obstacle Points: " << pre_non_ground_points->points.size() << std::endl;
 
         // Convert PCL PointCloud to ROS PointCloud2 message
+        pcl::toROSMsg(*pre_ground_points, *raw_ground_points);
         pcl::toROSMsg(*post_ground_points, *ground_points);
         pcl::toROSMsg(*pre_non_ground_points, *obstacle_points);
 
+        raw_ground_points->header.frame_id = target_frame;
+        raw_ground_points->header.stamp = this->now();
+
         // Set the frame ID and timestamp
-        ground_points->header.frame_id = "base_link";
+        ground_points->header.frame_id = target_frame;
         ground_points->header.stamp = this->now();
         // Set the frame ID and timestamp
-        obstacle_points->header.frame_id = "base_link";
+        obstacle_points->header.frame_id = target_frame;
         obstacle_points->header.stamp = this->now();
 
         // Publish the message
         publisher_ground_points->publish(*ground_points);
         publisher_obstacle_points->publish(*obstacle_points);
+        publisher_raw_ground_points->publish(*raw_ground_points);
 
     }
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr publisher_raw_ground_points;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr publisher_ground_points;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr publisher_obstacle_points;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscription;
