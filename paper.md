@@ -45,10 +45,49 @@ detected and removed. Additionally, the computational burden is reduced by proce
   <figcaption>Figure 3: Standard pipeline for processing of pointcloud data for robot navigation</figcaption>
 </figure>
 
+# State of the Art
+The extraction of ground points from a pointcloud sample is a key step in the perception pipleine of an autonomous systems. There are a number of solutions which have been presented over the past few years.
+
+Our main for this work was to focus on extraction of ground points with as few fixed thresholds as possible. We wanted to extract the ground points without the need to tune parameters to adapt to indoor and outdoor scenarios. Although our approach is not free of parameter tuning for best performance, however, we feel that the parameters only need to be tuned if the robot environment has major changes. 
+
+We chose a model fitting approach for our solution because once broken down to smaller cells, it is a plausible to assume that the local cells are flat given that the cell size is very small. The smaller cell size ensures that the assumption holds more often than not but this increases the computation cost due to the increased number of cells in the grid. A large grid cell size improves performance and produces good results in indoor or autonomous driving scenario but flattens the natural curvature of ground in outdoor environments. Large grid size in highly uneven terrain produces poor results and this is to be expected because the planar model fit will ignore some points. What do we do with the points which were marked as outliers but are not really outliers?
+
+Another challenge with the grid representation is that based on the sparsity of points, we might have completely different point assignment to a grid cell. In one cell, we might have a line of points, in another, a few lines, and in some one of a few randomly scattered points.
+
+# Challenges
+
+- Grid cell size vs roughness of the terrain
+
+In principle, small grid cells are better suited for plane fitting algorithms but the size of grid cell has a direct impact on the computational performance of the algorithm. The selected size also depends on the gap of the scan lines. The scan lines in close proximity to the robot are dense and the distance between the lines increases based on the distance from the robot. Irrespective of the grid cell size, a cell close to the robot is more likely to have points from multiple scan lines assigned to it. This means that such cells are better suited to fit a plane model. As a concequence, it is possible to have an accurate slope estimate of the local point surface. On the contrary, cells which are assigned points far away from the robot are more likely to have only single scan lines assigned to them. A plane fitting algorithm can fit a plane to the line of points but the slope estimate is highly uncertain and is usually unreliable.
+
+Additionally, the size of the grid cells is also closely related to the type of application and environment. In indoor environments with flat surfaces, it is generally unproblamatic to have large grid cell size as compared to outdoor uneven terrain. To sum up, there is so one size fits all solution when it comes to selection of a suitable grid cell size for a ground segmentation algorithm.
+
+In our solution, we make use of the known and reliable information and tried to find an algorithm which solves most of previously mentioned challenges. One challenge which remains unsolved is the computational performance related to the grid cell size. The type and amount of computational power available is robot platform dependent and therefore the grid cell size is coupled to the available resources. The user should select a grid cell size based on the runtime requirements of the algorithm.
+
+- Sparse assignment of far off points to grid cells
+
+As mentioned earlier, the point assignment to grid cells is non uniform and depends on various factors. It is not feasible to blindly fit a plane to all grid cells because some cells may have a single line of points or a random distribution of points. This is especially the case when using a fixed grid size and the distance of the cell from the pointcloud origin increases.
+
+- Polar vs Square grid cells
+
+Literature review has shown that researchers prefer polar grid cells as compared to square cells. However, in our experiments we found a square grid cell with a fixed grid size performs better than polar cells. The reason in our view is that as the distance from the sensor origin increases, the cells get bigger and as a concequence, results in the deterioration of the performance of the plane fitting based segmentation 
+
+- False positive flat surfaces other than ground e.g. table top, car roof etc.
+
+The gradient of the fitting plane to a grid cell can not be used as the sole criteria for the segmentation. The reason is the existence of flat surfaced obstacles in the robot's environment.
+
+
+- False positive points at the junction of ground and obstacles
+- Influence of grid cell height on the performance of segementation
+- Performance
+
 # Core Components 
 
-- Component 1
-- Component 2 
+- 3D Grid Representation
+- Local Eigen Analysis
+- Planar Model Fitting
+- Region Growing
+- Two phase segmentation of points based on local surface properties and neighbourhood analysis 
 
 # Current Capabilities and applications 
 
@@ -58,8 +97,9 @@ detected and removed. Additionally, the computational burden is reduced by proce
 
 # Outlook and future work 
 
-- Future1 
-- Future2
+- How to handle soft obstacles like tall grass and plants?
+- How to tune the parameters automatically based on local region properties?
+- 
 
 # Acknowledgements 
 
