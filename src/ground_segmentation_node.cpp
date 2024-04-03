@@ -30,11 +30,7 @@ public:
         publisher_obstacle_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/obstacle_points", 10);
         publisher_raw_ground_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/ground_points_raw", 10);
         pre_processor = std::make_unique<PointCloudGrid>(pre_processor_config);
-
-        post_processor_config.cellSizeX = 2;
-        post_processor_config.cellSizeY = 2;
         post_processor_config.cellSizeZ = 0.5;
-        post_processor_config.groundInlierThreshold = 0.1; 
         post_processor_config.processing_phase = 2;
         post_processor = std::make_unique<PointCloudGrid>(post_processor_config);
 
