@@ -29,9 +29,46 @@ public:
         publisher_ground_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/ground_points", 10);
         publisher_obstacle_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/obstacle_points", 10);
         publisher_raw_ground_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/ground_points_raw", 10);
-        pre_processor = std::make_unique<PointCloudGrid>(pre_processor_config);
+
+        double radialCellSize = this->get_parameter("radialCellSize").as_double();
+        double angularCellSize = this->get_parameter("angularCellSize").as_double();
+        double cellSizeX = this->get_parameter("cellSizeX").as_double();
+        double cellSizeY = this->get_parameter("cellSizeY").as_double();
+        double cellSizeZ = this->get_parameter("cellSizeZ").as_double();
+        double gridmaxX = this->get_parameter("gridmaxX").as_double();
+        double gridmaxY = this->get_parameter("gridmaxY").as_double();
+        double gridmaxZ = this->get_parameter("gridmaxZ").as_double();
+        double startCellDistanceThreshold = this->get_parameter("startCellDistanceThreshold").as_double();
+        double slopeThresholdDegrees = this->get_parameter("slopeThresholdDegrees").as_double();
+        double groundInlierThreshold = this->get_parameter("groundInlierThreshold").as_double();
+        double neighborsIndexThreshold = this->get_parameter("neighborsIndexThreshold").as_int();
+        double minPoints = this->get_parameter("minPoints").as_int();
+        double ransac_iterations = this->get_parameter("ransac_iterations").as_int();
+        int grid_type = this->get_parameter("grid_type").as_int();
+        bool returnGroundPoints = this->get_parameter("returnGroundPoints").as_bool();
+
+        pre_processor_config.radialCellSize = radialCellSize;
+        pre_processor_config.angularCellSize = angularCellSize;
+        pre_processor_config.cellSizeX = cellSizeX;
+        pre_processor_config.cellSizeY = cellSizeY;
+        pre_processor_config.cellSizeZ = cellSizeZ;
+        pre_processor_config.maxX = gridmaxX;
+        pre_processor_config.maxY = gridmaxY;
+        pre_processor_config.maxZ = gridmaxZ;
+        pre_processor_config.startCellDistanceThreshold = startCellDistanceThreshold;
+        pre_processor_config.slopeThresholdDegrees = slopeThresholdDegrees;
+        pre_processor_config.groundInlierThreshold = groundInlierThreshold;             
+        pre_processor_config.neighborsIndexThreshold = neighborsIndexThreshold;
+        pre_processor_config.minPoints = minPoints;
+        pre_processor_config.ransac_iterations = ransac_iterations;
+        pre_processor_config.grid_type = static_cast<GridType>(grid_type);
+        pre_processor_config.returnGroundPoints = returnGroundPoints;
+
+        post_processor_config = pre_processor_config;
         post_processor_config.cellSizeZ = 0.5;
         post_processor_config.processing_phase = 2;
+
+        pre_processor = std::make_unique<PointCloudGrid>(pre_processor_config);
         post_processor = std::make_unique<PointCloudGrid>(post_processor_config);
 
         // controller feedback (via TF)
@@ -43,8 +80,7 @@ private:
 
     std::shared_ptr<tf2_ros::Buffer> buffer;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener;
-
-
+    ProcessPointCloud processor;
     std::unique_ptr<PointCloudGrid> pre_processor;
     std::unique_ptr<PointCloudGrid> post_processor;
     GridConfig pre_processor_config;
@@ -59,6 +95,14 @@ private:
         pcl::fromROSMsg(*msg, input_cloud);
 
         std::string target_frame = this->get_parameter("target_frame").as_string();
+        double maxX = this->get_parameter("maxX").as_double();
+        double minX = this->get_parameter("minX").as_double();
+        double maxY = this->get_parameter("maxY").as_double();
+        double minY = this->get_parameter("minY").as_double();
+        double maxZ = this->get_parameter("maxZ").as_double();
+        double minZ = this->get_parameter("minZ").as_double();
+        bool downsample = this->get_parameter("downsample").as_bool();
+        double downsample_distance = this->get_parameter("downsample_distance").as_double();
 
         CloudXYZ input_cloud_ptr;
         if (target_frame != msg->header.frame_id){
@@ -84,11 +128,16 @@ private:
         
         //TODO: Read robot orientation
         Eigen::Quaterniond orientation(1.0, 0.0, 0.0, 0.0);
+        std::cout << "Before: Input Cloud Points: " << input_cloud_ptr->points.size() << std::endl;
 
-        std::cout << "Input Cloud Points: " << input_cloud_ptr->points.size() << std::endl;
+        Eigen::Vector4f min{minX,minY,minZ, 1};
+        Eigen::Vector4f max{maxX,maxY,maxZ,1};
+
+        CloudXYZ filtered_cloud_ptr = processor.FilterCloud(input_cloud_ptr, downsample, downsample_distance, min, max);
+        std::cout << "After: Input Cloud Points: " << filtered_cloud_ptr->points.size() << std::endl;
 
         //PRE
-        pre_processor->setInputCloud(input_cloud_ptr, orientation);
+        pre_processor->setInputCloud(filtered_cloud_ptr, orientation);
         CloudPair pre_result = pre_processor->segmentPoints();
         CloudXYZ pre_ground_points = pre_result.first;
         CloudXYZ pre_non_ground_points = pre_result.second;
