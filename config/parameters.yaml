@@ -2,12 +2,14 @@ ground_segmentation:
   ros__parameters:
     # pre processing
     target_frame: "base_link"
-    maxX:  50.0
-    minX: -50.0
-    maxY:  50.0
-    minY: -50.0
-    maxZ:  50.0
-    minZ: -50.0
+    #target_frame: "velodyne_top"
+    #target_frame: "husky"
+    maxX:  100.0
+    minX: -100.0
+    maxY:  100.0
+    minY: -100.0
+    maxZ:  100.0
+    minZ: -100.0
     downsample: true
     downsample_distance: 0.1
 
@@ -18,10 +20,10 @@ ground_segmentation:
     cellSizeX: 2.0
     cellSizeY: 2.0
     cellSizeZ: 10.0
-    gridmaxX: 50.0
-    gridmaxY: 50.0 
-    gridmaxZ: 50.0
-    startCellDistanceThreshold: 20.0
+    gridmaxX: 1000.0
+    gridmaxY: 1000.0 
+    gridmaxZ: 1000.0
+    startCellDistanceThreshold: 10.0
     slopeThresholdDegrees: 30.0
     groundInlierThreshold: 0.1
     returnGroundPoints: true

@@ -1,4 +1,5 @@
 #include "rclcpp/rclcpp.hpp"
+#include <pointcloud_obstacle_detection/utils.hpp>
 
 #include "pcl/point_types.h"
 #include "pcl_conversions/pcl_conversions.h"
@@ -14,9 +15,10 @@
 
 #include <Eigen/Dense>
 #include <memory>
+#include <chrono>
 
 using namespace pointcloud_obstacle_detection;
-
+using PointType = PointXYZILID;
 
 class GroundSegmentatioNode : public rclcpp::Node {
 public:
@@ -28,7 +30,7 @@ public:
 
         publisher_ground_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/ground_points", 10);
         publisher_obstacle_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/obstacle_points", 10);
-        publisher_raw_ground_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/ground_points_raw", 10);
+        publisher_raw_ground_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/filtered_input", 10);
 
         double radialCellSize = this->get_parameter("radialCellSize").as_double();
         double angularCellSize = this->get_parameter("angularCellSize").as_double();
@@ -68,30 +70,42 @@ public:
         post_processor_config.cellSizeZ = 0.5;
         post_processor_config.processing_phase = 2;
 
-        pre_processor = std::make_unique<PointCloudGrid>(pre_processor_config);
-        post_processor = std::make_unique<PointCloudGrid>(post_processor_config);
+        pre_processor = std::make_unique<PointCloudGrid<PointType>>(pre_processor_config);
+        post_processor = std::make_unique<PointCloudGrid<PointType>>(post_processor_config);
 
         // controller feedback (via TF)
         buffer = std::make_unique<tf2_ros::Buffer>(this->get_clock());
         tf_listener = std::make_shared<tf2_ros::TransformListener>(*buffer);
+
+        precision = 0.0;
+        recall = 0.0;
+        sample_count = 1;
     }
 
 private:
 
+    double precision, recall;
+
+    int sample_count;
+
     std::shared_ptr<tf2_ros::Buffer> buffer;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener;
-    ProcessPointCloud processor;
-    std::unique_ptr<PointCloudGrid> pre_processor;
-    std::unique_ptr<PointCloudGrid> post_processor;
+    ProcessPointCloud<PointType> processor;
+    std::unique_ptr<PointCloudGrid<PointType>> pre_processor;
+    std::unique_ptr<PointCloudGrid<PointType>> post_processor;
     GridConfig pre_processor_config;
     GridConfig post_processor_config;
     void PointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
         sensor_msgs::msg::PointCloud2::SharedPtr raw_ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr obstacle_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
+
+        //Start time
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
         // Convert the ROS 2 PointCloud2 message to a PCL PointCloud
-        pcl::PointCloud<pcl::PointXYZ> input_cloud;
-        pcl::PointCloud<pcl::PointXYZ> transformed_cloud;
+        typename pcl::PointCloud<PointType> input_cloud;
+        typename pcl::PointCloud<PointType> transformed_cloud;
         pcl::fromROSMsg(*msg, input_cloud);
 
         std::string target_frame = this->get_parameter("target_frame").as_string();
@@ -104,7 +118,7 @@ private:
         bool downsample = this->get_parameter("downsample").as_bool();
         double downsample_distance = this->get_parameter("downsample_distance").as_double();
 
-        CloudXYZ input_cloud_ptr;
+        typename pcl::PointCloud<PointType>::Ptr input_cloud_ptr;
         if (target_frame != msg->header.frame_id){
             try {
                 // Lookup transform from lidar frame to base_link frame
@@ -120,10 +134,10 @@ private:
                 RCLCPP_ERROR(this->get_logger(), "Transform exception: %s", ex.what());
                 return;
             }        
-            input_cloud_ptr = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>(transformed_cloud);
+            input_cloud_ptr = std::make_shared<typename pcl::PointCloud<PointType>>(transformed_cloud);
         }
         else{
-            input_cloud_ptr = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>(input_cloud);
+            input_cloud_ptr = std::make_shared<typename pcl::PointCloud<PointType>>(input_cloud);
         }
         
         //TODO: Read robot orientation
@@ -133,31 +147,48 @@ private:
         Eigen::Vector4f min{minX,minY,minZ, 1};
         Eigen::Vector4f max{maxX,maxY,maxZ,1};
 
-        CloudXYZ filtered_cloud_ptr = processor.FilterCloud(input_cloud_ptr, downsample, downsample_distance, min, max);
+        typename pcl::PointCloud<PointType>::Ptr filtered_cloud_ptr = processor.FilterCloud(input_cloud_ptr, downsample, downsample_distance, min, max);
         std::cout << "After: Input Cloud Points: " << filtered_cloud_ptr->points.size() << std::endl;
 
         //PRE
         pre_processor->setInputCloud(filtered_cloud_ptr, orientation);
-        CloudPair pre_result = pre_processor->segmentPoints();
-        CloudXYZ pre_ground_points = pre_result.first;
-        CloudXYZ pre_non_ground_points = pre_result.second;
+        std::pair< typename pcl::PointCloud<PointType>::Ptr,  typename pcl::PointCloud<PointType>::Ptr> pre_result = pre_processor->segmentPoints();
+        typename pcl::PointCloud<PointType>::Ptr pre_ground_points = pre_result.first;
+        typename pcl::PointCloud<PointType>::Ptr pre_non_ground_points = pre_result.second;
 
         //POST
         post_processor->setInputCloud(pre_ground_points, orientation);
-        CloudPair post_result = post_processor->segmentPoints();
-        CloudXYZ post_ground_points = post_result.first;
-        CloudXYZ post_non_ground_points  = post_result.second;
+        std::pair< typename pcl::PointCloud<PointType>::Ptr,  typename pcl::PointCloud<PointType>::Ptr> post_result = post_processor->segmentPoints();
+        typename pcl::PointCloud<PointType>::Ptr post_ground_points = post_result.first;
+        typename pcl::PointCloud<PointType>::Ptr post_non_ground_points  = post_result.second;
 
-        for (pcl::PointCloud<pcl::PointXYZ>::iterator it = post_non_ground_points->begin(); it != post_non_ground_points->end(); ++it)
+        for (typename pcl::PointCloud<PointType>::iterator it = post_non_ground_points->begin(); it != post_non_ground_points->end(); ++it)
         {
             pre_non_ground_points->points.push_back(*it);
         }
+
+        double curr_pre = 0.0;
+        double curr_rec = 0.0;
+
+        // Estimation
+        calculate_precision_recall(*filtered_cloud_ptr, *post_ground_points, curr_pre, curr_rec);
+
+        precision = precision + curr_pre;
+        recall = recall + curr_rec;
+
+        double avg_precision = precision / sample_count;
+        double avg_recall = recall / sample_count;
+
+        sample_count++;
+
+        cout << "\033[1;32m P: " << curr_pre << " | R: " << curr_rec << "\033[0m" << endl;
+        cout << "\033[1;32m Avg P: " << avg_precision << " | Avg R: " << avg_recall << "\033[0m" << endl;
 
         std::cout << "Ground Points: " << post_ground_points->points.size() << std::endl;
         std::cout << "Obstacle Points: " << pre_non_ground_points->points.size() << std::endl;
 
         // Convert PCL PointCloud to ROS PointCloud2 message
-        pcl::toROSMsg(*pre_ground_points, *raw_ground_points);
+        pcl::toROSMsg(*filtered_cloud_ptr, *raw_ground_points);
         pcl::toROSMsg(*post_ground_points, *ground_points);
         pcl::toROSMsg(*pre_non_ground_points, *obstacle_points);
 
@@ -175,6 +206,10 @@ private:
         publisher_ground_points->publish(*ground_points);
         publisher_obstacle_points->publish(*obstacle_points);
         publisher_raw_ground_points->publish(*raw_ground_points);
+
+        //End time
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() * 0.001 << "[ms]" << std::endl;
 
     }
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr publisher_raw_ground_points;
