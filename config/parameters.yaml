@@ -6,12 +6,12 @@ ground_segmentation:
     #target_frame: "husky"
     maxX:  100.0
     minX: -100.0
-    maxY:  100.0
-    minY: -100.0
-    maxZ:  100.0
-    minZ: -100.0
+    maxY:  20.0
+    minY: -20.0
+    maxZ:  10.0
+    minZ: -10.0
     downsample: true
-    downsample_distance: 0.1
+    downsample_distance: 0.2
 
     # ground detection
     grid_type: 0
@@ -20,10 +20,10 @@ ground_segmentation:
     cellSizeX: 2.0
     cellSizeY: 2.0
     cellSizeZ: 10.0
-    gridmaxX: 1000.0
-    gridmaxY: 1000.0 
-    gridmaxZ: 1000.0
-    startCellDistanceThreshold: 10.0
+    gridmaxX: 100.0
+    gridmaxY: 20.0 
+    gridmaxZ: 10.0
+    startCellDistanceThreshold: 30.0
     slopeThresholdDegrees: 30.0
     groundInlierThreshold: 0.1
     returnGroundPoints: true
