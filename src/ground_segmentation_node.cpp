@@ -95,6 +95,7 @@ private:
     std::unique_ptr<PointCloudGrid<PointType>> post_processor;
     GridConfig pre_processor_config;
     GridConfig post_processor_config;
+
     void PointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
         sensor_msgs::msg::PointCloud2::SharedPtr raw_ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();

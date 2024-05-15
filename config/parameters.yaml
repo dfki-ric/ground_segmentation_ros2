@@ -4,14 +4,14 @@ ground_segmentation:
     target_frame: "base_link"
     #target_frame: "velodyne_top"
     #target_frame: "husky"
-    maxX:  100.0
-    minX: -100.0
+    maxX:  30.0
+    minX: -30.0
     maxY:  20.0
     minY: -20.0
     maxZ:  10.0
     minZ: -10.0
     downsample: true
-    downsample_distance: 0.2
+    downsample_distance: 0.1
 
     # ground detection
     grid_type: 0
@@ -20,7 +20,7 @@ ground_segmentation:
     cellSizeX: 2.0
     cellSizeY: 2.0
     cellSizeZ: 10.0
-    gridmaxX: 100.0
+    gridmaxX: 30.0
     gridmaxY: 20.0 
     gridmaxZ: 10.0
     startCellDistanceThreshold: 30.0
