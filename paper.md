@@ -78,16 +78,44 @@ The gradient of the fitting plane to a grid cell can not be used as the sole cri
 
 
 - False positive points at the junction of ground and obstacles
+We perform a point wise check to remove as many false positives as possible at the junction of ground and non-ground points
+
 - Influence of grid cell height on the performance of segementation
+
+- Outlier Correction
+The plane fitting will produce false positive outliers because of the natual curvature of the ground surface. A correction step using the actual 
+resultant normal of the points is used to correctly assign ground and non ground points.
+
 - Performance
 
 # Core Components 
 
 - 3D Grid Representation
+The points are at first subdivided into a euclidean space 3d grid.
+
 - Local Eigen Analysis
+
+Points in each grid cell are analyzed based on the ratio of eigen values
+The cells are classified into three categories: PLANE, LINE, UNKNOWn
+
 - Planar Model Fitting
+
+The PLANE cells from the previous step are fitted with a plane model 
+The LINE cells are analyzed 
+The cells which fulfill the ground criteria are tentatively marked as a potential ground cells.
+Cells which fit the ground criteria are used to select the initial seeds for region growing.
+The initial seed cells are the ones which are closest to the mean height of all tentative ground cells and with highest number of ground neighbors.
+Cells which do not fit the ground criteria are marked as non-ground
+
 - Region Growing
+The initial seed cells are used to grow the ground cells. All ground neighbors are expanded recursively.
+
 - Two phase segmentation of points based on local surface properties and neighbourhood analysis 
+
+First phase uses a large height for the grid cells.
+Second phase uses a small height for the grid cells.
+
+
 
 # Current Capabilities and applications 
 
