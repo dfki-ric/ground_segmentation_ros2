@@ -18,6 +18,7 @@ find_package(Eigen3 REQUIRED)
 find_package(PkgConfig REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(CGAL REQUIRED COMPONENTS Core)
 
 pkg_check_modules(pointcloud_obstacle_detection IMPORTED_TARGET REQUIRED pointcloud_obstacle_detection)
 
@@ -44,6 +45,7 @@ ament_target_dependencies(ground_segmentation_node
 target_link_libraries(ground_segmentation_node
         PkgConfig::pointcloud_obstacle_detection
         ${PCL_LIBRARIES}
+        CGAL::CGAL
 )
 
 install(TARGETS ground_segmentation_node
