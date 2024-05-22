@@ -93,6 +93,9 @@ public:
         int grid_type = this->get_parameter("grid_type").as_int();
         bool returnGroundPoints = this->get_parameter("returnGroundPoints").as_bool();
 
+        useCGAL = this->get_parameter("use_cgal").as_bool();
+        useBenchmark = this->get_parameter("use_benchmark").as_bool();
+
         pre_processor_config.radialCellSize = radialCellSize;
         pre_processor_config.angularCellSize = angularCellSize;
         pre_processor_config.cellSizeX = cellSizeX;
@@ -127,6 +130,9 @@ public:
     }
 
 private:
+
+    bool useCGAL;
+    bool useBenchmark;
 
     double precision, recall;
 
@@ -212,134 +218,128 @@ private:
         typename pcl::PointCloud<PointType>::Ptr post_non_ground_points  = post_result.second;
         typename pcl::PointCloud<PointType>::Ptr post_ground_points = post_result.first;
 
-        for (typename pcl::PointCloud<PointType>::iterator it = post_non_ground_points->begin(); it != post_non_ground_points->end(); ++it)
-        {
-            pre_non_ground_points->points.push_back(*it);
+        typename pcl::PointCloud<PointType>::Ptr final_ground_points(new pcl::PointCloud<PointType>());
+        typename pcl::PointCloud<PointType>::Ptr final_non_ground_points(new pcl::PointCloud<PointType>());
+
+        *final_non_ground_points = *pre_non_ground_points + *post_non_ground_points;
+
+        if (!useCGAL){
+            final_ground_points = post_ground_points;
         }
-
-        std::vector<pcl::PointCloud<PointType>::Ptr> obstacles = processor.Clustering_euclideanCluster(pre_non_ground_points,
-                                                                                                           1,
-                                                                                                           3,
-                                                                                                           1000000);
-
-        std::vector<pcl::PointCloud<PointType>::Ptr> non_obstacles = processor.Clustering_euclideanCluster(post_ground_points,
-                                                                                                           1,
-                                                                                                           3,
-                                                                                                           1000000);
-        // define polyhedron to hold convex hull
-        std::vector<Polyhedron_3> polygons_3d;
-        for (const auto& obstacle : obstacles){
-            std::vector<Point_3> points;
-            for (typename pcl::PointCloud<PointType>::iterator it = obstacle->begin(); it != obstacle->end(); ++it){
-                Point_3 p(it->x, it->y, it->z);
-                points.push_back(p);
-            }
-            
-            CGAL::Object ch_object;
-            CGAL::convex_hull_3(points.begin(), points.end(), ch_object);
-            Polyhedron_3 polyhedron;
-            CGAL::assign (polyhedron, ch_object);
-            polygons_3d.push_back(polyhedron);
-        }
-
-        std::cout << "Obstacle Hulls: " << polygons_3d.size() << std::endl;
-
-        // define polyhedron to hold convex hull
-        std::vector<Polyhedron_3> polygons_3d_ground;
-        for (const auto& obstacle : non_obstacles){
-            std::vector<Point_3> points;
-            for (typename pcl::PointCloud<PointType>::iterator it = obstacle->begin(); it != obstacle->end(); ++it){
-                Point_3 p(it->x, it->y, it->z);
-                points.push_back(p);
-            }
-            
-            CGAL::Object ch_object;
-            CGAL::convex_hull_3(points.begin(), points.end(), ch_object);
-            Polyhedron_3 polyhedron;
-            CGAL::assign (polyhedron, ch_object);
-            polygons_3d_ground.push_back(polyhedron);
-        }
-
-        std::cout << "Ground Hulls: " << polygons_3d_ground.size() << std::endl;
-        
-        typename pcl::PointCloud<PointType>::Ptr true_points(new pcl::PointCloud<PointType>());
-
-        pcl::ExtractIndices<PointType> extract_ground;
-        pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-        
-        for (int i{0}; i < polygons_3d_ground.size(); ++i){
-            bool collision{false};    
-            inliers->indices.clear();
-            for (int j{0}; j < polygons_3d.size(); ++j){
-
-                // Calculate bounding boxes using Polygon_mesh_processing::bbox
-                CGAL::Bbox_3 bbox1 = CGAL::Polygon_mesh_processing::bbox(polygons_3d[j]);
-                CGAL::Bbox_3 bbox2 = CGAL::Polygon_mesh_processing::bbox(polygons_3d_ground[i]);    
-
-                // Optional: Quick rejection test using bounding boxes
-                if (!CGAL::do_overlap(bbox1, bbox2)) {
-                    continue;
+        else{
+            std::vector<pcl::PointCloud<PointType>::Ptr> obstacles = processor.Clustering_euclideanCluster(final_non_ground_points,1,3,1000000);
+            std::vector<pcl::PointCloud<PointType>::Ptr> non_obstacles = processor.Clustering_euclideanCluster(post_ground_points,1,3,1000000);
+            // define polyhedron to hold convex hull
+            std::vector<Polyhedron_3> polygons_3d;
+            for (const auto& obstacle : obstacles){
+                std::vector<Point_3> points;
+                for (typename pcl::PointCloud<PointType>::iterator it = obstacle->begin(); it != obstacle->end(); ++it){
+                    Point_3 p(it->x, it->y, it->z);
+                    points.push_back(p);
                 }
+                
+                CGAL::Object ch_object;
+                CGAL::convex_hull_3(points.begin(), points.end(), ch_object);
+                Polyhedron_3 polyhedron;
+                CGAL::assign (polyhedron, ch_object);
+                polygons_3d.push_back(polyhedron);
+            }
 
-                if (CGAL::Polygon_mesh_processing::do_intersect(polygons_3d[j], polygons_3d_ground[i])){
-                    collision = true;
-                    int count{0};
-                    for (typename pcl::PointCloud<PointType>::iterator it = non_obstacles[i]->begin(); it != non_obstacles[i]->end(); ++it)
-                    {
-                        Eigen::Vector3d point(it->x, it->y, it->z);
-                        CGAL::Side_of_triangle_mesh<Polyhedron_3, K> inside(polygons_3d[j]);
-                        Point_3 p(it->x, it->y, it->z);
-                        CGAL::Bounded_side res = inside(p);
-                        if (res == CGAL::ON_BOUNDED_SIDE || res == CGAL::ON_BOUNDARY){ 
-                            //pre_non_ground_points->points.push_back(*it); 
-                            inliers->indices.push_back(count);
+            std::cout << "Obstacle Hulls: " << polygons_3d.size() << std::endl;
+
+            // define polyhedron to hold convex hull
+            std::vector<Polyhedron_3> polygons_3d_ground;
+            for (const auto& obstacle : non_obstacles){
+                std::vector<Point_3> points;
+                for (typename pcl::PointCloud<PointType>::iterator it = obstacle->begin(); it != obstacle->end(); ++it){
+                    Point_3 p(it->x, it->y, it->z);
+                    points.push_back(p);
+                }
+                
+                CGAL::Object ch_object;
+                CGAL::convex_hull_3(points.begin(), points.end(), ch_object);
+                Polyhedron_3 polyhedron;
+                CGAL::assign (polyhedron, ch_object);
+                polygons_3d_ground.push_back(polyhedron);
+            }
+
+            std::cout << "Ground Hulls: " << polygons_3d_ground.size() << std::endl;
+            
+            pcl::ExtractIndices<PointType> extract_ground;
+            pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+            
+            for (int i{0}; i < polygons_3d_ground.size(); ++i){
+                bool collision{false};    
+                inliers->indices.clear();
+                for (int j{0}; j < polygons_3d.size(); ++j){
+
+                    // Calculate bounding boxes using Polygon_mesh_processing::bbox
+                    CGAL::Bbox_3 bbox1 = CGAL::Polygon_mesh_processing::bbox(polygons_3d[j]);
+                    CGAL::Bbox_3 bbox2 = CGAL::Polygon_mesh_processing::bbox(polygons_3d_ground[i]);    
+
+                    // Optional: Quick rejection test using bounding boxes
+                    if (!CGAL::do_overlap(bbox1, bbox2)) {
+                        continue;
+                    }
+
+                    if (CGAL::Polygon_mesh_processing::do_intersect(polygons_3d[j], polygons_3d_ground[i])){
+                        collision = true;
+                        int count{0};
+                        for (typename pcl::PointCloud<PointType>::iterator it = non_obstacles[i]->begin(); it != non_obstacles[i]->end(); ++it)
+                        {
+                            Eigen::Vector3d point(it->x, it->y, it->z);
+                            CGAL::Side_of_triangle_mesh<Polyhedron_3, K> inside(polygons_3d[j]);
+                            Point_3 p(it->x, it->y, it->z);
+                            CGAL::Bounded_side res = inside(p);
+                            if (res == CGAL::ON_BOUNDED_SIDE || res == CGAL::ON_BOUNDARY){ 
+                                //final_non_ground_points->points.push_back(*it); 
+                                inliers->indices.push_back(count);
+                            }
+                            count++;
                         }
-                        count++;
                     }
                 }
-            }
 
-            if(!collision){
-                for (typename pcl::PointCloud<PointType>::iterator it = non_obstacles[i]->begin(); it != non_obstacles[i]->end(); ++it){
-                    true_points->points.push_back(*it);                 
-                }    
-            }     
-            else{
-                typename pcl::PointCloud<PointType>::Ptr temp(new pcl::PointCloud<PointType>());
-                extract_ground.setInputCloud(non_obstacles[i]);
-                extract_ground.setIndices(inliers);
-                extract_ground.setNegative(true);
-                extract_ground.filter(*temp);
-                for (typename pcl::PointCloud<PointType>::iterator it = temp->begin(); it != temp->end(); ++it){
-                    true_points->points.push_back(*it);                 
-                }    
+                if(!collision){
+                    *final_ground_points += *non_obstacles[i];
+                 }     
+                else{
+                    typename pcl::PointCloud<PointType>::Ptr temp(new pcl::PointCloud<PointType>());
+                    extract_ground.setInputCloud(non_obstacles[i]);
+                    extract_ground.setIndices(inliers);
+                    extract_ground.setNegative(true);
+                    extract_ground.filter(*temp);
+                    *final_ground_points += *temp;
+                }
             }
         }
 
-        double curr_pre = 0.0;
-        double curr_rec = 0.0;
+        if (useBenchmark){
+            double curr_pre = 0.0;
+            double curr_rec = 0.0;
 
-        // Estimation
-        calculate_precision_recall(*filtered_cloud_ptr, *post_ground_points, curr_pre, curr_rec);
+            // Estimation
+            calculate_precision_recall(*filtered_cloud_ptr, *post_ground_points, curr_pre, curr_rec);
 
-        precision = precision + curr_pre;
-        recall = recall + curr_rec;
+            precision = precision + curr_pre;
+            recall = recall + curr_rec;
 
-        double avg_precision = precision / sample_count;
-        double avg_recall = recall / sample_count;
+            double avg_precision = precision / sample_count;
+            double avg_recall = recall / sample_count;
 
-        sample_count++;
+            sample_count++;
 
-        cout << "\033[1;32m P: " << curr_pre << " | R: " << curr_rec << "\033[0m" << endl;
-        cout << "\033[1;32m Avg P: " << avg_precision << " | Avg R: " << avg_recall << "\033[0m" << endl;
+            cout << "\033[1;32m P: " << curr_pre << " | R: " << curr_rec << "\033[0m" << endl;
+            cout << "\033[1;32m Avg P: " << avg_precision << " | Avg R: " << avg_recall << "\033[0m" << endl;
 
-        std::cout << "Ground Points: " << post_ground_points->points.size() << std::endl;
-        std::cout << "Obstacle Points: " << pre_non_ground_points->points.size() << std::endl;
+            std::cout << "Ground Points: " << post_ground_points->points.size() << std::endl;
+            std::cout << "Obstacle Points: " << pre_non_ground_points->points.size() << std::endl;
+        }
 
         // Convert PCL PointCloud to ROS PointCloud2 message
         //pcl::toROSMsg(*fake_points, *raw_ground_points);
-        pcl::toROSMsg(*true_points, *ground_points);
-        pcl::toROSMsg(*pre_non_ground_points, *obstacle_points);
+        pcl::toROSMsg(*final_ground_points, *ground_points);
+        pcl::toROSMsg(*final_non_ground_points, *obstacle_points);
 
         raw_ground_points->header.frame_id = target_frame;
         raw_ground_points->header.stamp = this->now();
