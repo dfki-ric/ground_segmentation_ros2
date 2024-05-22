@@ -4,12 +4,12 @@ ground_segmentation:
     target_frame: "base_link"
     #target_frame: "velodyne_top"
     #target_frame: "husky"
-    maxX:  30.0
-    minX: -30.0
-    maxY:  20.0
-    minY: -20.0
-    maxZ:  10.0
-    minZ: -10.0
+    maxX:  20.0
+    minX: -20.0
+    maxY:  10.0
+    minY: -10.0
+    maxZ:  5.0
+    minZ: -5.0
     downsample: true
     downsample_distance: 0.1
 
@@ -19,11 +19,11 @@ ground_segmentation:
     angularCellSize: 0.349066
     cellSizeX: 2.0
     cellSizeY: 2.0
-    cellSizeZ: 10.0
-    gridmaxX: 30.0
-    gridmaxY: 20.0 
-    gridmaxZ: 10.0
-    startCellDistanceThreshold: 30.0
+    cellSizeZ: 2.0
+    gridmaxX: 20.0
+    gridmaxY: 10.0 
+    gridmaxZ: 5.0
+    startCellDistanceThreshold: 8.0
     slopeThresholdDegrees: 30.0
     groundInlierThreshold: 0.1
     returnGroundPoints: true

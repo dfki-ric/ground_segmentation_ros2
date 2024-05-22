@@ -226,17 +226,9 @@ private:
                                                                                                            1,
                                                                                                            3,
                                                                                                            1000000);
-        
-        
         // define polyhedron to hold convex hull
         std::vector<Polyhedron_3> polygons_3d;
-        //std::vector<Eigen::Vector4d> centroids;
         for (const auto& obstacle : obstacles){
-
-            //Eigen::Vector4d centroid;
-            //pcl::compute3DCentroid(*(obstacle), centroid);
-            //centroids.push_back(centroid);
-
             std::vector<Point_3> points;
             for (typename pcl::PointCloud<PointType>::iterator it = obstacle->begin(); it != obstacle->end(); ++it){
                 Point_3 p(it->x, it->y, it->z);
@@ -250,17 +242,11 @@ private:
             polygons_3d.push_back(polyhedron);
         }
 
-        std::cout << "Computed Hulls: " << polygons_3d.size() << std::endl;
+        std::cout << "Obstacle Hulls: " << polygons_3d.size() << std::endl;
 
         // define polyhedron to hold convex hull
         std::vector<Polyhedron_3> polygons_3d_ground;
-        //std::vector<Eigen::Vector4d> centroids;
         for (const auto& obstacle : non_obstacles){
-
-            //Eigen::Vector4d centroid;
-            //pcl::compute3DCentroid(*(obstacle), centroid);
-            //centroids.push_back(centroid);
-
             std::vector<Point_3> points;
             for (typename pcl::PointCloud<PointType>::iterator it = obstacle->begin(); it != obstacle->end(); ++it){
                 Point_3 p(it->x, it->y, it->z);
@@ -274,14 +260,12 @@ private:
             polygons_3d_ground.push_back(polyhedron);
         }
 
-        std::cout << "Computed Hulls: " << polygons_3d_ground.size() << std::endl;
+        std::cout << "Ground Hulls: " << polygons_3d_ground.size() << std::endl;
         
-
         typename pcl::PointCloud<PointType>::Ptr true_points(new pcl::PointCloud<PointType>());
 
         pcl::ExtractIndices<PointType> extract_ground;
         pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-        
         
         for (int i{0}; i < polygons_3d_ground.size(); ++i){
             bool collision{false};    
@@ -330,9 +314,7 @@ private:
                     true_points->points.push_back(*it);                 
                 }    
             }
-
         }
-        
 
         double curr_pre = 0.0;
         double curr_rec = 0.0;
