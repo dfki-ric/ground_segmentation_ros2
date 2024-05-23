@@ -88,14 +88,37 @@ resultant normal of the points is used to correctly assign ground and non ground
 
 - Performance
 
-# Core Components 
+# Core Components
+
+- Pre Processing
+
+The input pointcloud is first filtered to a user defined region.
+
+
 
 - 3D Grid Representation
 The points are at first subdivided into a euclidean space 3d grid.
 
 - Local Eigen Analysis
 
-Points in each grid cell are analyzed based on the ratio of eigen values
+Points in each grid cell are analyzed based on the ratio of eigen values. Based on the ratio of the largest eigen value with the sum of all eigne values,
+we can rougly estimate that spread of points in the grid cell.
+
+1) Ratio > 0.950
+If the largest eigen value is also the dominating value in all the values then we classify this set
+of points as a LINE.
+
+2) Ratio > 0.40
+If the ratio is > 0.4 then the points are classified as PLANE
+
+3) Ratio < 0.40
+If the ratio is < 0.40 then the points are classified as UNKNOWn
+
+This step is important because as the distance of points gets large the point assignment to gird cells gets sparse. The plane fitting step is not suitable the case the points are LINE because the resulting plane fit can take any orientation and this will reduce the quality of segmentation. Similarly for UNKNOWN cells, we can not be certain if the points are from uneven terrain, vegetation etc. and thus the plane fit will not be of high quality.
+
+We can safely perform plane fitting on cells with the PLANE classification and can trust the resulting slope for the initial corse estimation of ground and non-ground cells.
+
+
 The cells are classified into three categories: PLANE, LINE, UNKNOWn
 
 - Planar Model Fitting
@@ -113,9 +136,15 @@ The initial seed cells are used to grow the ground cells. All ground neighbors a
 - Two phase segmentation of points based on local surface properties and neighbourhood analysis 
 
 First phase uses a large height for the grid cells.
+The large grid cell in the z direction ensures that we capture as many obstacles are possible. However, this also means that ground points in cases of the tree canopy will be falsly classified as non-ground points. We cater for these false detections at the later stage.
+
 Second phase uses a small height for the grid cells.
 
+The second phase uses a smaller grid cell height so that we can remove any false positive detections of ground points. All the false positive detections are later added back to the non-ground points during the post processing phase.
 
+
+
+- Post Processing
 
 # Current Capabilities and applications 
 
