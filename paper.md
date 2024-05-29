@@ -56,7 +56,7 @@ Another challenge with the grid representation is that based on the sparsity of 
 
 # Challenges
 
-- Grid cell size vs roughness of the terrain
+## Grid cell size vs roughness of the terrain
 
 In principle, small grid cells are better suited for plane fitting algorithms but the size of grid cell has a direct impact on the computational performance of the algorithm. The selected size also depends on the gap of the scan lines. The scan lines in close proximity to the robot are dense and the distance between the lines increases based on the distance from the robot. Irrespective of the grid cell size, a cell close to the robot is more likely to have points from multiple scan lines assigned to it. This means that such cells are better suited to fit a plane model. As a concequence, it is possible to have an accurate slope estimate of the local point surface. On the contrary, cells which are assigned points far away from the robot are more likely to have only single scan lines assigned to them. A plane fitting algorithm can fit a plane to the line of points but the slope estimate is highly uncertain and is usually unreliable.
 
@@ -64,42 +64,40 @@ Additionally, the size of the grid cells is also closely related to the type of 
 
 In our solution, we make use of the known and reliable information and tried to find an algorithm which solves most of previously mentioned challenges. One challenge which remains unsolved is the computational performance related to the grid cell size. The type and amount of computational power available is robot platform dependent and therefore the grid cell size is coupled to the available resources. The user should select a grid cell size based on the runtime requirements of the algorithm.
 
-- Sparse assignment of far off points to grid cells
+## Sparse assignment of far off points to grid cells
 
 As mentioned earlier, the point assignment to grid cells is non uniform and depends on various factors. It is not feasible to blindly fit a plane to all grid cells because some cells may have a single line of points or a random distribution of points. This is especially the case when using a fixed grid size and the distance of the cell from the pointcloud origin increases.
 
-- Polar vs Square grid cells
+## Polar vs Square grid cells
 
 Literature review has shown that researchers prefer polar grid cells as compared to square cells. However, in our experiments we found a square grid cell with a fixed grid size performs better than polar cells. The reason in our view is that as the distance from the sensor origin increases, the cells get bigger and as a concequence, results in the deterioration of the performance of the plane fitting based segmentation 
 
-- False positive flat surfaces other than ground e.g. table top, car roof etc.
+## False positive flat surfaces other than ground e.g. table top, car roof etc.
 
 The gradient of the fitting plane to a grid cell can not be used as the sole criteria for the segmentation. The reason is the existence of flat surfaced obstacles in the robot's environment.
 
 
-- False positive points at the junction of ground and obstacles
+## False positive points at the junction of ground and obstacles
 We perform a point wise check to remove as many false positives as possible at the junction of ground and non-ground points
 
-- Influence of grid cell height on the performance of segementation
+## Influence of grid cell height on the performance of segementation
 
-- Outlier Correction
+## Outlier Correction
 The plane fitting will produce false positive outliers because of the natual curvature of the ground surface. A correction step using the actual 
 resultant normal of the points is used to correctly assign ground and non ground points.
 
-- Performance
+## Performance
 
 # Core Components
 
-- Pre Processing
+## Pre Processing
 
 The input pointcloud is first filtered to a user defined region.
 
-
-
-- 3D Grid Representation
+## 3D Grid Representation
 The points are at first subdivided into a euclidean space 3d grid.
 
-- Local Eigen Analysis
+## Local Eigen Analysis
 
 Points in each grid cell are analyzed based on the ratio of eigen values. Based on the ratio of the largest eigen value with the sum of all eigne values,
 we can rougly estimate that spread of points in the grid cell.
@@ -121,7 +119,7 @@ We can safely perform plane fitting on cells with the PLANE classification and c
 
 The cells are classified into three categories: PLANE, LINE, UNKNOWn
 
-- Planar Model Fitting
+## Planar Model Fitting
 
 The PLANE cells from the previous step are fitted with a plane model 
 The LINE cells are analyzed 
@@ -130,10 +128,51 @@ Cells which fit the ground criteria are used to select the initial seeds for reg
 The initial seed cells are the ones which are closest to the mean height of all tentative ground cells and with highest number of ground neighbors.
 Cells which do not fit the ground criteria are marked as non-ground
 
-- Region Growing
-The initial seed cells are used to grow the ground cells. All ground neighbors are expanded recursively.
+## Seed Selectiom
 
-- Two phase segmentation of points based on local surface properties and neighbourhood analysis 
+The seed cells are selected based on the following conditions:
+1) High confidence of the cell points belong to ground
+2) The centroid is within a user defined distance threshold
+3) Initial cells are ground into 4 groups of cells, each group belongs to a single quadrant
+4) Mean height is computed for each group
+5) Seed cells are selected in each quadrant based on neighborhood and closeness to the mean height. The cell with the most ground neighbors and closest to the mean height is selected as a seed each from each quadrant.
+6) At the end of seed selection, we have 1 seed cell selected from each quadrant.
+
+## Region Growing
+The initial seed cells are used to grow the ground cells. All ground neighbors are expanded recursively. 
+
+## Segmentation
+
+### Ground Cells
+
+The ground cells are the result of the expansion of the grid. The grid expansion is based on connectivity of ground cells, thus any falsely classified ground cells which merely fulfilled the slope criteria are rejected during expansion because there was no connectivity of such a cell to main body of the ground cells.
+
+After the region growing, we go over all the cells marked as ground and segment each cell's points into inliers and outliers. The segmentation uses the inliers from the plane fitting. The goal here is to detect small obstacles in the ground cells. Given that the real world ground has curvature, we are certain that the plane fit did indeed mark some ground points as outliers and they will be falsely assigned to non-ground points, resulting in poor quality of segmentation in very uneven terrain. 
+
+Outlier check:
+1) Find the closest inlier point and compute the vector from the inlier to outlier
+2) Compute the distance of vector's component along the ground normal
+3) If the distance along the normal is 
+   3.1) less than or equal to the plane fit threshold then the outlier is marked as ground point  
+   3.2) greator than the plane fit theshold then the outlier marked as non-ground point
+
+### Unknown Cells
+
+At this step, it is still not known whether the unknown cells are ground or non-ground. To solve this, we use the ground points from the previous step and compute the normals for all the points. Afterwards, we use the same algorithm used for the outlier check in the previous step to classify each unknown point as either ground or non-ground. It is not necessary that the cloest ground point to an unknown point belong to the same or neighboring cells. The distance along the normal can only be used when the points are close to each other. To avoid far off unknown points from being falsly classified, we make sure that the distance between the unknown and the ground point is within a user-defined threshold.
+
+### Non-Ground Cells
+
+Over segmentation of non-ground cells is very evident in the case of non-ground cells. We process each non-ground cell based on its neighborhood.
+
+1) If the non-ground cell has no ground neighbors then we can safely assign all the points as non-ground.
+2) If the non-ground cell has ground neighbors then we need to make sure which of these ground neighbors are actually ground and which were falsely assigned the ground label due to only slope criteria fulfillment.
+3) To confirm the genuine ground neighbors, we explore its neighborhood via neighborhood expansion and the cell has a connectivity to 50% of the total ground cells, then we can be certain that this ground cell belongs to the main body of ground cells. Less than the threshold will mean that the cell might be false positive ground cell and not taken into consideration for the next step.
+4) If the non-ground cell has ground neighbors belonging to the main body of the ground cells then we collect all ground points into a single collection of points
+5) Afterwards, we use the asme algorithm used in outlier check to classify segment ground and non-ground points.
+
+
+# Two Step Approach
+Two phase segmentation of points based on local surface properties and neighbourhood analysis 
 
 First phase uses a large height for the grid cells.
 The large grid cell in the z direction ensures that we capture as many obstacles are possible. However, this also means that ground points in cases of the tree canopy will be falsly classified as non-ground points. We cater for these false detections at the later stage.
@@ -142,9 +181,10 @@ Second phase uses a small height for the grid cells.
 
 The second phase uses a smaller grid cell height so that we can remove any false positive detections of ground points. All the false positive detections are later added back to the non-ground points during the post processing phase.
 
+## Post Processing
 
+## 3D Convex Hull Correction
 
-- Post Processing
 
 # Current Capabilities and applications 
 
