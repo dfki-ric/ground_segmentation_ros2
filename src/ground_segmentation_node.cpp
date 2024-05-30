@@ -126,7 +126,10 @@ public:
 
         precision = 0.0;
         recall = 0.0;
+        precision_ng = 0.0;
+        recall_ng = 0.0;
         sample_count = 1;
+        sample_count_ng = 1;
     }
 
 private:
@@ -135,8 +138,10 @@ private:
     bool useBenchmark;
 
     double precision, recall;
+    double precision_ng, recall_ng;
 
     int sample_count;
+    int sample_count_ng;
 
     std::shared_ptr<tf2_ros::Buffer> buffer;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener;
@@ -155,9 +160,6 @@ private:
         sensor_msgs::msg::PointCloud2::SharedPtr raw_ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr obstacle_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
-
-        //Start time
-        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
         // Convert the ROS 2 PointCloud2 message to a PCL PointCloud
         typename pcl::PointCloud<PointType> input_cloud;
@@ -202,6 +204,9 @@ private:
 
         Eigen::Vector4f min{minX,minY,minZ, 1};
         Eigen::Vector4f max{maxX,maxY,maxZ,1};
+
+        //Start time
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
         typename pcl::PointCloud<PointType>::Ptr filtered_cloud_ptr = processor.FilterCloud(input_cloud_ptr, downsample, downsample_distance, min, max);
         std::cout << "After: Input Cloud Points: " << filtered_cloud_ptr->points.size() << std::endl;
@@ -310,34 +315,53 @@ private:
                     extract_ground.setNegative(true);
                     extract_ground.filter(*temp);
                     *final_ground_points += *temp;
+                    extract_ground.setNegative(false);
+                    extract_ground.filter(*temp);
+                    *final_non_ground_points += *temp;
                 }
             }
         }
 
+        //End time
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() * 0.001 << "[ms]" << std::endl;
+
         if (useBenchmark){
             double curr_pre = 0.0;
             double curr_rec = 0.0;
-
+            double curr_pre_ng = 0.0;
+            double curr_rec_ng = 0.0;
             // Estimation
-            calculate_precision_recall(*filtered_cloud_ptr, *post_ground_points, curr_pre, curr_rec);
+            calculate_precision_recall(*filtered_cloud_ptr, *final_ground_points, curr_pre, curr_rec, false);
+            calculate_precision_recall_non_ground(*filtered_cloud_ptr, *final_non_ground_points, curr_pre_ng, curr_rec_ng, false);
 
-            precision = precision + curr_pre;
-            recall = recall + curr_rec;
+            if (curr_pre >= 0 && curr_rec >= 0){
+                precision += curr_pre;
+                recall += curr_rec;
+                double avg_precision = precision / sample_count;
+                double avg_recall = recall / sample_count;
+                double f1_score =  2 * (avg_precision * avg_recall) / (avg_precision + avg_recall);
+                cout << "Ground" << endl;
+                cout << "\033[1;32m P: " << curr_pre << " | R: " << curr_rec << "\033[0m" << endl;
+                cout << "\033[1;32m Avg P: " << avg_precision << " | Avg R: " << avg_recall << " | Avg F1: " << f1_score << "\033[0m" << endl;
+                sample_count++;
+            }
 
-            double avg_precision = precision / sample_count;
-            double avg_recall = recall / sample_count;
-
-            sample_count++;
-
-            cout << "\033[1;32m P: " << curr_pre << " | R: " << curr_rec << "\033[0m" << endl;
-            cout << "\033[1;32m Avg P: " << avg_precision << " | Avg R: " << avg_recall << "\033[0m" << endl;
-
-            std::cout << "Ground Points: " << post_ground_points->points.size() << std::endl;
-            std::cout << "Obstacle Points: " << pre_non_ground_points->points.size() << std::endl;
+            if (curr_pre_ng >= 0 && curr_rec_ng >= 0){
+                precision_ng += curr_pre_ng;
+                recall_ng += curr_rec_ng;
+                double avg_precision = precision_ng / sample_count_ng;
+                double avg_recall = recall_ng / sample_count_ng;
+                double f1_score =  2 * (avg_precision * avg_recall) / (avg_precision + avg_recall);
+                cout << "Non Ground" << endl;
+                cout << "\033[1;32m P: " << curr_pre_ng << " | R: " << curr_rec_ng << "\033[0m" << endl;
+                cout << "\033[1;32m Avg P: " << avg_precision << " | Avg R: " << avg_recall << " | Avg F1: " << f1_score << "\033[0m" << endl;
+                sample_count_ng++;
+            }
         }
 
         // Convert PCL PointCloud to ROS PointCloud2 message
-        //pcl::toROSMsg(*fake_points, *raw_ground_points);
+        pcl::toROSMsg(*filtered_cloud_ptr, *raw_ground_points);
         pcl::toROSMsg(*final_ground_points, *ground_points);
         pcl::toROSMsg(*final_non_ground_points, *obstacle_points);
 
@@ -354,12 +378,7 @@ private:
         // Publish the message
         publisher_ground_points->publish(*ground_points);
         publisher_obstacle_points->publish(*obstacle_points);
-        //publisher_raw_ground_points->publish(*raw_ground_points);
-
-        //End time
-        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() * 0.001 << "[ms]" << std::endl;
-
+        publisher_raw_ground_points->publish(*raw_ground_points);
     }
 };
 
