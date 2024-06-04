@@ -19,6 +19,7 @@ find_package(PkgConfig REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(CGAL REQUIRED COMPONENTS Core)
+find_package(visualization_msgs REQUIRED)
 
 pkg_check_modules(pointcloud_obstacle_detection IMPORTED_TARGET REQUIRED pointcloud_obstacle_detection)
 
@@ -36,6 +37,7 @@ set(dependencies
   tf2
   tf2_geometry_msgs
   tf2_ros
+  visualization_msgs
 )
 
 ament_target_dependencies(ground_segmentation_node

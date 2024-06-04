@@ -1,5 +1,6 @@
 #include "rclcpp/rclcpp.hpp"
-#include <pointcloud_obstacle_detection/utils.hpp>
+#include <pointcloud_obstacle_detection/common.hpp>
+#include <pointcloud_obstacle_detection/ground_detection_types.hpp>
 
 #include "pcl/point_types.h"
 #include "pcl_conversions/pcl_conversions.h"
@@ -19,6 +20,8 @@
 #include <chrono>
 #include <vector>
 #include <limits>
+
+#include <visualization_msgs/msg/marker_array.hpp>
 
 using namespace pointcloud_obstacle_detection;
 using PointType = PointXYZILID;
@@ -75,6 +78,11 @@ public:
         publisher_ground_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/ground_points", 10);
         publisher_obstacle_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/obstacle_points", 10);
         publisher_raw_ground_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/filtered_input", 10);
+        publisher_start_cells = this->create_publisher<visualization_msgs::msg::MarkerArray>("/ground_segmentation/start_cells", 10);
+
+        pub_tp = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/TP", 10);
+        pub_fn = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/TN", 10);
+        pub_fp = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/FP", 10);
 
         double radialCellSize = this->get_parameter("radialCellSize").as_double();
         double angularCellSize = this->get_parameter("angularCellSize").as_double();
@@ -93,8 +101,9 @@ public:
         int grid_type = this->get_parameter("grid_type").as_int();
         bool returnGroundPoints = this->get_parameter("returnGroundPoints").as_bool();
 
-        useCGAL = this->get_parameter("use_cgal").as_bool();
-        useBenchmark = this->get_parameter("use_benchmark").as_bool();
+        use_convex_hulls_3d = this->get_parameter("use_convex_hulls_3d").as_bool();
+        show_benchmark = this->get_parameter("show_benchmark").as_bool();
+        show_seed_cells = this->get_parameter("show_seed_cells").as_bool();
 
         pre_processor_config.radialCellSize = radialCellSize;
         pre_processor_config.angularCellSize = angularCellSize;
@@ -114,7 +123,7 @@ public:
         pre_processor_config.returnGroundPoints = returnGroundPoints;
 
         post_processor_config = pre_processor_config;
-        post_processor_config.cellSizeZ = 0.5;
+        post_processor_config.cellSizeZ = 0.1;
         post_processor_config.processing_phase = 2;
 
         pre_processor = std::make_unique<PointCloudGrid<PointType>>(pre_processor_config);
@@ -134,14 +143,20 @@ public:
 
 private:
 
-    bool useCGAL;
-    bool useBenchmark;
+    bool use_convex_hulls_3d;
+    bool show_benchmark;
+    bool show_seed_cells;
 
     double precision, recall;
     double precision_ng, recall_ng;
 
     int sample_count;
     int sample_count_ng;
+
+    std::vector<double> recall_arr;
+    std::vector<double> prec_arr;
+    std::vector<double> recall_o_arr;
+    std::vector<double> prec_o_arr;
 
     std::shared_ptr<tf2_ros::Buffer> buffer;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener;
@@ -154,12 +169,22 @@ private:
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr publisher_raw_ground_points;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr publisher_ground_points;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr publisher_obstacle_points;
+    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr publisher_start_cells;
+
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_tp;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_fn;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_fp;
+
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscription;
 
     void PointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
         sensor_msgs::msg::PointCloud2::SharedPtr raw_ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr obstacle_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
+
+        sensor_msgs::msg::PointCloud2::SharedPtr msg_TP = std::make_shared<sensor_msgs::msg::PointCloud2>();
+        sensor_msgs::msg::PointCloud2::SharedPtr msg_FP = std::make_shared<sensor_msgs::msg::PointCloud2>();
+        sensor_msgs::msg::PointCloud2::SharedPtr msg_FN = std::make_shared<sensor_msgs::msg::PointCloud2>();
 
         // Convert the ROS 2 PointCloud2 message to a PCL PointCloud
         typename pcl::PointCloud<PointType> input_cloud;
@@ -228,7 +253,7 @@ private:
 
         *final_non_ground_points = *pre_non_ground_points + *post_non_ground_points;
 
-        if (!useCGAL){
+        if (!use_convex_hulls_3d){
             final_ground_points = post_ground_points;
         }
         else{
@@ -250,8 +275,6 @@ private:
                 polygons_3d.push_back(polyhedron);
             }
 
-            std::cout << "Obstacle Hulls: " << polygons_3d.size() << std::endl;
-
             // define polyhedron to hold convex hull
             std::vector<Polyhedron_3> polygons_3d_ground;
             for (const auto& obstacle : non_obstacles){
@@ -267,8 +290,6 @@ private:
                 CGAL::assign (polyhedron, ch_object);
                 polygons_3d_ground.push_back(polyhedron);
             }
-
-            std::cout << "Ground Hulls: " << polygons_3d_ground.size() << std::endl;
             
             pcl::ExtractIndices<PointType> extract_ground;
             pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
@@ -326,60 +347,135 @@ private:
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() * 0.001 << "[ms]" << std::endl;
 
-        if (useBenchmark){
-            double curr_pre = 0.0;
-            double curr_rec = 0.0;
-            double curr_pre_ng = 0.0;
-            double curr_rec_ng = 0.0;
+        if (show_benchmark){
+
             // Estimation
-            calculate_precision_recall(*filtered_cloud_ptr, *final_ground_points, curr_pre, curr_rec, false);
-            calculate_precision_recall_non_ground(*filtered_cloud_ptr, *final_non_ground_points, curr_pre_ng, curr_rec_ng, false);
+            static double      precision, recall, precision_wo_veg, recall_wo_veg;
+            static double      precision_o, recall_o;
+            static std::vector<int> TPFNs; // TP, FP, FN, TF order
+            static std::vector<int> TPFNs_wo_veg; // TP, FP, FN, TF order
+            static std::vector<int> TPFNs_o; // TP, FP, FN, TF order
 
-            if (curr_pre >= 0 && curr_rec >= 0){
-                precision += curr_pre;
-                recall += curr_rec;
-                double avg_precision = precision / sample_count;
-                double avg_recall = recall / sample_count;
-                double f1_score =  2 * (avg_precision * avg_recall) / (avg_precision + avg_recall);
-                cout << "Ground" << endl;
-                cout << "\033[1;32m P: " << curr_pre << " | R: " << curr_rec << "\033[0m" << endl;
-                cout << "\033[1;32m Avg P: " << avg_precision << " | Avg R: " << avg_recall << " | Avg F1: " << f1_score << "\033[0m" << endl;
-                sample_count++;
-            }
+            calculate_precision_recall(*filtered_cloud_ptr, *final_ground_points, precision, recall, TPFNs);
+            calculate_precision_recall_without_vegetation(*filtered_cloud_ptr, *final_ground_points, precision_wo_veg, recall_wo_veg, TPFNs_wo_veg);
+            recall_arr.push_back(recall);
+            prec_arr.push_back(precision);
 
-            if (curr_pre_ng >= 0 && curr_rec_ng >= 0){
-                precision_ng += curr_pre_ng;
-                recall_ng += curr_rec_ng;
-                double avg_precision = precision_ng / sample_count_ng;
-                double avg_recall = recall_ng / sample_count_ng;
-                double f1_score =  2 * (avg_precision * avg_recall) / (avg_precision + avg_recall);
-                cout << "Non Ground" << endl;
-                cout << "\033[1;32m P: " << curr_pre_ng << " | R: " << curr_rec_ng << "\033[0m" << endl;
-                cout << "\033[1;32m Avg P: " << avg_precision << " | Avg R: " << avg_recall << " | Avg F1: " << f1_score << "\033[0m" << endl;
-                sample_count_ng++;
-            }
+            double recall_mean =(double)accumulate(recall_arr.begin(), recall_arr.end(), 0)/recall_arr.size();
+            double prec_mean =(double)accumulate(prec_arr.begin(), prec_arr.end(), 0)/prec_arr.size();
+
+            calculate_precision_recall_origin(*filtered_cloud_ptr, *final_ground_points, precision_o, recall_o, TPFNs_o);
+            recall_o_arr.push_back(recall_o);
+            prec_o_arr.push_back(precision_o);
+
+            double recall_o_mean =(double)accumulate(recall_o_arr.begin(), recall_o_arr.end(), 0)/recall_o_arr.size();
+            double prec_o_mean =(double)accumulate(prec_o_arr.begin(), prec_o_arr.end(), 0)/prec_o_arr.size();
+
+
+                // Publish msg
+            pcl::PointCloud<PointType> TP;
+            pcl::PointCloud<PointType> FP;
+            pcl::PointCloud<PointType> FN;
+            pcl::PointCloud<PointType> TN;
+            // discern_ground(pc_ground, TP, FP);
+            discern_ground_without_vegetation(*final_ground_points, TP, FP);
+            // discern_ground(pc_non_ground, FN, TN);
+            discern_ground_without_vegetation(*final_non_ground_points, FN, TN);
+
+            //Print TPFN
+            cout << "TP: " << TP.points.size();
+            cout << " | FP: " << FP.points.size();
+            cout << " | TN: " << TN.points.size() << endl;
+
+            // Convert PCL PointCloud to ROS PointCloud2 message
+            pcl::toROSMsg(TP, *msg_TP);
+            pcl::toROSMsg(FP, *msg_FP);
+            pcl::toROSMsg(FN, *msg_FN);
+
+            msg_TP->header.frame_id = target_frame;
+            msg_TP->header.stamp = this->now();
+
+            // Set the frame ID and timestamp
+            msg_FP->header.frame_id = target_frame;
+            msg_FP->header.stamp = this->now();
+            // Set the frame ID and timestamp
+            msg_FN->header.frame_id = target_frame;
+            msg_FN->header.stamp = this->now();
+
+                    // Publish the message
+            pub_tp->publish(*msg_TP);
+            pub_fp->publish(*msg_FP);
+            pub_fn->publish(*msg_FN);
+
         }
 
-        // Convert PCL PointCloud to ROS PointCloud2 message
+        if (show_seed_cells){
+            visualization_msgs::msg::MarkerArray markers;
+            std::vector<pointcloud_obstacle_detection::GridCell<PointType>> pre_start_cells  = pre_processor->getStartCells();
+            std::vector<pointcloud_obstacle_detection::GridCell<PointType>> post_start_cells = post_processor->getStartCells();
+            int marker_count{0};
+            for (const auto& start_cell : post_start_cells){
+                // Creating the marker and initialising its fields
+                geometry_msgs::msg::Pose pose;
+                pose.position.x = start_cell.centroid.x();
+                pose.position.y = start_cell.centroid.y();
+                pose.position.z = start_cell.centroid.z();
+                pose.orientation.x = 0;
+                pose.orientation.y = 0;
+                pose.orientation.z = 0;
+                pose.orientation.w = 1;
+
+                std_msgs::msg::ColorRGBA colour;
+                colour.a = 1;
+                colour.r = 0;
+                colour.g = 0;
+                colour.b = 1;
+
+                visualization_msgs::msg::Marker marker;
+                marker.header.frame_id = target_frame;
+                marker.header.stamp = this->now();
+                marker.action = visualization_msgs::msg::Marker::ADD;
+                marker.type = visualization_msgs::msg::Marker::CUBE;
+                marker.pose = pose;
+                marker.id = marker_count++;
+                marker.scale.x = 1;
+                marker.scale.y = 1;
+                marker.scale.z = 1;
+                marker.color = colour;       
+                markers.markers.push_back(marker);     
+            }
+            publisher_start_cells->publish(markers);
+        }
+
+        //Temp Hack!
+        typename pcl::PointCloud<PointType>::Ptr final_two(new pcl::PointCloud<PointType>());
+        sensor_msgs::msg::PointCloud2::SharedPtr final_two_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
         pcl::toROSMsg(*filtered_cloud_ptr, *raw_ground_points);
         pcl::toROSMsg(*final_ground_points, *ground_points);
         pcl::toROSMsg(*final_non_ground_points, *obstacle_points);
+        pcl::fromROSMsg(*ground_points, *final_two);
+        pcl::toROSMsg(*final_two, *final_two_msg);
+
+        std::cout << "PCL Points: " << final_ground_points->points.size() << std::endl;
+        std::cout << "ROS Points: " << ground_points->width * ground_points->height << std::endl;
+
+        final_two_msg->header.frame_id = target_frame;
+        final_two_msg->header.stamp = this->now();
+
+        obstacle_points->header.frame_id = target_frame;
+        obstacle_points->header.stamp = this->now();
+
+        ground_points->header.frame_id = target_frame;
+        ground_points->header.stamp = this->now();
 
         raw_ground_points->header.frame_id = target_frame;
         raw_ground_points->header.stamp = this->now();
 
-        // Set the frame ID and timestamp
-        ground_points->header.frame_id = target_frame;
-        ground_points->header.stamp = this->now();
-        // Set the frame ID and timestamp
-        obstacle_points->header.frame_id = target_frame;
-        obstacle_points->header.stamp = this->now();
-
         // Publish the message
-        publisher_ground_points->publish(*ground_points);
+        publisher_ground_points->publish(*final_two_msg);
         publisher_obstacle_points->publish(*obstacle_points);
         publisher_raw_ground_points->publish(*raw_ground_points);
-    }
+   }
 };
 
 int main(int argc, char** argv) {

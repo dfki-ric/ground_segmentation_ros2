@@ -1,16 +1,20 @@
 ground_segmentation:
   ros__parameters:
     # pre processing
-    #target_frame: "base_link"
+    target_frame: "base_link"
     #target_frame: "map"
     #target_frame: "velodyne_top"
-    target_frame: "husky"
-    maxX:  100.0
-    minX: -100.0
-    maxY:  100.0
-    minY: -100.0
-    maxZ:  100.0
-    minZ: -100.0
+    #target_frame: "husky"
+    #target_frame: "os1_lidar"
+    #target_frame: "ouster1/os1_lidar"
+    #target_frame: "lexus3/os_center_a_laser_data_frame"
+    #target_frame: "os_sensor"
+    maxX:  80.0
+    minX: -80.0
+    maxY:  80.0
+    minY: -80.0
+    maxZ:  80.0
+    minZ: -80.0
     downsample: true
     downsample_distance: 0.1
 
@@ -21,10 +25,10 @@ ground_segmentation:
     cellSizeX: 2.0
     cellSizeY: 2.0
     cellSizeZ: 10.0
-    gridmaxX: 100.0
-    gridmaxY: 100.0 
-    gridmaxZ: 100.0
-    startCellDistanceThreshold: 8.0
+    gridmaxX: 80.0
+    gridmaxY: 80.0 
+    gridmaxZ: 80.0
+    startCellDistanceThreshold: 20.0
     slopeThresholdDegrees: 30.0
     groundInlierThreshold: 0.1
     returnGroundPoints: true
@@ -33,7 +37,8 @@ ground_segmentation:
     ransac_iterations: 50
 
     #post processing
-    use_cgal: false
+    use_convex_hulls_3d: false
 
-    #benchmark
-    use_benchmark: false
+    #debug
+    show_benchmark: true
+    show_seed_cells: false
