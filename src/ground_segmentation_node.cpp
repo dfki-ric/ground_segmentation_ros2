@@ -257,8 +257,8 @@ private:
             final_ground_points = post_ground_points;
         }
         else{
-            std::vector<pcl::PointCloud<PointType>::Ptr> obstacles = processor.Clustering_euclideanCluster(final_non_ground_points,1,3,1000000);
-            std::vector<pcl::PointCloud<PointType>::Ptr> non_obstacles = processor.Clustering_euclideanCluster(post_ground_points,1,3,1000000);
+            std::vector<pcl::PointCloud<PointType>::Ptr> obstacles = processor.Clustering_euclideanCluster(final_non_ground_points,0.3,3,1000000);
+            std::vector<pcl::PointCloud<PointType>::Ptr> non_obstacles = processor.Clustering_euclideanCluster(post_ground_points,0.3,3,1000000);
             // define polyhedron to hold convex hull
             std::vector<Polyhedron_3> polygons_3d;
             for (const auto& obstacle : obstacles){
