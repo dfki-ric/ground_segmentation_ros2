@@ -29,12 +29,11 @@ ground_segmentation:
     gridmaxY: 80.0 
     gridmaxZ: 80.0
     startCellDistanceThreshold: 20.0
-    slopeThresholdDegrees: 30.0
+    slopeThresholdDegrees: 20.0
     groundInlierThreshold: 0.1
-    returnGroundPoints: true
     neighborsIndexThreshold: 1
     minPoints: 5
-    ransac_iterations: 50
+    ransac_iterations: 1000
 
     #post processing
     use_convex_hulls_3d: false

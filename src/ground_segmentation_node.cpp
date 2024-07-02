@@ -99,7 +99,6 @@ public:
         double minPoints = this->get_parameter("minPoints").as_int();
         double ransac_iterations = this->get_parameter("ransac_iterations").as_int();
         int grid_type = this->get_parameter("grid_type").as_int();
-        bool returnGroundPoints = this->get_parameter("returnGroundPoints").as_bool();
 
         use_convex_hulls_3d = this->get_parameter("use_convex_hulls_3d").as_bool();
         show_benchmark = this->get_parameter("show_benchmark").as_bool();
@@ -120,7 +119,6 @@ public:
         pre_processor_config.minPoints = minPoints;
         pre_processor_config.ransac_iterations = ransac_iterations;
         pre_processor_config.grid_type = static_cast<GridType>(grid_type);
-        pre_processor_config.returnGroundPoints = returnGroundPoints;
 
         post_processor_config = pre_processor_config;
         post_processor_config.cellSizeZ = 0.1;
