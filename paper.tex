@@ -1,4 +1,4 @@
-\documentclass[cocnference]{IEEEtran}
+\documentclass[conference]{IEEEtran}
 \IEEEoverridecommandlockouts
 % The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
 \usepackage{cite}
@@ -13,6 +13,7 @@
 \usepackage[textsize=tiny]{todonotes}
 \usepackage{multirow}
 
+\bibliographystyle{IEEEtran}
 
 \begin{document}
 
@@ -63,7 +64,7 @@ The perception system of an autonomous system utilizes multiple sensors to
 capture salient features of the environment which help are used by various sub
 systems of e.g., navigation, control etc. A core sensor of the perception system
 is the LIDAR and given the advancements in sensor design and reduced costs, it
-has been a standard sensor in autonomous systems \cite{}. The LIDAR uses bands of
+has been a standard sensor in autonomous systems \cite{todo}. The LIDAR uses bands of
 laser beams to scan the surrounding environment and the time-of-flight
 information is to used to capture distance information at mm  resolution. The
 result of the single scan is a point cloud sample which in today’s sensors may
@@ -112,11 +113,11 @@ points.
 \begin{itemize}
   \item Detection of ground points is a necessary precursor step for extraction
     of useful information from pointcloud data for downstream tasks in mobile
-    robot navigation. [6,8] 
+    robot navigation. \cite{6,8} 
   \item Object and obstacle detection algorithms detect ground points as false
     positives. The detection can be improved when ground points aredetected and
     removed. Additionally, the computational burden is reduced by processing only
-    non-ground points. [9] 
+    non-ground points. \cite{9} 
   \item Ground points can be used for traversability analysis, navigation, and
     static map generation.
 \end{itemize}
@@ -126,28 +127,28 @@ points.
 \section{Related Work}
 The ground segmentation approaches use either a traditional or a learning-based
 approach. This claim is supported by the recent survey of ground segmentation
-approaches [X] which classifies the available state-of-the-art solutions.
+approaches \cite{todo} which classifies the available state-of-the-art solutions.
 
 \subsection{Traditional Solutions}
 The traditional solutions to ground segmentation use geometric properties of the
 points to segment the ground and non-ground points. Usual approaches discretize
 the point cloud into grid cells and then process the points in each cell
-individually. The grid cells may be purely 2D, 2.5D, or even 3D [X]. Some
+individually. The grid cells may be purely 2D, 2.5D, or even 3D \cite{todo}. Some
 approaches extend the grid cell and analyze the points in neighboring cells for
-a better estimation of surface properties [X]. The modeling of the points in the
+a better estimation of surface properties \cite{todo}. The modeling of the points in the
 grid cells using  plane fitting and line extraction is a common approach in many
-solutions [X]. Region growing and clustering is used to combine individual grid
-cells into a larger region of connected cells [X]. Higher order inferences based
+solutions \cite{todo}. Region growing and clustering is used to combine individual grid
+cells into a larger region of connected cells \cite{todo}. Higher order inferences based
 on Conditional Random Field (CRF) and Markov Random Field (MRF) have been used
-[X].
+\cite{todo}.
 
 \subsection{Learning Solutions}
 The advancements in deep learning meant that some researchers used the existing
 CNN networks originally used for object detection for ground segmentation using
 range images generated from the point cloud data.
-The development of PointNet [X] and its successor PointNet++ [X] give a unified
+The development of PointNet \cite{todo} and its successor PointNet++ \cite{todo} give a unified
 solution for various applications e.g. object and scene segmentation. Various
-other solutions like GndNet [X], PointPiller [X], JCP [X], SectorGSnet [X]
+other solutions like GndNet \cite{todo}, PointPiller \cite{todo}, JCP \cite{todo}, SectorGSnet \cite{todo}
 showcase good results.
 
 
@@ -358,7 +359,7 @@ when the spacial distribution of the points has two dominant eigen values and
 the third eigen value is negligibly small or significantly smaller. If the
 largest eigen value to the sum of eigen values ratio is greater than 0.4 then
 the points are classified as Plane.
-\todo{Suggestion: One could check lowest EV/EV sum < threshold}
+\todo{Suggestion: One could check lowest EV/EV sum $<$ threshold}
 
 
 \subsubsection{Obstacle Cell}
@@ -490,7 +491,7 @@ down-sample it to 0.1m.
 
 
 \section{Results and Discussion}
-\subsection{RELLIES-3 [X]}
+\subsection{RELLIES-3 \cite{todo}}
 The Rellis-3D dataset, developed by Texas A\&M University, is an advanced dataset
 aimed at improving semantic segmentation in outdoor environments. Named after
 the RELLIS Campus, it features high-resolution LiDAR and camera data captured in
@@ -500,7 +501,7 @@ complex and cluttered scenes with vegetation, rough terrain, and obstacles. This
 dataset is instrumental for developing and testing algorithms in fields such as
 robotics, autonomous navigation, and environmental perception, where
 understanding complex 3D structures and diverse landscapes is crucial.
-\subsection{KITTI [X]}
+\subsection{KITTI \cite{todo}}
 The KITTI dataset is a comprehensive collection of real-world data designed to
 facilitate research in autonomous driving and computer vision. Collected by the
 Karlsruhe Institute of Technology and the Toyota Technological Institute at
@@ -528,7 +529,6 @@ Algorithm & Vegetation & Precison & Recall & F1 & Time (ms) \\
 \end{table}
 \section*{Acknowledgment}
 \todo{Proudly presented by \ldots{} But funding should be mentioned in footnote on first page}
-
 \iffalse
 
 The preferred spelling of the word ``acknowledgment'' in America is without 
@@ -536,40 +536,10 @@ an ``e'' after the ``g''. Avoid the stilted expression ``one of us (R. B.
 G.) thanks $\ldots$''. Instead, try ``R. B. G. thanks$\ldots$''. Put sponsor 
 acknowledgments in the unnumbered footnote on the first page.
 
-\section*{References}
-
-Please number citations consecutively within brackets \cite{b1}. The 
-sentence punctuation follows the bracket \cite{b2}. Refer simply to the reference 
-number, as in \cite{b3}---do not use ``Ref. \cite{b3}'' or ``reference \cite{b3}'' except at 
-the beginning of a sentence: ``Reference \cite{b3} was the first $\ldots$''
-
-Number footnotes separately in superscripts. Place the actual footnote at 
-the bottom of the column in which it was cited. Do not put footnotes in the 
-abstract or reference list. Use letters for table footnotes.
-
-Unless there are six authors or more give all authors' names; do not use 
-``et al.''. Papers that have not been published, even if they have been 
-submitted for publication, should be cited as ``unpublished'' \cite{b4}. Papers 
-that have been accepted for publication should be cited as ``in press'' \cite{b5}. 
-Capitalize only the first word in a paper title, except for proper nouns and 
-element symbols.
-
-For papers published in translation journals, please give the English 
-citation first, followed by the original foreign-language citation \cite{b6}.
-
-
-\begin{thebibliography}{00}
-\bibitem{b1} G. Eason, B. Noble, and I. N. Sneddon, ``On certain integrals of Lipschitz-Hankel type involving products of Bessel functions,'' Phil. Trans. Roy. Soc. London, vol. A247, pp. 529--551, April 1955.
-\bibitem{b2} J. Clerk Maxwell, A Treatise on Electricity and Magnetism, 3rd ed., vol. 2. Oxford: Clarendon, 1892, pp.68--73.
-\bibitem{b3} I. S. Jacobs and C. P. Bean, ``Fine particles, thin films and exchange anisotropy,'' in Magnetism, vol. III, G. T. Rado and H. Suhl, Eds. New York: Academic, 1963, pp. 271--350.
-\bibitem{b4} K. Elissa, ``Title of paper if known,'' unpublished.
-\bibitem{b5} R. Nicole, ``Title of paper with only first word capitalized,'' J. Name Stand. Abbrev., in press.
-\bibitem{b6} Y. Yorozu, M. Hirano, K. Oka, and Y. Tagawa, ``Electron spectroscopy studies on magneto-optical media and plastic substrate interface,'' IEEE Transl. J. Magn. Japan, vol. 2, pp. 740--741, August 1987 [Digests 9th Annual Conf. Magnetics Japan, p. 301, 1982].
-\bibitem{b7} M. Young, The Technical Writer's Handbook. Mill Valley, CA: University Science, 1989.
-\end{thebibliography}
-\vspace{12pt}
-\color{red}
-IEEE conference templates contain guidance text for composing and formatting conference papers. Please ensure that all template text is removed from your conference paper prior to submission to the conference. Failure to remove the template text from your paper may result in your paper not being published.
 \fi
+
+\section*{References}
+\bibliography{paper}
+
 
 \end{document}
