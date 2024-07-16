@@ -12,6 +12,8 @@
 
 \usepackage[textsize=tiny]{todonotes}
 \usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{gensymb}
 
 \bibliographystyle{IEEEtran}
 
@@ -25,15 +27,14 @@
 \IEEEauthorblockA{\textit{Robotics Innovation Center}\\
 German Research Center for Artificial Intelligence (DFKI)\\
 Bremen, Germany\\
-mulo01@dfki.de
-}
+mulo01@dfki.de}%
 \and
-\IEEEauthorblockN{2\textsuperscript{nd} Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
-\textit{name of organization (of Aff.)}\\
-City, Country \\
-email address or ORCID}
-}
+\IEEEauthorblockN{Christoph Hertzberg}
+\IEEEauthorblockA{\textit{Robotics Innovation Center}\\
+German Research Center for Artificial Intelligence (DFKI)\\
+Bremen, Germany\\
+christoph.hertzberg@dfki.de}%
+}%
 
 \maketitle
 
@@ -113,11 +114,11 @@ points.
 \begin{itemize}
   \item Detection of ground points is a necessary precursor step for extraction
     of useful information from pointcloud data for downstream tasks in mobile
-    robot navigation. \cite{6,8} 
+    robot navigation \cite{Jimenez2021,Arora2023}.
   \item Object and obstacle detection algorithms detect ground points as false
-    positives. The detection can be improved when ground points aredetected and
+    positives. The detection can be improved when ground points are detected and
     removed. Additionally, the computational burden is reduced by processing only
-    non-ground points. \cite{9} 
+    non-ground points \cite{Firkat2023}.
   \item Ground points can be used for traversability analysis, navigation, and
     static map generation.
 \end{itemize}
@@ -127,7 +128,7 @@ points.
 \section{Related Work}
 The ground segmentation approaches use either a traditional or a learning-based
 approach. This claim is supported by the recent survey of ground segmentation
-approaches \cite{todo} which classifies the available state-of-the-art solutions.
+approaches \cite{Gomes2023} which classifies the available state-of-the-art solutions.
 
 \subsection{Traditional Solutions}
 The traditional solutions to ground segmentation use geometric properties of the
@@ -146,13 +147,13 @@ on Conditional Random Field (CRF) and Markov Random Field (MRF) have been used
 The advancements in deep learning meant that some researchers used the existing
 CNN networks originally used for object detection for ground segmentation using
 range images generated from the point cloud data.
-The development of PointNet \cite{todo} and its successor PointNet++ \cite{todo} give a unified
+The development of PointNet \cite{qi2017pointnet} and its successor PointNet++ \cite{qi2017pointnet++} give a unified
 solution for various applications e.g. object and scene segmentation. Various
-other solutions like GndNet \cite{todo}, PointPiller \cite{todo}, JCP \cite{todo}, SectorGSnet \cite{todo}
+other solutions like GndNet \cite{paigwar2020gndnet}, PointPillars \cite{lang2019pointpillars}, JCP \cite{todo}, SectorGSnet \cite{todo}
 showcase good results.
 
 
-\section{PROPOSED SOLUTION}
+\section{Proposed Solution}
 When choosing a ground segmentation algorithm, it is crucial to understand their
 most significant differences and features that best suit the requirements of the
 ﬁnal application. Our goal was to develop a ground segmentation solution based
@@ -208,7 +209,7 @@ application and environment. In indoor environments with flat surfaces, it is
 generally unproblamatic to have large grid cell size as compared to outdoor
 uneven terrain. To sum up, there is so one size fits all solution when it comes
 to selection of a suitable grid cell size for a ground segmentation algorithm.
-Solution: We make use a phase-wise approach. In the first phase, we use a large
+\paragraph*{Solution} We make use a phase-wise approach. In the first phase, we use a large
 height (10 m) for the grid cells to capture as many tall structures as possible.
 The second phase is applied on the resultant ground points of the first phase
 and we use a small height (0.5 m) for the grid cells to remove any false
@@ -250,7 +251,8 @@ neighboring ground cells are expanded.
 
 \subsection{False positive points at the junction of ground and obstacles}
 We perform a point wise check to remove as many false positives as possible at
-the junction of ground and non-ground points \paragraph*{Solution:} The grid
+the junction of ground and non-ground points 
+\paragraph*{Solution} The grid
 cells are big and this may create over or under segmenation at the junction of
 ground and non-ground cells. Therefore, a point-wise inlier check is used at the
 junction of ground and obstacle cells to detect and correct segmentation
@@ -319,12 +321,14 @@ cells into three categories.
 \begin{table}
 \caption{Largest eigen to the sum ratio}
 \label{tab:eigen-ratio}
-\begin{tabular}{ll}
+\begin{tabular}{@{}ll@{}}
+\toprule
 \textbf{Cell Type} & \textbf{Threshold} \\
-\hline
+\midrule
 Line      & $> 0.95$ \\
 Plane     & $\ge 0.40$ \\
-Unknown   & $< 0.40$
+Unknown   & $< 0.40$ \\
+\bottomrule
 \end{tabular}
 \todo[inline]{Do we need a table for this additionally to explanation?}
 \end{table}
@@ -339,8 +343,8 @@ the largest eigen vector (shown green in Fig. 2) and the positive z-axis
 \begin{align}
 CellType &= 
   \begin{cases}
-    \text{TentativeObstacle} & angle \ge 90° - Threshold \\
-    \text{TentativeGround} & angle < 90° - Threshold
+    \text{TentativeObstacle} & angle \ge 90\degree - Threshold \\
+    \text{TentativeGround} & angle < 90\degree - Threshold
   \end{cases}
 \end{align}
 where threshold refers to the ground slope threshold.
@@ -501,8 +505,8 @@ complex and cluttered scenes with vegetation, rough terrain, and obstacles. This
 dataset is instrumental for developing and testing algorithms in fields such as
 robotics, autonomous navigation, and environmental perception, where
 understanding complex 3D structures and diverse landscapes is crucial.
-\subsection{KITTI \cite{todo}}
-The KITTI dataset is a comprehensive collection of real-world data designed to
+\subsection{KITTI}
+The KITTI dataset \cite{Geiger2013IJRR} is a comprehensive collection of real-world data designed to
 facilitate research in autonomous driving and computer vision. Collected by the
 Karlsruhe Institute of Technology and the Toyota Technological Institute at
 Chicago, it includes data captured from a vehicle equipped with various sensors,
@@ -515,18 +519,21 @@ advancing autonomous driving technologies and robust computer vision algorithms.
 \begin{table}
 \caption{Ground Points}
 \label{tab:ground-points}
-\begin{tabular}{@{}rlllll@{}}
+\begin{tabular}{@{}llllll@{}}
+\toprule
 Algorithm & Vegetation & Precison & Recall & F1 & Time (ms) \\
-\hline
+\midrule
 \multirow2*{Ours}
    & No  & 97.7 & 96.7125 & 97.2037 & 123.392 \\
    & Yes & 86.4444 & 90.3457 & 88.352 & 121.808 \\
 \multirow2*{Patchwork++}
    & No  & 95.4681 & 84.3617 & 89.5719 & 6.38772 \\
-   & Yes & 85.2909 & 79.3273 & 82.2011 & 6.23292
+   & Yes & 85.2909 & 79.3273 & 82.2011 & 6.23292 \\
+\bottomrule
 \end{tabular}
-\todo[inline]{beautify table. Round values to reasonable precision}
+\todo[inline]{Round values to reasonable precision}
 \end{table}
+
 \section*{Acknowledgment}
 \todo{Proudly presented by \ldots{} But funding should be mentioned in footnote on first page}
 \iffalse
@@ -538,7 +545,6 @@ acknowledgments in the unnumbered footnote on the first page.
 
 \fi
 
-\section*{References}
 \bibliography{paper}
 
 

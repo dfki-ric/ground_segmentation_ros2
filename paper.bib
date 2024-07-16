@@ -1,7 +1,7 @@
 @ARTICLE{1,
   author={Anand, Bhaskar and Senapati, Mrinal and Barsaiyan, Vivek and Rajalakshmi, Pachamuthu},
   journal={IEEE Transactions on Instrumentation and Measurement}, 
-  title={LiDAR-INS/GNSS-Based Real-Time Ground Removal, Segmentation, and Georeferencing Framework for Smart Transportation}, 
+  title={{LiDAR-INS}/{GNSS}-Based Real-Time Ground Removal, Segmentation, and Georeferencing Framework for Smart Transportation}, 
   year={2021},
   volume={70},
   number={},
@@ -11,7 +11,7 @@
 @INPROCEEDINGS{2,
   author={Arora, Mehul and Wiesmann, Louis and Chen, Xieyuanli and Stachniss, Cyrill},
   booktitle={2021 European Conference on Mobile Robots (ECMR)}, 
-  title={Mapping the Static Parts of Dynamic Scenes from 3D LiDAR Point Clouds Exploiting Ground Segmentation}, 
+  title={Mapping the Static Parts of Dynamic Scenes from 3D {LiDAR} Point Clouds Exploiting Ground Segmentation}, 
   year={2021},
   volume={},
   number={},
@@ -28,7 +28,7 @@
   pages={1-13},
   doi={10.1109/TIM.2022.3154835}}  
 
-@Article{4,
+@Article{Gomes2023,
 AUTHOR = {Gomes, Tiago and Matias, Diogo and Campos, André and Cunha, Luís and Roriz, Ricardo},
 TITLE = {A Survey on Ground Segmentation Methods for Automotive LiDAR Sensors},
 JOURNAL = {Sensors},
@@ -45,17 +45,17 @@ DOI = {10.3390/s23020601}}
 @ARTICLE{5,
   author={Qian, Yeqiang and Wang, Xiaoliang and Chen, Ziqing and Wang, Chunxiang and Yang, Ming},
   journal={IEEE Transactions on Intelligent Vehicles}, 
-  title={Hy-Seg: A Hybrid Method for Ground Segmentation Using Point Clouds}, 
+  title={{Hy-Seg}: A Hybrid Method for Ground Segmentation Using Point Clouds}, 
   year={2023},
   volume={8},
   number={2},
   pages={1597-1606},
   doi={10.1109/TIV.2022.3187008}}
 
-@ARTICLE{6,
+@ARTICLE{Jimenez2021,
   author={Jiménez, Víctor and Godoy, Jorge and Artuñedo, Antonio and Villagra, Jorge},
   journal={IEEE Access}, 
-  title={Ground Segmentation Algorithm for Sloped Terrain and Sparse LiDAR Point Cloud}, 
+  title={Ground Segmentation Algorithm for Sloped Terrain and Sparse {LiDAR} Point Cloud}, 
   year={2021},
   volume={9},
   number={},
@@ -72,8 +72,8 @@ DOI = {10.3390/s23020601}}
   pages={497-504},
   doi={10.1109/ITSC.2018.8569534}}
 
-@article{8,
-title = {Static map generation from 3D LiDAR point clouds exploiting ground segmentation},
+@article{Arora2023,
+title = {Static map generation from 3D {LiDAR} point clouds exploiting ground segmentation},
 journal = {Robotics and Autonomous Systems},
 volume = {159},
 pages = {104287},
@@ -86,8 +86,8 @@ keywords = {Map cleaning, Ground segmentation},
 abstract = {A clean and reliable map of the environment is key for a variety of robotic tasks including localization, path planning, and navigation. Dynamic objects are an inherent part of our world, but their presence often deteriorates the performance of various mapping algorithms. This not only makes it important but necessary to remove these dynamic points from the map before they can be used for other tasks such as path planning. In this paper, we address the problem of building maps of the static aspects of the world by detecting and removing dynamic points from the source point clouds. We target a map cleaning approach that removes the dynamic points and maintains a high quality map of the static part of the world. To this end, we propose a novel offline ground segmentation method and integrate it into the OctoMap to better distinguish between the moving objects and static road backgrounds. We evaluate our approach using SemanticKITTI for both, dynamic object removal and ground segmentation algorithms as well as on the Apollo dataset. The evaluation results show that our method outperforms the baseline methods in both tasks and achieves good performance in generating clean maps over different datasets without any change in the parameters.}
 }
 
-@article{9,
-title = {FGSeg: Field-ground segmentation for agricultural robot based on LiDAR},
+@article{Firkat2023,
+title = {{FGSeg}: Field-ground segmentation for agricultural robot based on {LiDAR}},
 journal = {Computers and Electronics in Agriculture},
 volume = {211},
 pages = {107965},
@@ -99,3 +99,45 @@ author = {Eksan Firkat and Fan An and Bei Peng and Jinlai Zhang and Tayir Mijit 
 keywords = {LiDAR, Ground segmentation, Precision agriculture, Agricultural robot, Terrain analysis},
 abstract = {Ground segmentation using LiDAR technology plays a vital role in the successful execution of several tasks in agricultural robotics, such as sowing, spraying, fertilizing, harvesting, and weeding. However, traditional ground segmentation algorithms are often designed for urban environments and are not suitable for complex and challenging agricultural field environments. Additionally, some of these algorithms depend on specific LiDAR sensors, limiting the range of options available for use in agricultural robots. To address these limitations, we introduce FGSeg, a ground segmentation algorithm designed specifically for the agricultural field environment. Our proposed method utilizes only the spatial features of the point cloud data, making it compatible with a wide range of LiDAR sensors. Additionally, FGSeg can effectively distinguish between horizontal and slope terrains, which is crucial for many agricultural operations. The results of extensive experiments demonstrate that our proposed algorithm outperforms existing ground segmentation algorithms in both field and urban environments, and its real-time performance makes it well-suited for practical applications in the agriculture industry.}
 }
+
+@article{Geiger2013IJRR,
+  author = {Andreas Geiger and Philip Lenz and Christoph Stiller and Raquel Urtasun},
+  title = {Vision meets Robotics: The {KITTI} Dataset},
+  journal = {International Journal of Robotics Research (IJRR)},
+  year = {2013}
+} 
+
+@inproceedings{qi2017pointnet,
+  title={Pointnet: Deep learning on point sets for 3d classification and segmentation},
+  author={Qi, Charles R and Su, Hao and Mo, Kaichun and Guibas, Leonidas J},
+  booktitle={Proceedings of the IEEE conference on computer vision and pattern recognition},
+  pages={652--660},
+  year={2017}
+}
+
+
+@article{qi2017pointnet++,
+  title={Pointnet++: Deep hierarchical feature learning on point sets in a metric space},
+  author={Qi, Charles Ruizhongtai and Yi, Li and Su, Hao and Guibas, Leonidas J},
+  journal={Advances in neural information processing systems},
+  volume={30},
+  year={2017}
+}
+
+@inproceedings{paigwar2020gndnet,
+  title={{GndNet}: Fast ground plane estimation and point cloud segmentation for autonomous vehicles},
+  author={Paigwar, Anshul and Erkent, {\"O}zg{\"u}r and Sierra-Gonzalez, David and Laugier, Christian},
+  booktitle={2020 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+  pages={2150--2156},
+  year={2020},
+  organization={IEEE}
+}
+
+@inproceedings{lang2019pointpillars,
+  title={Pointpillars: Fast encoders for object detection from point clouds},
+  author={Lang, Alex H and Vora, Sourabh and Caesar, Holger and Zhou, Lubing and Yang, Jiong and Beijbom, Oscar},
+  booktitle={Proceedings of the IEEE/CVF conference on computer vision and pattern recognition},
+  pages={12697--12705},
+  year={2019}
+}
+
