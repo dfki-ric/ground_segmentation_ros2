@@ -17,6 +17,8 @@
 
 \bibliographystyle{IEEEtran}
 
+\graphicspath{{figures}}
+
 \begin{document}
 
 \title{A User-Friendly Hybrid Approach for Ground Segmentation in 3D Grid-Based Point Clouds across All Terrains
@@ -154,6 +156,13 @@ showcase good results.
 
 
 \section{Proposed Solution}
+\begin{figure*}
+  \centering
+  \includegraphics[width=\linewidth]{ground_segmentation_result.png}
+  \caption{Results of the ground segmentation pipeline
+  \todo[inline]{Split into subfigures. Move this or some figure into intro-section}}
+  \label{fig:results}
+\end{figure*}
 When choosing a ground segmentation algorithm, it is crucial to understand their
 most significant differences and features that best suit the requirements of the
 ﬁnal application. Our goal was to develop a ground segmentation solution based
@@ -336,9 +345,19 @@ Unknown   & $< 0.40$ \\
 Each cell type is processed with a different algorithm. 
 
 \subsubsection{Line Cell}
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{line_cell.png}
+  \caption{Points (white) assigned to a grid cell and the 
+  corresponding eigen vectors (green) are shown. 
+  The eigen vector along the line of points is the single dominant eigen value. 
+  The cell is classified as Line based of the local eigen analysis.}
+  \label{fig:LineCell}
+\end{figure}
+
 If the largest eigen value is also the dominating value in all the values then
 the cell is categorized as Line. For such cells, we compute the angle between
-the largest eigen vector (shown green in Fig. 2) and the positive z-axis
+the largest eigen vector (shown green in Fig.\@~\ref{fig:LineCell}) and the positive z-axis
 (upwards).
 \begin{align}
 CellType &= 
@@ -358,6 +377,14 @@ mark such cells as tentative Obstacle.
 
 
 \subsubsection{Plane Cell}
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{plane_cell.png}
+  \caption{Points (white) assigned to a grid cell and the corresponding eigen vectors (green) are shown. 
+  Two dominant eigen vectors and shown and the third vector is negligible in comparison. 
+  The cell is classified as Plane based on the local eigen analysis.}
+  \label{fig:PlaneCell}
+\end{figure}
 Cells with more than one scan lines are suitable candidates for plane fitting
 when the spacial distribution of the points has two dominant eigen values and
 the third eigen value is negligibly small or significantly smaller. If the
@@ -367,6 +394,14 @@ the points are classified as Plane.
 
 
 \subsubsection{Obstacle Cell}
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{unknown_cell.png}
+  \caption{Points (white) assigned to a grid cell and the corresponding eigen vectors (green) are shown. 
+  There is no dominance of a single or two eigen vectors. 
+  The cell is classified as Unknown based on the local eigen analysis.}
+  \label{fig:UnknownCell}
+\end{figure}
 If the ratio is smaller than 0.4 then the points are classified as Obstacle. In
 this case the points in the cell do not have two clearly dominant eigen values.
 It is true that the sharp cut off of 0.4 will result in some falsely classified
@@ -377,6 +412,12 @@ Each Obstacle cell is individually processed in the segmentation stage.
 
 
 \subsection{Planar Model Fitting}
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{plane_model_fit.png}
+  \caption{Plane model fit for local surface gradient estimation.}
+  \label{fig:PlaneFit}
+\end{figure}
 The plane model fitting is applied only to cells of type Plane. We compute the
 gradient of fitted plane and apply a slope threshold. The cells which fulfill
 the ground criteria are tentatively marked as a potential ground cells. Cells
