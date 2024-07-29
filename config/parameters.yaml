@@ -28,7 +28,7 @@ ground_segmentation:
     gridmaxX: 80.0
     gridmaxY: 80.0 
     gridmaxZ: 80.0
-    startCellDistanceThreshold: 20.0
+    startCellDistanceThreshold: 80.0
     slopeThresholdDegrees: 20.0
     groundInlierThreshold: 0.1
     neighborsIndexThreshold: 1
@@ -40,4 +40,4 @@ ground_segmentation:
 
     #debug
     show_benchmark: true
-    show_seed_cells: false
+    show_seed_cells: true

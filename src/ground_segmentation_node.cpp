@@ -1,6 +1,8 @@
+#define PCL_NO_PRECOMPILE
 #include "rclcpp/rclcpp.hpp"
-#include <pointcloud_obstacle_detection/common.hpp>
 #include <pointcloud_obstacle_detection/ground_detection_types.hpp>
+#include <pointcloud_obstacle_detection/ground_detection.hpp>
+#include "common.hpp"
 
 #include "pcl/point_types.h"
 #include "pcl_conversions/pcl_conversions.h"
@@ -12,16 +14,13 @@
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
-
-#include <pointcloud_obstacle_detection/ground_detection.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #include <Eigen/Dense>
 #include <memory>
 #include <chrono>
 #include <vector>
 #include <limits>
-
-#include <visualization_msgs/msg/marker_array.hpp>
 
 using namespace pointcloud_obstacle_detection;
 using PointType = PointXYZILID;
@@ -121,7 +120,7 @@ public:
         pre_processor_config.grid_type = static_cast<GridType>(grid_type);
 
         post_processor_config = pre_processor_config;
-        post_processor_config.cellSizeZ = 0.1;
+        post_processor_config.cellSizeZ = 0.5;
         post_processor_config.processing_phase = 2;
 
         pre_processor = std::make_unique<PointCloudGrid<PointType>>(pre_processor_config);
@@ -133,10 +132,6 @@ public:
 
         precision = 0.0;
         recall = 0.0;
-        precision_ng = 0.0;
-        recall_ng = 0.0;
-        sample_count = 1;
-        sample_count_ng = 1;
     }
 
 private:
@@ -146,10 +141,6 @@ private:
     bool show_seed_cells;
 
     double precision, recall;
-    double precision_ng, recall_ng;
-
-    int sample_count;
-    int sample_count_ng;
 
     std::vector<double> recall_arr;
     std::vector<double> prec_arr;
@@ -361,6 +352,8 @@ private:
 
             double recall_mean =(double)accumulate(recall_arr.begin(), recall_arr.end(), 0)/recall_arr.size();
             double prec_mean =(double)accumulate(prec_arr.begin(), prec_arr.end(), 0)/prec_arr.size();
+            double f1_score =  2 * (prec_mean * recall_mean) / (prec_mean + recall_mean);
+            std::cout << "\033[1;32m Avg P: " << prec_mean << " | Avg R: " << recall_mean << " | Avg F1: " << f1_score << "\033[0m" << std::endl;
 
             calculate_precision_recall_origin(*filtered_cloud_ptr, *final_ground_points, precision_o, recall_o, TPFNs_o);
             recall_o_arr.push_back(recall_o);
@@ -369,8 +362,7 @@ private:
             double recall_o_mean =(double)accumulate(recall_o_arr.begin(), recall_o_arr.end(), 0)/recall_o_arr.size();
             double prec_o_mean =(double)accumulate(prec_o_arr.begin(), prec_o_arr.end(), 0)/prec_o_arr.size();
 
-
-                // Publish msg
+            // Publish msg
             pcl::PointCloud<PointType> TP;
             pcl::PointCloud<PointType> FP;
             pcl::PointCloud<PointType> FN;

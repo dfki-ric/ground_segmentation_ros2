@@ -26,6 +26,7 @@ pkg_check_modules(pointcloud_obstacle_detection IMPORTED_TARGET REQUIRED pointcl
 add_executable(ground_segmentation_node src/ground_segmentation_node.cpp)
 target_include_directories(ground_segmentation_node PUBLIC
         ${pcl_conversions_INCLUDE_DIRS}
+        ${CMAKE_SOURCE_DIR}/include
 )
 
 set(dependencies
