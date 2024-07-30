@@ -114,7 +114,7 @@ public:
         pre_processor_config.ransac_iterations = ransac_iterations;
 
         post_processor_config = pre_processor_config;
-        post_processor_config.cellSizeZ = 0.5;
+        post_processor_config.cellSizeZ = 0.2;
         post_processor_config.processing_phase = 2;
 
         pre_processor = std::make_unique<PointCloudGrid<PointType>>(pre_processor_config);
@@ -498,7 +498,7 @@ private:
                     cell_msg.color.g = 1;
                     cell_msg.color.b = 0;
                     cell_msg.color.a = 1;
-
+                    
                     post_grid_map_msg.cells.push_back(cell_msg);
                 }
             }
