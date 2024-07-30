@@ -1,0 +1,10 @@
+
+<library path="grid_map_plugin">
+  <class name="ground_segmentation::grid_map_plugin::GridMapDisplay"
+         type="ground_segmentation::grid_map_plugin::GridMapDisplay"
+         base_class_type="rviz_common::Display">
+    <description>
+      A custom display plugin for GridMap visualization.
+    </description>
+  </class>
+</library>

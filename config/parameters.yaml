@@ -16,18 +16,12 @@ ground_segmentation:
     maxZ:  80.0
     minZ: -80.0
     downsample: true
-    downsample_distance: 0.1
+    downsample_resolution: 0.1
 
     # ground detection
-    grid_type: 0
-    radialCellSize: 2.0
-    angularCellSize: 0.349066
     cellSizeX: 2.0
     cellSizeY: 2.0
-    cellSizeZ: 10.0
-    gridmaxX: 80.0
-    gridmaxY: 80.0 
-    gridmaxZ: 80.0
+    cellSizeZ: 3.0
     startCellDistanceThreshold: 80.0
     slopeThresholdDegrees: 20.0
     groundInlierThreshold: 0.1

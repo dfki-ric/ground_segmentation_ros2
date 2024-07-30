@@ -4,6 +4,9 @@
 #include <pointcloud_obstacle_detection/ground_detection.hpp>
 #include "common.hpp"
 
+#include "ground_segmentation/msg/grid_map.hpp"
+#include "ground_segmentation/msg/grid_cell.hpp"
+
 #include "pcl/point_types.h"
 #include "pcl_conversions/pcl_conversions.h"
 #include <pcl_ros/impl/transforms.hpp>
@@ -83,41 +86,32 @@ public:
         pub_fn = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/TN", 10);
         pub_fp = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/FP", 10);
 
-        double radialCellSize = this->get_parameter("radialCellSize").as_double();
-        double angularCellSize = this->get_parameter("angularCellSize").as_double();
+        pre_grid_map_publisher = this->create_publisher<ground_segmentation::msg::GridMap>("/ground_segmentation/pre_grid_map", 10);
+        post_grid_map_publisher = this->create_publisher<ground_segmentation::msg::GridMap>("/ground_segmentation/post_grid_map", 10);
+
         double cellSizeX = this->get_parameter("cellSizeX").as_double();
         double cellSizeY = this->get_parameter("cellSizeY").as_double();
         double cellSizeZ = this->get_parameter("cellSizeZ").as_double();
-        double gridmaxX = this->get_parameter("gridmaxX").as_double();
-        double gridmaxY = this->get_parameter("gridmaxY").as_double();
-        double gridmaxZ = this->get_parameter("gridmaxZ").as_double();
         double startCellDistanceThreshold = this->get_parameter("startCellDistanceThreshold").as_double();
         double slopeThresholdDegrees = this->get_parameter("slopeThresholdDegrees").as_double();
         double groundInlierThreshold = this->get_parameter("groundInlierThreshold").as_double();
         double neighborsIndexThreshold = this->get_parameter("neighborsIndexThreshold").as_int();
         double minPoints = this->get_parameter("minPoints").as_int();
         double ransac_iterations = this->get_parameter("ransac_iterations").as_int();
-        int grid_type = this->get_parameter("grid_type").as_int();
 
         use_convex_hulls_3d = this->get_parameter("use_convex_hulls_3d").as_bool();
         show_benchmark = this->get_parameter("show_benchmark").as_bool();
         show_seed_cells = this->get_parameter("show_seed_cells").as_bool();
 
-        pre_processor_config.radialCellSize = radialCellSize;
-        pre_processor_config.angularCellSize = angularCellSize;
         pre_processor_config.cellSizeX = cellSizeX;
         pre_processor_config.cellSizeY = cellSizeY;
         pre_processor_config.cellSizeZ = cellSizeZ;
-        pre_processor_config.maxX = gridmaxX;
-        pre_processor_config.maxY = gridmaxY;
-        pre_processor_config.maxZ = gridmaxZ;
         pre_processor_config.startCellDistanceThreshold = startCellDistanceThreshold;
         pre_processor_config.slopeThresholdDegrees = slopeThresholdDegrees;
         pre_processor_config.groundInlierThreshold = groundInlierThreshold;             
         pre_processor_config.neighborsIndexThreshold = neighborsIndexThreshold;
         pre_processor_config.minPoints = minPoints;
         pre_processor_config.ransac_iterations = ransac_iterations;
-        pre_processor_config.grid_type = static_cast<GridType>(grid_type);
 
         post_processor_config = pre_processor_config;
         post_processor_config.cellSizeZ = 0.5;
@@ -164,6 +158,9 @@ private:
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_fn;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_fp;
 
+    rclcpp::Publisher<ground_segmentation::msg::GridMap>::SharedPtr pre_grid_map_publisher;
+    rclcpp::Publisher<ground_segmentation::msg::GridMap>::SharedPtr post_grid_map_publisher;
+
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscription;
 
     void PointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
@@ -188,7 +185,7 @@ private:
         double maxZ = this->get_parameter("maxZ").as_double();
         double minZ = this->get_parameter("minZ").as_double();
         bool downsample = this->get_parameter("downsample").as_bool();
-        double downsample_distance = this->get_parameter("downsample_distance").as_double();
+        double downsample_resolution = this->get_parameter("downsample_resolution").as_double();
 
         typename pcl::PointCloud<PointType>::Ptr input_cloud_ptr;
         if (target_frame != msg->header.frame_id){
@@ -222,7 +219,7 @@ private:
         //Start time
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-        typename pcl::PointCloud<PointType>::Ptr filtered_cloud_ptr = processor.FilterCloud(input_cloud_ptr, downsample, downsample_distance, min, max);
+        typename pcl::PointCloud<PointType>::Ptr filtered_cloud_ptr = processor.FilterCloud(input_cloud_ptr, downsample, downsample_resolution, min, max);
         std::cout << "After: Input Cloud Points: " << filtered_cloud_ptr->points.size() << std::endl;
 
         //PRE
@@ -436,6 +433,79 @@ private:
             }
             publisher_start_cells->publish(markers);
         }
+
+        ground_segmentation::msg::GridMap pre_grid_map_msg;
+        pre_grid_map_msg.cell_size_x = pre_processor_config.cellSizeX;
+        pre_grid_map_msg.cell_size_y = pre_processor_config.cellSizeY;
+        pre_grid_map_msg.cell_size_z = pre_processor_config.cellSizeZ;
+        pre_grid_map_msg.header.frame_id = this->get_parameter("target_frame").as_string();
+
+        RCLCPP_INFO_STREAM(this->get_logger(), "Reading Grid Map");
+        auto pre_grid_cells = pre_processor->getGridCells();
+
+        for (auto& rowPair : pre_grid_cells){
+            for (auto& colPair : rowPair.second){
+                for (auto& heightPair : colPair.second){
+                    pointcloud_obstacle_detection::GridCell<PointType>& cell = heightPair.second;
+
+                    if (cell.points->size() < 1){
+                        continue;
+                    }
+
+                    ground_segmentation::msg::GridCell cell_msg;
+
+                    cell_msg.position.x = cell.row * pre_processor_config.cellSizeX;
+                    cell_msg.position.y = cell.col * pre_processor_config.cellSizeY;
+                    cell_msg.position.z = cell.height * pre_processor_config.cellSizeZ;
+
+                    cell_msg.color.r = 0;
+                    cell_msg.color.g = 1;
+                    cell_msg.color.b = 0;
+                    cell_msg.color.a = 1;
+
+                    pre_grid_map_msg.cells.push_back(cell_msg);
+                }
+            }
+        }
+
+        pre_grid_map_publisher->publish(pre_grid_map_msg);
+
+        ground_segmentation::msg::GridMap post_grid_map_msg;
+        post_grid_map_msg.cell_size_x = post_processor_config.cellSizeX;
+        post_grid_map_msg.cell_size_y = post_processor_config.cellSizeY;
+        post_grid_map_msg.cell_size_z = post_processor_config.cellSizeZ;
+        post_grid_map_msg.header.frame_id = this->get_parameter("target_frame").as_string();
+
+        RCLCPP_INFO_STREAM(this->get_logger(), "Reading Grid Map");
+        auto post_grid_cells = post_processor->getGridCells();
+
+        for (auto& rowPair : post_grid_cells){
+            for (auto& colPair : rowPair.second){
+                for (auto& heightPair : colPair.second){
+                    pointcloud_obstacle_detection::GridCell<PointType>& cell = heightPair.second;
+
+                    if (cell.points->size() < 1){
+                        continue;
+                    }
+
+                    ground_segmentation::msg::GridCell cell_msg;
+
+                    cell_msg.position.x = cell.row * post_processor_config.cellSizeX;
+                    cell_msg.position.y = cell.col * post_processor_config.cellSizeY;
+                    cell_msg.position.z = cell.height * post_processor_config.cellSizeZ;
+
+                    cell_msg.color.r = 0;
+                    cell_msg.color.g = 1;
+                    cell_msg.color.b = 0;
+                    cell_msg.color.a = 1;
+
+                    post_grid_map_msg.cells.push_back(cell_msg);
+                }
+            }
+        }
+
+        post_grid_map_publisher->publish(post_grid_map_msg);
+        RCLCPP_INFO_STREAM(this->get_logger(), "Published Grid Map");
 
         //Temp Hack!
         typename pcl::PointCloud<PointType>::Ptr final_two(new pcl::PointCloud<PointType>());
