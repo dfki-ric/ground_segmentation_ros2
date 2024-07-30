@@ -69,6 +69,11 @@ void GridMapDisplay::processMessage(ground_segmentation::msg::GridMap::ConstShar
     // Convert the box parameters to a visual representation
     Ogre::Vector3 position(cell.position.x, cell.position.y, cell.position.z);
 
+    auto pass = transparentMaterial_->getTechnique(0)->getPass(0);
+    pass->setDiffuse(cell.color.r, cell.color.g, cell.color.b, cell.color.a);  
+    pass->setAmbient(cell.color.r, cell.color.g, cell.color.b);
+    pass->setSelfIllumination(cell.color.r, cell.color.g, cell.color.b);
+
     // Create a box visual for each cell
     auto box = scene_manager_->createManualObject();
     box->begin("TransparentWireframe", Ogre::RenderOperation::OT_LINE_LIST);
