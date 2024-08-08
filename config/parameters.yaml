@@ -21,7 +21,7 @@ ground_segmentation:
     # ground detection
     cellSizeX: 2.0
     cellSizeY: 2.0
-    cellSizeZ: 3.0
+    cellSizeZ: 10.0
     startCellDistanceThreshold: 80.0
     slopeThresholdDegrees: 20.0
     groundInlierThreshold: 0.1

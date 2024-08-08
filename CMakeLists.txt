@@ -57,6 +57,7 @@ set(dependencies
   rviz_common
   rviz_rendering
   pluginlib
+  message_filters
 )
 
 ament_target_dependencies(ground_segmentation_node

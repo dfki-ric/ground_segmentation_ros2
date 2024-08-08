@@ -15,6 +15,7 @@
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "sensor_msgs/msg/point_cloud2.hpp"
+#include "sensor_msgs/msg/imu.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include <visualization_msgs/msg/marker_array.hpp>
@@ -24,6 +25,9 @@
 #include <chrono>
 #include <vector>
 #include <limits>
+
+#include <message_filters/subscriber.h>
+#include <message_filters/time_synchronizer.h>
 
 using namespace pointcloud_obstacle_detection;
 using PointType = PointXYZILID;
@@ -73,9 +77,20 @@ class GroundSegmentatioNode : public rclcpp::Node {
 public:
     GroundSegmentatioNode(rclcpp::NodeOptions options) : Node("ground_segmentation",options) {
 
-        subscription = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-            "/ground_segmentation/input", 10, std::bind(&GroundSegmentatioNode::PointCloudCallback, this, std::placeholders::_1)
-        );
+        //subscription = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+        //    "/ground_segmentation/input", 10, std::bind(&GroundSegmentatioNode::PointCloudCallback, this, std::placeholders::_1)
+        //);
+
+        //imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
+        //    "/imu/data", 10, std::bind(&GroundSegmentatioNode::imuCallback, this, std::placeholders::_1));
+  
+        filter_imu_sub_.subscribe(this, "/imu/data");
+        filter_pointcloud_sub_.subscribe(this, "/os_cloud_node/points");
+
+        sync_ = std::make_shared<message_filters::TimeSynchronizer<sensor_msgs::msg::Imu, sensor_msgs::msg::PointCloud2>>(
+            filter_imu_sub_, filter_pointcloud_sub_, 100);
+
+        sync_->registerCallback(std::bind(&GroundSegmentatioNode::callback, this, std::placeholders::_1, std::placeholders::_2));
 
         publisher_ground_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/ground_points", 10);
         publisher_obstacle_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/obstacle_points", 10);
@@ -126,6 +141,8 @@ public:
 
         precision = 0.0;
         recall = 0.0;
+
+        imu_orientation_ = Eigen::Quaterniond::Identity();
     }
 
 private:
@@ -162,8 +179,40 @@ private:
     rclcpp::Publisher<ground_segmentation::msg::GridMap>::SharedPtr post_grid_map_publisher;
 
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscription;
+    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
 
-    void PointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+    Eigen::Quaterniond imu_orientation_;
+    std::chrono::time_point<std::chrono::steady_clock> last_time_;
+
+    message_filters::Subscriber<sensor_msgs::msg::Imu> filter_imu_sub_;
+    message_filters::Subscriber<sensor_msgs::msg::PointCloud2> filter_pointcloud_sub_;
+    std::shared_ptr<message_filters::TimeSynchronizer<sensor_msgs::msg::Imu, sensor_msgs::msg::PointCloud2>> sync_;
+
+    void callback(const sensor_msgs::msg::Imu::ConstSharedPtr& imu_msg, const sensor_msgs::msg::PointCloud2::ConstSharedPtr& pc_msg)
+    {
+        RCLCPP_INFO(this->get_logger(),
+                    "I heard and synchronized the following timestamps: %u, %u",
+                    imu_msg->header.stamp.sec, pc_msg->header.stamp.sec);
+        imu_orientation_.w() = imu_msg->orientation.w;
+        imu_orientation_.x() = imu_msg->orientation.x;
+        imu_orientation_.y() = imu_msg->orientation.y;
+        imu_orientation_.z() = imu_msg->orientation.z;
+        PointCloudCallback(pc_msg);
+    }
+
+
+    void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg)
+    {
+        // Update the orientation quaternion
+        imu_orientation_.w() = msg->orientation.w;
+        imu_orientation_.x() = msg->orientation.x;
+        imu_orientation_.y() = msg->orientation.y;
+        imu_orientation_.z() = msg->orientation.z;
+
+        std::cout << "IMU Ori: " << imu_orientation_ << std::endl;
+    }
+
+    void PointCloudCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg) {
         sensor_msgs::msg::PointCloud2::SharedPtr raw_ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr obstacle_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
@@ -221,6 +270,16 @@ private:
 
         typename pcl::PointCloud<PointType>::Ptr filtered_cloud_ptr = processor.FilterCloud(input_cloud_ptr, downsample, downsample_resolution, min, max);
         std::cout << "After: Input Cloud Points: " << filtered_cloud_ptr->points.size() << std::endl;
+
+        // Inverse the quaternion
+        Eigen::Quaterniond imu_orientation_inv = imu_orientation_.inverse();
+
+        // Create a transformation matrix from the quaternion
+        Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity();
+        transformation_matrix.block<3, 3>(0, 0) = imu_orientation_inv.toRotationMatrix();
+
+        // Apply the transformation to each point in the cloud
+        pcl::transformPointCloud(*filtered_cloud_ptr, *filtered_cloud_ptr, transformation_matrix);
 
         //PRE
         pre_processor->setInputCloud(filtered_cloud_ptr, orientation);
