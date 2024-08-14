@@ -15,7 +15,6 @@
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "sensor_msgs/msg/point_cloud2.hpp"
-#include "sensor_msgs/msg/imu.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include <visualization_msgs/msg/marker_array.hpp>
@@ -25,9 +24,6 @@
 #include <chrono>
 #include <vector>
 #include <limits>
-
-#include <message_filters/subscriber.h>
-#include <message_filters/time_synchronizer.h>
 
 using namespace pointcloud_obstacle_detection;
 using PointType = PointXYZILID;
@@ -77,20 +73,9 @@ class GroundSegmentatioNode : public rclcpp::Node {
 public:
     GroundSegmentatioNode(rclcpp::NodeOptions options) : Node("ground_segmentation",options) {
 
-        //subscription = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        //    "/ground_segmentation/input", 10, std::bind(&GroundSegmentatioNode::PointCloudCallback, this, std::placeholders::_1)
-        //);
-
-        //imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
-        //    "/imu/data", 10, std::bind(&GroundSegmentatioNode::imuCallback, this, std::placeholders::_1));
-  
-        filter_imu_sub_.subscribe(this, "/imu/data");
-        filter_pointcloud_sub_.subscribe(this, "/os_cloud_node/points");
-
-        sync_ = std::make_shared<message_filters::TimeSynchronizer<sensor_msgs::msg::Imu, sensor_msgs::msg::PointCloud2>>(
-            filter_imu_sub_, filter_pointcloud_sub_, 100);
-
-        sync_->registerCallback(std::bind(&GroundSegmentatioNode::callback, this, std::placeholders::_1, std::placeholders::_2));
+        subscription = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+            "/ground_segmentation/input", 10, std::bind(&GroundSegmentatioNode::PointCloudCallback, this, std::placeholders::_1)
+        );
 
         publisher_ground_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/ground_points", 10);
         publisher_obstacle_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/obstacle_points", 10);
@@ -129,6 +114,8 @@ public:
         pre_processor_config.ransac_iterations = ransac_iterations;
 
         post_processor_config = pre_processor_config;
+        //post_processor_config.cellSizeX = 0.7;
+        //post_processor_config.cellSizeY = 0.7;
         post_processor_config.cellSizeZ = 0.2;
         post_processor_config.processing_phase = 2;
 
@@ -141,8 +128,6 @@ public:
 
         precision = 0.0;
         recall = 0.0;
-
-        imu_orientation_ = Eigen::Quaterniond::Identity();
     }
 
 private:
@@ -153,6 +138,7 @@ private:
 
     double precision, recall;
 
+    std::vector<double> runtime;
     std::vector<double> recall_arr;
     std::vector<double> prec_arr;
     std::vector<double> recall_o_arr;
@@ -179,40 +165,8 @@ private:
     rclcpp::Publisher<ground_segmentation::msg::GridMap>::SharedPtr post_grid_map_publisher;
 
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscription;
-    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
 
-    Eigen::Quaterniond imu_orientation_;
-    std::chrono::time_point<std::chrono::steady_clock> last_time_;
-
-    message_filters::Subscriber<sensor_msgs::msg::Imu> filter_imu_sub_;
-    message_filters::Subscriber<sensor_msgs::msg::PointCloud2> filter_pointcloud_sub_;
-    std::shared_ptr<message_filters::TimeSynchronizer<sensor_msgs::msg::Imu, sensor_msgs::msg::PointCloud2>> sync_;
-
-    void callback(const sensor_msgs::msg::Imu::ConstSharedPtr& imu_msg, const sensor_msgs::msg::PointCloud2::ConstSharedPtr& pc_msg)
-    {
-        RCLCPP_INFO(this->get_logger(),
-                    "I heard and synchronized the following timestamps: %u, %u",
-                    imu_msg->header.stamp.sec, pc_msg->header.stamp.sec);
-        imu_orientation_.w() = imu_msg->orientation.w;
-        imu_orientation_.x() = imu_msg->orientation.x;
-        imu_orientation_.y() = imu_msg->orientation.y;
-        imu_orientation_.z() = imu_msg->orientation.z;
-        PointCloudCallback(pc_msg);
-    }
-
-
-    void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg)
-    {
-        // Update the orientation quaternion
-        imu_orientation_.w() = msg->orientation.w;
-        imu_orientation_.x() = msg->orientation.x;
-        imu_orientation_.y() = msg->orientation.y;
-        imu_orientation_.z() = msg->orientation.z;
-
-        std::cout << "IMU Ori: " << imu_orientation_ << std::endl;
-    }
-
-    void PointCloudCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg) {
+    void PointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
         sensor_msgs::msg::PointCloud2::SharedPtr raw_ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr obstacle_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
@@ -271,16 +225,6 @@ private:
         typename pcl::PointCloud<PointType>::Ptr filtered_cloud_ptr = processor.FilterCloud(input_cloud_ptr, downsample, downsample_resolution, min, max);
         std::cout << "After: Input Cloud Points: " << filtered_cloud_ptr->points.size() << std::endl;
 
-        // Inverse the quaternion
-        Eigen::Quaterniond imu_orientation_inv = imu_orientation_.inverse();
-
-        // Create a transformation matrix from the quaternion
-        Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity();
-        transformation_matrix.block<3, 3>(0, 0) = imu_orientation_inv.toRotationMatrix();
-
-        // Apply the transformation to each point in the cloud
-        pcl::transformPointCloud(*filtered_cloud_ptr, *filtered_cloud_ptr, transformation_matrix);
-
         //PRE
         pre_processor->setInputCloud(filtered_cloud_ptr, orientation);
         std::pair< typename pcl::PointCloud<PointType>::Ptr,  typename pcl::PointCloud<PointType>::Ptr> pre_result = pre_processor->segmentPoints();
@@ -290,8 +234,8 @@ private:
         //POST
         post_processor->setInputCloud(pre_ground_points, orientation);
         std::pair< typename pcl::PointCloud<PointType>::Ptr,  typename pcl::PointCloud<PointType>::Ptr> post_result = post_processor->segmentPoints();
-        typename pcl::PointCloud<PointType>::Ptr post_non_ground_points  = post_result.second;
         typename pcl::PointCloud<PointType>::Ptr post_ground_points = post_result.first;
+        typename pcl::PointCloud<PointType>::Ptr post_non_ground_points  = post_result.second;
 
         typename pcl::PointCloud<PointType>::Ptr final_ground_points(new pcl::PointCloud<PointType>());
         typename pcl::PointCloud<PointType>::Ptr final_non_ground_points(new pcl::PointCloud<PointType>());
@@ -390,7 +334,10 @@ private:
 
         //End time
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() * 0.001 << "[ms]" << std::endl;
+
+        double rt = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() * 0.001;
+
+        std::cout << "Time difference = " << rt << "[ms]" << std::endl;
 
         if (show_benchmark){
 
@@ -405,11 +352,14 @@ private:
             calculate_precision_recall_without_vegetation(*filtered_cloud_ptr, *final_ground_points, precision_wo_veg, recall_wo_veg, TPFNs_wo_veg);
             recall_arr.push_back(recall);
             prec_arr.push_back(precision);
+            runtime.push_back(rt);
 
+            double rt_mean =(double)accumulate(runtime.begin(), runtime.end(), 0.0)/runtime.size();
             double recall_mean =(double)accumulate(recall_arr.begin(), recall_arr.end(), 0)/recall_arr.size();
             double prec_mean =(double)accumulate(prec_arr.begin(), prec_arr.end(), 0)/prec_arr.size();
             double f1_score =  2 * (prec_mean * recall_mean) / (prec_mean + recall_mean);
-            std::cout << "\033[1;32m Avg P: " << prec_mean << " | Avg R: " << recall_mean << " | Avg F1: " << f1_score << "\033[0m" << std::endl;
+            std::cout << "\033[1;32m Avg P: " << prec_mean << ", " << cal_stdev(prec_arr) <<  " | Avg R: " << recall_mean << ", " << cal_stdev(recall_arr) <<  " | Avg F1: " << f1_score << "\033[0m" << std::endl;
+            std::cout << "Avg Time difference = " << rt_mean << "[ms]" << ", " << cal_stdev(runtime) << std::endl;
 
             calculate_precision_recall_origin(*filtered_cloud_ptr, *final_ground_points, precision_o, recall_o, TPFNs_o);
             recall_o_arr.push_back(recall_o);
@@ -423,10 +373,10 @@ private:
             pcl::PointCloud<PointType> FP;
             pcl::PointCloud<PointType> FN;
             pcl::PointCloud<PointType> TN;
-            // discern_ground(pc_ground, TP, FP);
-            discern_ground_without_vegetation(*final_ground_points, TP, FP);
-            // discern_ground(pc_non_ground, FN, TN);
-            discern_ground_without_vegetation(*final_non_ground_points, FN, TN);
+            discern_ground(*final_ground_points, TP, FP);
+            //discern_ground_without_vegetation(*final_ground_points, TP, FP);
+            discern_ground(*final_non_ground_points, FN, TN);
+            //discern_ground_without_vegetation(*final_non_ground_points, FN, TN);
 
             //Print TPFN
             cout << "TP: " << TP.points.size();
@@ -567,6 +517,9 @@ private:
         RCLCPP_INFO_STREAM(this->get_logger(), "Published Grid Map");
 
         //Temp Hack!
+        //typename pcl::PointCloud<PointType>::Ptr final_one(new pcl::PointCloud<PointType>());
+        //sensor_msgs::msg::PointCloud2::SharedPtr final_one_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
+
         typename pcl::PointCloud<PointType>::Ptr final_two(new pcl::PointCloud<PointType>());
         sensor_msgs::msg::PointCloud2::SharedPtr final_two_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
         pcl::toROSMsg(*filtered_cloud_ptr, *raw_ground_points);
@@ -575,11 +528,17 @@ private:
         pcl::fromROSMsg(*ground_points, *final_two);
         pcl::toROSMsg(*final_two, *final_two_msg);
 
+        //pcl::fromROSMsg(*obstacle_points, *final_one);
+        //pcl::toROSMsg(*final_one, *final_one_msg);
+
         std::cout << "PCL Points: " << final_ground_points->points.size() << std::endl;
         std::cout << "ROS Points: " << ground_points->width * ground_points->height << std::endl;
 
         final_two_msg->header.frame_id = target_frame;
         final_two_msg->header.stamp = this->now();
+
+        //final_one_msg->header.frame_id = target_frame;
+        //final_one_msg->header.stamp = this->now();
 
         obstacle_points->header.frame_id = target_frame;
         obstacle_points->header.stamp = this->now();

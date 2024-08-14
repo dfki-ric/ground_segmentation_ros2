@@ -5,6 +5,7 @@
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{algorithmic}
 \usepackage{graphicx}
+\usepackage{subcaption} % For subfigures
 \usepackage{textcomp}
 \usepackage{xcolor}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
@@ -14,6 +15,7 @@
 \usepackage{multirow}
 \usepackage{booktabs}
 \usepackage{gensymb}
+\usepackage{enumitem}
 
 \bibliographystyle{IEEEtran}
 
@@ -21,7 +23,7 @@
 
 \begin{document}
 
-\title{A User-Friendly Hybrid Approach for Ground Segmentation in 3D Grid-Based Point Clouds across All Terrains
+\title{A Robust 3D Grid-Based Hybrid Approach for Ground Segmentation in Point Clouds Across Varied Terrains
 \thanks{Funded via some awesome projects}
 }
 
@@ -43,42 +45,41 @@ christoph.hertzberg@dfki.de}%
 \begin{abstract}
 Ground segmentation in point cloud data is the process of separating the points
 into ground and non-ground. It is a key component in the perception pipeline of
-an autonomous system. Many solutions have been published in literature, but
-they are targeted to solve the ground segmentation challenge for autonomous
+an autonomous system. Many solutions have been published in literature but
+they are targeted to solve the ground segmentation challenge for autonomous
 driving and are based on the assumption that the ground surface is composed of
 flat surfaces. There are very few solutions which are capable of performing in
-indoor and outdoor environments with various degrees of roughness. Additionally,
-the existing solutions usually require hand tuning of many parameters for
+indoor and outdoor environments with various degrees of terrain roughness. Additionally,
+the existing solutions usually require hand tuning of many parameters for
 optimal performance and are specific for certain type of LIDAR sensors and
 sensor configurations. There is a need to have a general purpose, easy to use,
 all-terrain capable ground segmentation solution which does not require
 extensive tuning of parameters. In this work, we provide such a solution for
-rough terrain indoor and outdoor mobile robotics applications. Our solution
+rough terrain indoor and outdoor mobile robotics and autonomous driving applications. Our solution
 combines the strengths of different approaches as a single solution and produces
-good ground segmentation on all terrains.
+good ground segmentation on varied terrains.
 \end{abstract}
 
 \begin{IEEEkeywords}
-LIDAR, Ground segmentation, Mobile Robotics, Rough Terrain
+LIDAR, Ground segmentation, Mobile Robotics, Rough Terrain, Autonomous Driving
 \end{IEEEkeywords}
 
 \section{Introduction}
 The perception system of an autonomous system utilizes multiple sensors to
-capture salient features of the environment which help are used by various sub
-systems of e.g., navigation, control etc. A core sensor of the perception system
+capture salient features of the environment. These features are used as inputs by various sub
+systems e.g. navigation, control, learning etc. A core sensor of the perception system
 is the LIDAR and given the advancements in sensor design and reduced costs, it
-has been a standard sensor in autonomous systems \cite{todo}. The LIDAR uses bands of
+has become a standard sensor in autonomous systems \cite{todo}. The LIDAR uses bands of
 laser beams to scan the surrounding environment and the time-of-flight
-information is to used to capture distance information at mm  resolution. The
+information is used to capture distance information at high resolution. The
 result of the single scan is a point cloud sample which in today’s sensors may
 contain more than 1~million points. Evidently, the point cloud captures the
-points from the environment in the scanning region of interest. Depending on the
-sensor setting, it is usual that the point cloud has points from the 360~degree
-surrounding. At a basic level, the points can be divided into two categories.
-The points which belong to the ground surface are be called ground points and
-all other points are called non-ground points. The goal of the ground
-segmentation is to segment the input point cloud into ground and non-ground
-points. The ground segmentation has many applications:
+points from the environment in the scanning region of interest. However, not all 
+points in the region of interest are relevant for the downstream algorithms. For example, the obstacle detection 
+algorithm is only interested in the obstacle points and the road detection algorithm only requires the ground points. 
+Feeding the same point cloud sample to both algorithms would require redudant processing of irrelevant points in both 
+algorithms. To mitigate the redudancy, it is a usual practice to segment the points into ground and non-ground points. 
+The segmentation task is performed by a ground segmentation algorithm and it has many applications:
 \begin{itemize}
   \item Ground Detection
   \item Obstacle Detection
@@ -89,33 +90,28 @@ points. The ground segmentation has many applications:
   \item SLAM
 \end{itemize}
 
-The extraction of ground points from a pointcloud sample is a key step in the
-perception pipleine of an autonomous systems. There are a number of solutions
-which have been presented over the past few years. Our aim for this work was to
-focus on extraction of ground points with as few parameters as possible. We
-wanted to extract the ground points without the need to tune parameters to adapt
-to indoor and outdoor scenarios. Although our approach is not free of parameter
-tuning for best performance, however, we feel that the parameters only need to
-be tuned if the robot environment has major changes. We chose a model fitting
-approach for our solution because once broken down to smaller cells, it is a
-plausible to assume that the local cells are flat given that the cell size is
-very small. The smaller cell size ensures that the assumption holds more often
-than not but this increases the computation cost due to the increased number of
-cells in the grid. A large grid cell size improves performance and produces good
-results in indoor or autonomous driving scenario but flattens the natural
-curvature of ground in outdoor environments. Large grid size in highly uneven
-terrain produces poor results and this is to be expected because the planar
-model fit will ignore some points. What do we do with the points which were
-marked as outliers but are not really outliers? Another challenge with the grid
-representation is that based on the sparsity of points, we might have completely
-different point assignment to a grid cell. In one cell, we might have a line of
-points, in another, a few lines, and in some one of a few randomly scattered
-points.
+\begin{figure*}
+  \centering
+  \includegraphics[width=\linewidth]{intro.png}
+  \caption{Results of the ground segmentation pipeline
+  \todo[inline]{Split into subfigures. Move this or some figure into intro-section}}
+  \label{fig:results}
+\end{figure*}
+
+Ground point extraction from a point cloud sample is a crucial step in the perception pipeline of autonomous systems. 
+Numerous solutions have been proposed over the past few years. In this work, our primary focus was on extracting ground 
+points with minimal parameter dependency. We aimed to eliminate the need for parameter fine-tuning, ensuring 
+adaptability across various vehicles, robots, sensor configurations, and both indoor and outdoor environments. 
+Our segmentation algorithm was tested using a consistent set of parameters on real-world datasets, featuring different 
+types of point cloud sensors in various configurations and environments. The parameters in our solution are intuitive, 
+easy to understand, and do not require advanced domain knowledge. The segmentation process combines local eigen analysis, 
+model fitting, and region-growing algorithms. We explore the strengths and weaknesses of these approaches and integrate 
+them into a processing pipeline to achieve effective ground segmentation in diverse indoor and outdoor scenarios.
 
 \subsection{Statement of Need}
 \begin{itemize}
   \item Detection of ground points is a necessary precursor step for extraction
-    of useful information from pointcloud data for downstream tasks in mobile
+    of useful information from point cloud data for downstream tasks in mobile
     robot navigation \cite{Jimenez2021,Arora2023}.
   \item Object and obstacle detection algorithms detect ground points as false
     positives. The detection can be improved when ground points are detected and
@@ -126,14 +122,13 @@ points.
 \end{itemize}
 
 
-
 \section{Related Work}
-The ground segmentation approaches use either a traditional or a learning-based
-approach. This claim is supported by the recent survey of ground segmentation
-approaches \cite{Gomes2023} which classifies the available state-of-the-art solutions.
+Existing ground segmentation methods typically rely on either traditional techniques or learning-based approaches. 
+This classification is supported by a recent survey on ground segmentation methods \cite{Gomes2023}, which 
+categorizes the current state-of-the-art solutions accordingly.
 
 \subsection{Traditional Solutions}
-The traditional solutions to ground segmentation use geometric properties of the
+The traditional solutions for ground segmentation use geometric properties of the
 points to segment the ground and non-ground points. Usual approaches discretize
 the point cloud into grid cells and then process the points in each cell
 individually. The grid cells may be purely 2D, 2.5D, or even 3D \cite{todo}. Some
@@ -154,16 +149,8 @@ solution for various applications e.g. object and scene segmentation. Various
 other solutions like GndNet \cite{paigwar2020gndnet}, PointPillars \cite{lang2019pointpillars}, JCP \cite{todo}, SectorGSnet \cite{todo}
 showcase good results.
 
-
 \section{Proposed Solution}
-\begin{figure*}
-  \centering
-  \includegraphics[width=\linewidth]{ground_segmentation_result.png}
-  \caption{Results of the ground segmentation pipeline
-  \todo[inline]{Split into subfigures. Move this or some figure into intro-section}}
-  \label{fig:results}
-\end{figure*}
-When choosing a ground segmentation algorithm, it is crucial to understand their
+When selecting a ground segmentation algorithm, it is crucial to understand their
 most significant differences and features that best suit the requirements of the
 ﬁnal application. Our goal was to develop a ground segmentation solution based
 on the traditional approaches. After analyzing the state-of-the-art, we decided
@@ -181,64 +168,60 @@ operation, this sensor can be configured to produce, on average, a point cloud
 of 2,403,840 points per second (240,384 points at 10 Hz), which makes it harder
 to analyze the entire point cloud in real time during the navigation tasks.
 
+\paragraph*{Solution} We use a grid-based technique in 3D space to help mitigate these problems, 
+where each grid cell contain its assigned points and can be processed individually on demand.
 
-\paragraph*{Solution} To help mitigate these problems, grid-based technique in
-3D space is used, where each grid cell contain its assigned points and can be
-processed individually on demand.
+\subsection{Terrain Roughness}
+The assumption of flat ground surfaces may be plausible in a urban environment but it 
+does not always hold for the mobile robots. Moble robots usually have to navigate 
+on uneven terrain with varying degrees of roughness. Therefore, the ground segementation algorithms
+are not always easily applicable for mobile robots.
 
-
-\subsection{Roughness of the terrain}
-The assumption of flat ground surfaces does not always hold for the mobile
-robots. The robots usually have to navigation on uneven terrain with varying
-degrees of roughness.
-
-\paragraph*{Solution} To extract the surface properties e.g. gradient, we use
-plane and line fitting for the points in each grid cell. We faced the challenge
-regarding the selection of a suitable grid cell size in relation to the
-roughness of the terrain.
-
+\paragraph*{Solution} We use a combination of local and global terrain properties e.g. surface gradiant,
+local spacial distribution of points, and global connectivity. We apply local eigen analysis to extract local 
+terrain surface properties and utilize a connectivity-based region growing algorithm based on initial seed selection. 
 
 \subsection{Size of Grid Cell}
-In principle, small grid cells are better suited for plane fitting algorithms
-but the size of grid cell has a direct impact on the computational performance
+We faced the challenge regarding the selection of a suitable grid cell size in 
+relation to the roughness of the terrain. In principle, small grid cells are better 
+suited for model fitting but the grid cell's size has a direct impact on the computational performance
 of the algorithm. The selected size also depends on the gap of the scan lines.
 The scan lines in close proximity to the robot are dense and the distance
 between the lines increases based on the distance from the robot. Irrespective
 of the grid cell size, a cell close to the robot is more likely to have points
 from multiple scan lines assigned to it. This means that such cells are better
 suited to fit a plane model. As a consequence, it is possible to have an
-accurate slope estimate of the local point surface. On the contrary, cells which
+accurate slope estimate of the local terrain surface. On the contrary, cells which
 are assigned points far away from the robot are more likely to have only single
 scan lines assigned to them. A plane fitting algorithm can fit a plane to the
 line of points but the slope estimate is highly uncertain and is usually
-unreliable. Additionally, small cell size is more sensitive to noise
+unreliable. Additionally to this, a small cell size is more sensitive to noisy 
+sensor data.
 
 Furthermore, the size of the grid cells is also closely related to the type of
 application and environment. In indoor environments with flat surfaces, it is
 generally unproblamatic to have large grid cell size as compared to outdoor
 uneven terrain. To sum up, there is so one size fits all solution when it comes
 to selection of a suitable grid cell size for a ground segmentation algorithm.
-\paragraph*{Solution} We make use a phase-wise approach. In the first phase, we use a large
-height (10 m) for the grid cells to capture as many tall structures as possible.
-The second phase is applied on the resultant ground points of the first phase
-and we use a small height (0.5 m) for the grid cells to remove any false
-positive ground points. In our experiements, which are discussed at the end, we
-found that a 2 m length and width of the grid cell works well in various types
-of terrains.
 
+\paragraph*{Solution} We make use a phase-wise approach and vary the size of grid
+cell. In the first phase, we use a large height for the grid cells to capture as 
+many tall structures as possible. The second phase is applied on the resultant 
+ground points of the first phase and we use a small height for the grid cells to 
+remove any false positive ground points.
 
 \subsection{Point Sparsity}
 As mentioned earlier, the point assignment to grid cells is non uniform and
 depends on various factors. It is not feasible to blindly fit a plane to all
 grid cells because some cells may have a single line of points or a random
 distribution of points. This is especially the case when using a fixed grid size
-and the distance of the cell from the pointcloud origin increases.
+and the distance of the cell from the point cloud origin increases.
 
-\paragraph*{Solution} We perform local eigen analysis and classify each grid
-cell into one of the three classes: Line, Plane, and Unknown. Each cell type is
-handed with a different technique most appropritate for it. We explain the
-details in the section X.Y
-
+\paragraph*{Solution} We perform local eigen analysis on each grid cell. The eigen values
+encode a good representation of the spacial distribution of the points assigned to the cell. 
+Afterwards, we classify each grid cell into one of the two classes: Line and Plane. Each 
+cell type is handed with a different technique most appropritate for it. We explain the
+details in the section X.Y.
 
 \subsection{Polar \& Square Coordinates}
 Literature review has shown that researchers prefer polar grid cells as compared
@@ -247,10 +230,9 @@ to square cells. Various types of polar grid cells have been researched.
 with a fixed grid size performs better than polar cells. The reason in our view
 is that as the distance from the sensor origin increases, the cells get bigger
 and as a concequence, results in the deterioration of the performance of the
-plane fitting based segmentation.
+plane fitting based segmentation. \todo{TODO} How does CZH work in relation to this?
 
-
-\subsection{False positive flat surfaces other than ground e.g. table top, car roof etc.}
+\subsection{False positive flat surfaces e.g. table top, car roof etc.}
 The gradient of the fitting plane to a grid cell can not be used as the sole
 criteria for the segmentation. The reason is the existence of flat surfaced
 obstacles in the robot's environment.
@@ -258,14 +240,13 @@ obstacles in the robot's environment.
 ground seed cells. The connectivity-based expansion ensures that only
 neighboring ground cells are expanded.
 
-\subsection{False positive points at the junction of ground and obstacles}
-We perform a point wise check to remove as many false positives as possible at
-the junction of ground and non-ground points 
-\paragraph*{Solution} The grid
-cells are big and this may create over or under segmenation at the junction of
-ground and non-ground cells. Therefore, a point-wise inlier check is used at the
-junction of ground and obstacle cells to detect and correct segmentation
-mistakes.
+\subsection{False positive points at the junction of ground and non-ground points}
+The results of the segmentation depend on the handling of junctions between
+ground and non-ground points. This is where the majority of cases of under and over
+segmentation occur. 
+
+\paragraph*{Solution} A point-wise inlier check is used at the
+junction of ground and obstacle cells to detect and correct over and under segmentation.
 
 \subsection{Influence of grid cell height on the performance of segmentation}
 The height of the grid cell plays a key role in identification of obstacles in
@@ -274,15 +255,17 @@ cells but without false detection the underlying ground points as obstacles.
 This challenge is evident in the tree canopy situation where the ground points
 in the grid cell are falsely identified as obstacle points because of the large
 height of the grid cell.
-\paragraph*{Solution} Using the same strategy as mentioned in the point G to
-detect and correct segmentation mistakes.
+\paragraph*{Solution} The point space is sub-divided into 3D grid cells for a clear distinction
+between ground and non-ground points. Additionally, we use the same strategy as mentioned in the 
+point G to detect and correct segmentation mistakes.
 
-\subsection{Outlier Correction}
-The plane fitting will produce false positive outliers because of the natual
-curvature of the ground surface. A correction step using the actual  resultant
-normal of the points is used to correctly assign ground and non ground points.
-\paragraph*{Solution} Using the same strategy as mentioned in the point G to
-detect and correct segmentation mistakes.
+\subsection{Fitted Plane Outlier Correction}
+The real world ground surface has a curvature and plane fitting usually results in false 
+positive outliers upon fitting a ideal flat surface to the the points. 
+\paragraph*{Solution} It is common practice to define a distance threshold to fit a planar model to a set of 
+points. We also use a fixed distance threshold for the initial plane fit for for gradient estimation. However, the 
+extraction of ground and non-ground points uses an additional correction step using the actual resultant normal of 
+the points assinged to the cell. We use the strategy as mentioned in the point G to detect and correct segmentation mistakes.
 
 \subsection{Performance}
 The requirement for real-time operation of the ground segmentation is very
@@ -290,19 +273,81 @@ evident for the application in the autonomous driving community. Therefore,
 solutions need to able to do a highly accurate segmentation within in stipulated
 time period. The exact time requirements may vary based on the industry.
 
-\paragraph*{Solution} \todo{TODO}
-
-
+\paragraph*{Solution} \todo{Time and space complexity analysis needs to be done}
 
 \section{Core Components}
-\subsection{Pre-Processing}
-The input point cloud is cropped to a user defined region of interest. The
-region of interest is application specific, where a large region of interest is
-desirable in the autonomous driving situation and in mobile robotics
-applications a small to medium region of interest is usually enough.
-\subsection{3D Grid Representation}
-The points are assigned to cells into a Euclidean space based 3D grid. The
-points are indiscriminately assigned to grid cells based on their 3D positions.
+
+\todo{Need a picture of the pipeline}
+
+\subsection{Data Preparation and Filtering}
+The input point cloud is cropped to a user-defined region of interest, which varies depending on the application. 
+For autonomous driving, a larger region of interest is preferred, while mobile robotics typically require a smaller
+to medium-sized region. To manage the number of points, we downsample the point cloud to a resolution of 10 cm. 
+The downsampling and the respective resolution is determined by specific algorithm parameters.
+
+\section{Two-Phase Segmentation of Points Based on Local Surface Properties and Neighborhood Analysis}
+
+The segmentation process is divided into two distinct phases to address different challenges in point classification. 
+Each phase uses grid cells of varying heights to improve the accuracy of ground and obstacle detection, 
+while also managing potential misclassifications.
+
+\textbf{First Phase: Large Grid Cell Height}: In the first phase of segmentation, a large height for the grid cells in the \( z \)-direction is employed. 
+This approach is designed to capture as many obstacles as possible within each grid cell. The larger cell size helps 
+in identifying obstacles that might otherwise be missed.
+
+However, this method comes with a trade-off. The increased cell height can lead to the misclassification of ground points, 
+especially in scenarios where the ground is obscured by overhead objects, such as tree canopies. As a result, some ground 
+points may be incorrectly labeled as non-ground. These false detections are addressed in subsequent stages of the segmentation process.
+
+\textbf{Second Phase: Small Grid Cell Height}: The second phase of segmentation uses a smaller height for the grid cells. This smaller cell size is crucial for 
+refining the segmentation results by minimizing false positives identified as ground points in the first phase. 
+The reduced cell height allows for more precise detection of ground and obstacle points.
+
+During the post-processing phase, any points that were incorrectly classified as non-ground in the first phase but 
+are actually ground are reclassified and added back to the ground points. This correction ensures that the final 
+classification is accurate, reflecting the true distribution of ground and non-ground points.
+
+
+The steps involved in the segmentation process are:
+
+\begin{itemize}
+  \item Local Eigen Analysis (LEA)
+  \item Surface Gradient Analysis (SGA)
+  \item Ground Region Growth (GRG)
+  \item Final Ground Segmentation (FGS)
+\end{itemize}
+
+The behavior of these steps varies between the first and second phases. The table below summarizes the changes in behavior for each step during these phases.
+
+\begin{table}[h!]
+  \centering
+  \caption{Behavior of steps in the first and second phases of segmentation}
+  \resizebox{\columnwidth}{!}{%
+  \begin{tabular}{|p{4cm}|p{2cm}|p{2cm}|}
+  \hline
+  \textbf{Step} & \textbf{First Phase} & \textbf{Second Phase} \\
+  \hline
+  \textbf{Grid Representation} & Grid cells have a large height & Grid cells have a small height \\
+  \hline
+  \hline
+  \textbf{Local Eigen Analysis} & Unchanged & Unchanged \\
+  \hline
+  \textbf{Surface Gradient Analysis} & Unchanged & Unchanged \\
+  \hline
+  \textbf{Ground Region Growth} & Unchanged & A detailed neighborhood check is performed for neighboring cells during expansion \\
+  \hline
+  \textbf{Final Ground Segmentation} & Unchanged & Unchanged \\
+  \hline
+  \end{tabular}%
+  }
+  \label{tab:phase_behavior}
+\end{table}
+
+\subsection{Grid Representation 3D}
+The points are assigned to cells within a 3D grid in Euclidean space based on their positions. This 3D grid is crucial 
+for modeling and detecting empty spaces, as the height of each grid cell helps identify voids or gaps in the environment. 
+The dimensions of the grid cells in the x, y, and z axes are determined by three specific algorithm parameters, ensuring 
+that the grid accurately represents the spatial characteristics of the point cloud.
 \begin{align}
 cell_x &= point_x / cellsize_x \\
 cell_y &= point_y / cellsize_y \\
@@ -311,38 +356,60 @@ cell_z &= point_z / cellsize_z
 where $cellsize$ is a parameter. We explain our choice of parameters in the section H.
 
 \subsection{Local Eigen Analysis}
-The sparsity of points increases with the distance of the points from the
-sensor. As a consequence of this we can not except to get a reliable fit of a
-planar model to all the grid cells. Therefore, we perform a computationally
-inexpensive eigen analysis on each grid cell in order to get a rough estimation
-of the local spacial distribution of the points. The ratio of the largest eigen
-value to the sum of eigen values is computed.
+In point cloud data, the density of points often decreases as the distance from the sensor increases. 
+This relationship arises because most sensors, such as LiDAR or depth cameras, have a limited resolution 
+and a wider field of view at greater distances. Consequently, the farther the points are from the sensor, 
+the fewer points are collected per unit area, leading to increased sparsity.
+
+To address this issue in point cloud processing, especially when fitting geometric models, we use eigenvalue 
+analysis to estimate the local spatial distribution of points within each grid cell. The eigenvalue analysis 
+helps determine how well a grid cell approximates a planar surface, which is challenging when point density is low.
+
+Given a point cloud within a grid cell, we can calculate the eigenvalues of the covariance matrix of the points 
+to assess their spatial distribution. Let CC be the covariance matrix computed for the points in a grid cell. 
+The eigenvalue decomposition of CC yields eigenvalues $\lambda_1$, $\lambda_2$, and $\lambda_3$ (where $\lambda_1$ > $\lambda_2$ > $\lambda_3$).
+
+We use the ratio of the largest eigenvalue to the sum of all eigenvalues to gauge the distribution:
+
+\begin{align}
+  \text{Ratio} &= \frac{\lambda_1}{\lambda_1 + \lambda_2 + \lambda_3}
+\end{align}  
+
+The ratio of the largest eigenvalue to the sum of all eigenvalues provides an indication of whether the points in 
+a grid cell are more aligned with a planar surface, a line, or a non-planar structure. The ratio is calculated as follows:
 
 We devise three possible conclusions based on the ratio and categorize the grid
 cells into three categories.
 
-\begin{description}
-  \item[Line] Ratio is close to 1 which means that the largest eigen value is the dominating value. This implies that the points have a linear spacial distribution.
-  \item[Plane] Ratio is close to 0.5 which implies that there is a planar spacial distribution of points.
-  \item[Unknown] Smaller values imply a random spread of points.
+\begin{description}[style=nextline]
+  \item[Line Cell]
+  A high ratio in range [0.9, 1.0] indicates that $\lambda_1$ is significantly larger than $\lambda_2$ and $\lambda_3$, which suggests that the points 
+  are distributed along a line. In this case, the distribution is highly elongated along one direction with minimal variation 
+  in the other directions.
+  
+  \item[Plane Cell]
+  A ratio in this range [0.4, 0.9) indicates that $\lambda_1$ is moderately larger than $\lambda_2$ and $\lambda_3$, suggesting that the points 
+  are more aligned with a planar surfaceFinal Ground Segmentation
+
+  \item[Non-Plane Cell]
+  A ratio in this range [0.4, 0.9) indicates that $\lambda_1$ is moderately larger than $\lambda_2$ and $\lambda_3$, suggesting that the points 
+  are more aligned with a planar surfaceFinal Ground Segmentation
 \end{description}
 
-\begin{table}
-\caption{Largest eigen to the sum ratio}
-\label{tab:eigen-ratio}
 \begin{tabular}{@{}ll@{}}
 \toprule
 \textbf{Cell Type} & \textbf{Threshold} \\
 \midrule
-Line      & $> 0.95$ \\
-Plane     & $\ge 0.40$ \\
-Unknown   & $< 0.40$ \\
+Line Cell      & $> 0.95$ \\
+Plane Cell     & $\ge 0.40$ \\
+Non-Plane Cell   & $< 0.40$ \\
 \bottomrule
+\caption{Largest eigen to the sum ratio}
+\label{tab:eigen-ratio}
 \end{tabular}
-\todo[inline]{Do we need a table for this additionally to explanation?}
 \end{table}
 
-Each cell type is processed with a different algorithm. 
+Each type of cell is processed using a distinct algorithm, and we refer to these cells as Line, Plane, and Non-Planar cells:
 
 \subsubsection{Line Cell}
 \begin{figure}
@@ -355,26 +422,27 @@ Each cell type is processed with a different algorithm.
   \label{fig:LineCell}
 \end{figure}
 
-If the largest eigen value is also the dominating value in all the values then
-the cell is categorized as Line. For such cells, we compute the angle between
-the largest eigen vector (shown green in Fig.\@~\ref{fig:LineCell}) and the positive z-axis
-(upwards).
+If the largest eigenvalue is significantly larger than the other eigenvalues, the cell is categorized as a Line Cell.
+In such cases, the cell exhibits a dominant linear structure. For these cells, we compute the angle between the largest eigenvector 
+(depicted in green in Fig.~\ref{fig:LineCell}) and the positive z-axis (pointing upwards). This angle helps to characterize 
+the orientation of the linear distribution relative to the vertical axis.
+
 \begin{align}
 CellType &= 
   \begin{cases}
-    \text{TentativeObstacle} & angle \ge 90\degree - Threshold \\
-    \text{TentativeGround} & angle < 90\degree - Threshold
+    \text{Tentative Obstacle} & angle \ge 90\degree - Threshold \\
+    \text{Tentative Ground} & angle < 90\degree - Threshold
   \end{cases}
 \end{align}
-where threshold refers to the ground slope threshold.
 
-Based on the angle of uprightness, it is possible to classify cells with small
-angles as obstacles since we do not expect ground cells to have a upright
-spacial distribution. For the case where the points are not upright, the cell
-might be Obstacle or Ground. We can not be certain because this Line of points
-can also belong to a top of an obstacle e.g. car top, table etc. Therefore, we
-mark such cells as tentative Obstacle.
+The ground slope threshold is used to determine the classification of cells based on their angle of uprightness. 
+Cells with a small angle between the largest eigenvector and the positive z-axis are considered for classification
+as obstacles. This is because ground cells typically do not exhibit a highly upright spatial distribution.
 
+When the angle of the largest eigenvector is small, indicating that the points are not upright, the cell might be 
+categorized as either an Obstacle or Ground. However, because this configuration could also represent the top of an
+obstacle (such as a car roof or a table), we cannot be certain of its exact nature. As a result, such cells are marked
+as tentative Obstacle until further analysis can confirm their true classification.
 
 \subsubsection{Plane Cell}
 \begin{figure}
@@ -385,15 +453,17 @@ mark such cells as tentative Obstacle.
   The cell is classified as Plane based on the local eigen analysis.}
   \label{fig:PlaneCell}
 \end{figure}
-Cells with more than one scan lines are suitable candidates for plane fitting
-when the spacial distribution of the points has two dominant eigen values and
-the third eigen value is negligibly small or significantly smaller. If the
-largest eigen value to the sum of eigen values ratio is greater than 0.4 then
-the points are classified as Plane.
+Cells that contain multiple scan lines are suitable candidates for plane fitting when the spatial distribution of the points 
+exhibits two dominant eigenvalues, with the third eigenvalue being negligibly small or significantly smaller. In such cases, 
+the cell is assessed to determine if it can be classified as a Plane Cell.
+
+Specifically, if the ratio of the largest eigenvalue to the sum of all eigenvalues is greater than 0.4, the points are 
+classified as Plane. This ratio indicates that the points align well with a planar surface, where the largest eigenvalue 
+reflects the direction perpendicular to the plane, and the other two eigenvalues are relatively small, suggesting minimal 
+variation within the plane.
 \todo{Suggestion: One could check lowest EV/EV sum $<$ threshold}
 
-
-\subsubsection{Obstacle Cell}
+\subsubsection{Non-Plane Cell}
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{unknown_cell.png}
@@ -402,14 +472,15 @@ the points are classified as Plane.
   The cell is classified as Unknown based on the local eigen analysis.}
   \label{fig:UnknownCell}
 \end{figure}
-If the ratio is smaller than 0.4 then the points are classified as Obstacle. In
-this case the points in the cell do not have two clearly dominant eigen values.
-It is true that the sharp cut off of 0.4 will result in some falsely classified
-Plane and Unknown cells but these false cases are automatically corrected at a
-later stage.
 
-Each Obstacle cell is individually processed in the segmentation stage.
+If the ratio of the largest eigenvalue to the sum of all eigenvalues is smaller than 0.4, the points are 
+classified as Obstacle. In this scenario, the cell does not exhibit two clearly dominant eigenvalues, 
+suggesting that the points do not align well with a planar surface.
 
+While the threshold of 0.4 helps in distinguishing between Plane and Obstacle cells, it may lead to some false 
+classifications. Specifically, cells that should be classified as Plane or Unknown might be incorrectly 
+categorized due to the sharp cutoff. However, these misclassifications are addressed and corrected automatically 
+during subsequent stages of the processing pipeline. Each Obstacle cell is individually processed in the segmentation stage.
 
 \subsection{Planar Model Fitting}
 \begin{figure}
@@ -418,11 +489,26 @@ Each Obstacle cell is individually processed in the segmentation stage.
   \caption{Plane model fit for local surface gradient estimation.}
   \label{fig:PlaneFit}
 \end{figure}
-The plane model fitting is applied only to cells of type Plane. We compute the
-gradient of fitted plane and apply a slope threshold. The cells which fulfill
-the ground criteria are tentatively marked as a potential ground cells. Cells
-which fit the ground criteria are used to select the initial seeds for region
-growing.  Cells which do not fit the ground criteria are marked as non-ground.
+
+We chose a model-fitting approach for our solution because, when the input point cloud is divided into smaller cells, 
+it is reasonable to assume that these local cells are flat, given the small cell size. This assumption holds true more 
+often than not due to the reduced cell size, which leads to more accurate plane fitting. However, this approach increases 
+computational costs due to the larger number of cells.
+
+A larger grid cell size improves performance and yields good results in indoor environments or autonomous driving scenarios. 
+Nonetheless, it tends to flatten the natural curvature of the ground in outdoor settings. In areas with highly uneven terrain, 
+using a large grid size can lead to poor results, as the planar model fitting might ignore some points. This raises the question 
+of how to handle points marked as outliers but which are not truly outliers.
+
+Another challenge with the grid representation is the variability in point distribution within a cell. Depending on point 
+sparsity, a single cell may contain a line of points, a few lines, or even scattered points. This variability complicates 
+the grid-based point assignment.
+
+The plane model fitting is applied specifically to cells categorized as Plane. For these cells, we compute the gradient of 
+the fitted plane and apply a slope threshold to assess whether the cell meets the ground criteria. Cells that fulfill these 
+criteria are tentatively marked as potential ground cells. These ground cells are then used as initial seeds for the 
+region-growing algorithm. Cells that do not meet the ground criteria are marked as non-ground.
+
 \begin{align}
 CellType &= 
   \begin{cases}
@@ -437,88 +523,90 @@ where threshold refers to the ground slope threshold.
 The seed cells are selected from the tentative Ground cells based on the following conditions:
 
 \begin{enumerate}
-  \item High confidence of the cell belongs to ground. High confidence means that more than 95\% of points in the grid cell are inlier of the planar model fit. 
-  \item The centroid is within a user defined distance threshold. Far off cells are expected usually to have sparse points with large gaps in between points. These are not suitable candidates for the selection of initial seed cells and the subsequent expansion because of limited possibility of connectivity with neighboring cells. Therefore, we set a distance limit for the selection of seed cells so that only cells in close proximity the sensor are candidate seed cells.
-  \item Seed cells are selected from each of the four quadrants in the euclidean space. Large occlusions or gaps in the point cloud inhibit the region growth. If we select a single seed cell then there is a risk that the region growth will not be able to cover all the cells. Therefore, we select a seed cells as four groups. Each group belongs to a quadrant.
-  \item We compute the mean height of the selected cells in each group. We do this to minimize any adverse effects of a false positive seed cells. A group is only considered valid if there are at least a minimum number of selected seed cells.
-  \item A single seed cell is selected from all valid groups. The cell is selected based on neighborhood and closeness to the mean height.
-  The conditions for selection are:
+  \item \textbf{High Confidence of Ground Classification:} The cell is considered to have high confidence if more than 95 percent 
+  of the points within it are inliers of the planar model fit.
+  
+  \item \textbf{Proximity to Sensor:} The centroid of the cell must be within a user-defined distance threshold. Cells that are far 
+  from the sensor typically have sparse points with large gaps, making them unsuitable for initial seed selection due to limited 
+  connectivity with neighboring cells. Therefore, a distance limit is set to ensure that only cells close to the sensor are considered 
+  as potential seed cells.
+  
+  \item \textbf{Quadrant-Based Seed Selection:} Seed cells are selected from each of the four quadrants in the Euclidean space. 
+  This approach helps mitigate issues related to large occlusions or gaps in the point cloud, which could inhibit region growth 
+  if only a single seed cell were used. By selecting seed cells from four distinct groups (one per quadrant), we improve the 
+  coverage and connectivity of the region-growing process.
+  
+  \item \textbf{Mean Height Calculation:} The mean height of the selected cells in each group is computed. This step helps 
+  minimize the impact of any false positive seed cells. A group is considered valid only if it contains at least a minimum 
+  number of selected seed cells, ensuring a robust basis for the region-growing process.
+  
+  \item \textbf{Selection of a Single Seed Cell:} From each valid group, one seed cell is selected based on the following criteria:
   \begin{itemize}
-    \item The cell has the highest number of ground neighbors compared to other cells in the group.
-    \item It is closest to the mean height of the group.
+  \item The cell must have the highest number of ground neighbors compared to other cells in the group.
+  \item It should be closest to the mean height of the group.
   \end{itemize}
-  \item At the end of seed selection, we have one seed cell selected from each quadrant.
-\end{enumerate}
+  
+  \item \textbf{Final Seed Cells:} After the selection process, one seed cell is chosen from each of the four quadrants.
+  \end{enumerate}
 
 \subsection{Region Growth}
-We recursively expand all ground neighbors of the seed cells. The region wise
-growth ensures that false positive ground cells, which fulfilled the slope
-criteria, are not selected. When selecting neighbors of a cell, we check for
-24~neighbors in its vicinity. We do not store empty cells in our 3D grid and to
-avoid far off neighbors to be selected, we apply a maximum distance threshold
-for the neighboring cell.
+We recursively expand all ground neighbors of the seed cells. This region-wise growth process ensures that cells falsely 
+classified as ground cells (i.e., cells that meet the slope criteria but are not truly ground) are not included in the final result.
 
-Each ground neighbor within the distance threshold is expanded and afterwards
-marked as expanded. The designation of cell as expanded ensures that no cell is
-expanded twice.
+When expanding the neighbors of a cell, we consider up to 24 neighboring cells in its vicinity. To avoid including 
+distant or irrelevant neighbors, we apply a maximum distance threshold. Empty cells are not stored in the 3D grid, 
+which helps in focusing only on relevant neighboring cells.
 
-\subsection{Point Segmentation}
+Each ground neighbor within the distance threshold is expanded and subsequently marked as expanded. This designation 
+prevents any cell from being expanded more than once, ensuring efficiency and accuracy in the expansion process.
+
+\subsection{Final Ground Segmentation}
+
+The final ground segmentation is a critical step in the pipeline for accurately interpreting ground points from the input point cloud data, 
+especially at junctions of ground and obstacle cells. This process involves analyzing and classifying the points in the cells based on
+their surface and neightborhood properties. The goal is to refine the cells obtained from previous steps in the pipeline and ensure 
+that each point in the cells is accurately categorized, considering both its local properties and its relationship with neighboring cells.
+
 \subsubsection{Ground Points}
-The ground cells are the result of the expansion of the grid. The grid expansion
-is based on connectivity of ground cells, thus any falsely classified ground
-cells which merely fulfilled the slope criteria are rejected during expansion
-because there was no connectivity of such a cell to main body of the ground
-cells.After the region growing, we go over all the cells marked as ground and
-segment each cell's points into inliers and outliers. The segmentation uses the
-inliers from the plane fitting. The goal here is to detect small obstacles in
-the ground cells. Given that the real world ground has curvature, we are certain
-that the plane fit did indeed mark some ground points as outliers and they will
-be falsely assigned to non-ground points, resulting in poor quality of
-segmentation in very uneven terrain.
 
-\paragraph*{Outlier check}
+In our approach to point segmentation, each ground cell obtained from the region-growing phase is processed individually. 
+This helps us determine whether any outliers from the plane fitting were incorrectly marked. Specifically, we use the smallest 
+eigenvalue of the points in the cell, rather than the normal to the plane fit, to check for false negatives. This pointwise check 
+helps in identifying and correcting false outliers.
+
+The process involves the following steps:
+
+\paragraph*{Outlier Check}
 
 \begin{enumerate}
-  \item Find the closest inlier point and compute the vector from the inlier to outlier
-  \item Compute the distance of vector's component along the ground normal
-  \item If the distance along the normal is
-  \begin{enumerate}
-    \item Less than or equal to the plane fit threshold then the outlier is marked as ground point
-    \item Greator than the plane fit theshold then the outlier marked as non-ground point
-  \end{enumerate}
+\item Identify the closest inlier point and compute the vector from this inlier to the outlier.
+\item Calculate the component of this vector along the ground normal.
+\item Based on the distance along the normal:
+\begin{enumerate}
+\item If the distance is less than or equal to the plane fit threshold, the outlier is classified as a ground point.
+\item If the distance exceeds the plane fit threshold, the outlier is classified as a non-ground point.
 \end{enumerate}
-
+\end{enumerate}
 
 \subsubsection{Non-Ground Cells}
-Over segmentation of non-ground cells is very evident in the case of non-ground
-cells. We process each non-ground cell based on its neighborhood.
+
+Segmentation of non-ground cells presents additional challenges, especially at the boundaries where obstacles meet ground surfaces. 
+To address these challenges, we perform the following checks:
 
 \begin{enumerate}
-  \item If the non-ground cell has no ground neighbors then we can safely assign all the points as non-ground.
-  \item If the non-ground cell has ground neighbors then we need to make sure which of these ground neighbors are actually ground and which were falsely assigned the ground label due to only slope criteria fulfillment.
-  \item To confirm the genuine ground neighbors, we check if the ground cell was expanded during the region growing phase. If the cell was expanded then we can be certain that this ground cell belongs to the main body of ground cells. On the contrary, the un-expanded ground cell emplys that the cell is a false positive ground cell and therefore it is not taken into consideration for the next step.
-  \item If the non-ground cell has ground neighbors belonging to the main body of the ground cells then we collect all ground points into a single collection of points
-  \item Afterwards, we use the same algorithm used in outlier check to classify segment ground and non-ground points.
+\item Neighbor Check: We first check if a non-ground cell has any ground neighbors. This step is crucial because false segmentation 
+often occurs at the junctions between obstacles and ground cells.
+\begin{itemize}
+\item If the non-ground cell has no ground neighbors, all its points are classified as non-ground.
+\item If the non-ground cell does have ground neighbors, we need to perform further analysis to determine the validity of these neighbors.
+\end{itemize}
+\item Pointwise Check: For non-ground cells with ground neighbors, we perform a pointwise comparison. This involves analyzing the 
+obstacle points in the cell and comparing them with neighboring ground points. The goal is to identify and remove any false positive obstacle points.
 \end{enumerate}
 
-
-\subsection{Two Step Approach}
-Two phase segmentation of points based on local surface properties and
-neighborhood analysis First phase uses a large height for the grid cells. The
-large grid cell in the $z$-direction ensures that we capture as many obstacles are
-possible. However, this also means that ground points in cases of the tree
-canopy will be falsely classified as non-ground points. We cater for these false
-detections at the later stage. Second phase uses a small height for the grid
-cells. The second phase uses a smaller grid cell height so that we can remove
-any false positive detections of ground points. All the false positive
-detections are later added back to the non-ground points during the post
-processing phase.
-
-\subsection{Post Processing}
-A convex hull based post-processing approach is used for highly challenging
-rough terrains with thick vegetation. The post-processing improves the quality
-of the ground segmentation.
-
+By implementing these procedures, we refine the segmentation of non-ground cells and improve the overall accuracy of the point 
+classification. This approach helps in reducing false positives and ensuring that the point cloud data accurately reflects the 
+true nature of the environment.
 
 \section{Experiments}
 We tested our ground segmentation on various indoor and outdoor scenarios on a
@@ -530,23 +618,66 @@ these tests is that we do not change the parameters of the algorithm. This is
 done to support our initial claim that the algorithm can work in various types
 of indoor and outdoor environments without the need to manually tune parameters.
 \subsection{Datasets and Evaluation Metrics}
-We evaluate the work against the state-of-the-art method with the best
-performance Patchwork++. We limit the size of the point cloud to 80m and set the
-down-sample it to 0.1m.
+
+We test our solution on various available datasets with the same set of parameters.
+The parameters used are:
+
+\begin{table}[h!]
+  \centering
+  \caption{Parameters of GroundGrid3D}
+  \resizebox{\columnwidth}{!}{%
+  \begin{tabular}{|p{4cm}|p{2cm}|p{4cm}|}
+  \hline
+  \textbf{Parameter} & \textbf{Value} & \textbf{Description} \\
+  \hline
+  \textbf{(maxX, minX, maxY, minY, maxZ, minZ)} & (500, -500, 500, -500, 500, -500) & Region of interest (in meters) of the point cloud in Euclidean space. \\ 
+  \hline
+  \textbf{downsample} & True & Toggle to downsample the point cloud to a user-defined resolution in meters. \\ 
+  \hline
+  \textbf{downsample\_resolution} & 0.1 & Point cloud is downsampled to 10 cm. \\ 
+  \hline
+  \textbf{(cellSizeX, cellSizeY, cellSizeZ)} & (2, 2, 10) & Size (in meters) of the grid cell in three-dimensional space. \\ 
+  \hline
+  \textbf{startCellDistanceThreshold} & 80 & Maximum distance for selection of seed cells used as start cells for region growing. \\
+  \hline
+  \textbf{groundInlierThreshold} & 0.1 & Inlier threshold (in meters) for the plane model fitting to points in a grid cell. \\ 
+  \hline
+  \textbf{neighborsIndexThreshold} & 1 & Number of neighbors analyzed for neighborhood analysis. \\
+  \hline
+  \textbf{minPoints} & 5 & Minimum number of points assigned to a cell for plane model fitting. \\
+  \hline
+  \textbf{ransac\_iterations} & 1000 & Number of iterations of RANSAC for plane model fitting. \\
+  \hline
+  \end{tabular}%
+  }
+  \label{tab:parameters}
+\end{table}
+
+\begin{table}[h!]
+  \centering
+  \caption{Data Sources}
+  \resizebox{\columnwidth}{!}{%
+  \begin{tabular}{|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
+  \hline
+  \textbf{Dataset} & \textbf{Environment} & \textbf{Sensor} & \textbf{Year} & \textbf{Platform} & \textbf{Sensor Height (m)}\\
+  \hline
+  \textbf{KITTI \cite{todo}} & Urban & Velodyne HDL-64E & 2013 & Car & 1.723 \\ 
+  \hline
+  \textbf{UrbanNav \cite{todo}} & Urban & Velodyne HDL-32E & 2021 & Car & 1.832 \\ 
+  \hline
+  \textbf{DOALS \cite{todo}} & Urban & Ouster OS0 128 & 2021 & Handheld & 2 \\ 
+  \hline
+  \textbf{BotanicGarden \cite{todo}} & Natural  & Velodyne VLP-16 & 2024 & Mobile Robot & 1.164 \\
+  \hline
+  \textbf{RELLIS-3D \cite{todo}} & Natural & Velodyne VLP-32C & 2022 & Mobile Robot &  \\
+  \hline
+  \end{tabular}%
+  }
+  \label{tab:phase_behavior}
+  \end{table}
 
 
-\section{Results and Discussion}
-\subsection{RELLIES-3 \cite{todo}}
-The Rellis-3D dataset, developed by Texas A\&M University, is an advanced dataset
-aimed at improving semantic segmentation in outdoor environments. Named after
-the RELLIS Campus, it features high-resolution LiDAR and camera data captured in
-diverse weather conditions and various terrain types. Unlike many other datasets
-focused on urban settings, Rellis-3D emphasizes off-road scenarios, including
-complex and cluttered scenes with vegetation, rough terrain, and obstacles. This
-dataset is instrumental for developing and testing algorithms in fields such as
-robotics, autonomous navigation, and environmental perception, where
-understanding complex 3D structures and diverse landscapes is crucial.
-\subsection{KITTI}
+\subsubsection{KITTI}
 The KITTI dataset \cite{Geiger2013IJRR} is a comprehensive collection of real-world data designed to
 facilitate research in autonomous driving and computer vision. Collected by the
 Karlsruhe Institute of Technology and the Toyota Technological Institute at
@@ -557,23 +688,322 @@ providing benchmarks for tasks such as object detection, tracking, segmentation,
 and visual odometry. Its diversity and complexity make it a pivotal resource for
 advancing autonomous driving technologies and robust computer vision algorithms.
 
-\begin{table}
-\caption{Ground Points}
-\label{tab:ground-points}
-\begin{tabular}{@{}llllll@{}}
-\toprule
-Algorithm & Vegetation & Precison & Recall & F1 & Time (ms) \\
-\midrule
-\multirow2*{Ours}
-   & No  & 97.7 & 96.7125 & 97.2037 & 123.392 \\
-   & Yes & 86.4444 & 90.3457 & 88.352 & 121.808 \\
-\multirow2*{Patchwork++}
-   & No  & 95.4681 & 84.3617 & 89.5719 & 6.38772 \\
-   & Yes & 85.2909 & 79.3273 & 82.2011 & 6.23292 \\
-\bottomrule
-\end{tabular}
-\todo[inline]{Round values to reasonable precision}
+\subsubsection{UrbanNav}
+The UrbanNav dataset, available on GitHub, is a comprehensive dataset designed for urban navigation research, 
+particularly in Global Navigation Satellite System (GNSS)-denied environments. Developed by the Intelligent 
+Positioning and Navigation Laboratory at The Hong Kong Polytechnic University, it provides data collected 
+from various sensors, including GNSS receivers, Inertial Measurement Units (IMUs), Light Detection and Ranging (LiDAR) sensors, 
+and cameras, in dense urban settings like Hong Kong. The dataset is intended to facilitate the development and testing of robust 
+navigation algorithms that can handle the challenges of urban environments, such as multipath effects and signal blockages. The 
+repository includes detailed descriptions of the data collection process, file structure, and usage guidelines, making it a valuable 
+resource for researchers working on urban navigation and related fields.
+
+\subsubsection{DOALS}
+Dynamic Object Aware LiDAR SLAM based on Automatic Generation of Training Data (DOALS) contains 12000 scans that were recorded
+in the main hall of ETH Zurich. The recording was performed at various locations and each location provides 2 sequences of data.
+We use the data collection from the touristic pedestrian zone (Nierendorf) for our ground segmentation tests.
+
+\subsubsection{BotanicGarden}
+The BotanicGarden dataset is a used to test the ground segmentation capabilities of the algorithm in unstructured natual environments. The
+dataset provides data from wide varierty of sensors, including high-res and high-rate stereo gray and RGB cameras, 
+spinning and MEMS 3D LiDARs, and low-cost and industrial-grade IMUs, supporting a wide range of applications. 
+
+\subsubsection{RELLIES-3 \cite{todo}}
+The Rellis-3D dataset, developed by Texas A\&M University, is an advanced dataset
+aimed at improving semantic segmentation in outdoor environments. Named after
+the RELLIS Campus, it features high-resolution LiDAR and camera data captured in
+diverse weather conditions and various terrain types. Unlike many other datasets
+focused on urban settings, Rellis-3D emphasizes off-road scenarios, including
+complex and cluttered scenes with vegetation, rough terrain, and obstacles. This
+dataset is instrumental for developing and testing algorithms in fields such as
+robotics, autonomous navigation, and environmental perception, where
+understanding complex 3D structures and diverse landscapes is crucial.
+
+\section{Results and Discussion}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{urban_nav_all.png}
+  \caption{UrbanNav: UrbanNav Hong Kong Tunnel}
+  \label{fig:urban_nav_all}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{nierendorf_final.png}
+  \caption{DOALS: Nierendorf}
+  \label{fig:nierendorf_final}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{bg_all.png}
+  \caption{BotanicGarden: ?}
+  \label{fig:bg_all}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{r3d_all.png}
+  \caption{RELLIES-3D: ?}
+  \label{fig:r3d_all}
+\end{figure}
+
+\begin{figure}[h!]
+  \centering
+  % First row of 3 subfigures
+  \begin{subfigure}[b]{0.23\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/00_499/gpf_00.png}
+    \caption{Subfigure 1}
+    \label{fig:sub1}
+  \end{subfigure}
+  \hspace{0.02\textwidth}
+  \begin{subfigure}[b]{0.23\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/00_499/groundgrid_00.png}
+    \caption{Subfigure 2}
+    \label{fig:sub2}
+  \end{subfigure}
+  \hspace{0.02\textwidth}
+  \begin{subfigure}[b]{0.23\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/00_499/linefit_00.png}
+    \caption{Subfigure 3}
+    \label{fig:sub3}
+  \end{subfigure}
+  
+  \vspace{0.5cm} % Adds some vertical space between the rows
+  
+  % Second row of 4 subfigures
+  \begin{subfigure}[b]{0.23\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/00_499/patchwork_00.png}
+    \caption{Subfigure 4}
+    \label{fig:sub4}
+  \end{subfigure}
+  \hspace{0.02\textwidth}
+  \begin{subfigure}[b]{0.23\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/00_499/patchworkpp_00.png}
+    \caption{Subfigure 5}
+    \label{fig:sub5}
+  \end{subfigure}
+  \hspace{0.02\textwidth}
+  \begin{subfigure}[b]{0.23\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/00_499/ransac_00.png}
+    \caption{Subfigure 6}
+    \label{fig:sub6}
+  \end{subfigure}
+  
+  \vspace{0.5cm} % Adds some vertical space between the rows
+  
+  % Third row of 2 subfigures
+  \begin{subfigure}[b]{0.23\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/00_499/rgpf_00.png}
+    \caption{Subfigure 7}
+    \label{fig:sub7}
+  \end{subfigure}
+  \caption{Main figure caption with 8 subfigures}
+  \label{fig:main1}
+  \end{figure}  
+
+\begin{figure}[h!]
+  \centering
+  % First row of 3 subfigures
+  \begin{subfigure}[b]{0.23\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/botanic_garden/g15401.png}
+      \caption{Subfigure 1}
+      \label{fig:sub1}
+  \end{subfigure}
+  \hspace{0.02\textwidth}
+  \begin{subfigure}[b]{0.23\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/botanic_garden/g30323.png}
+      \caption{Subfigure 2}
+      \label{fig:sub2}
+  \end{subfigure}
+  \hspace{0.02\textwidth}
+  \begin{subfigure}[b]{0.23\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/botanic_garden/g37120.png}
+      \caption{Subfigure 3}
+      \label{fig:sub3}
+  \end{subfigure}
+
+  \vspace{0.5cm} % Adds some vertical space between the rows
+
+  % Second row of 3 subfigures
+  \begin{subfigure}[b]{0.23\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/botanic_garden/g44109.png}
+      \caption{Subfigure 4}
+      \label{fig:sub4}
+  \end{subfigure}
+  \hspace{0.02\textwidth}
+  \begin{subfigure}[b]{0.23\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/botanic_garden/g49838.png}
+      \caption{Subfigure 5}
+      \label{fig:sub5}
+  \end{subfigure}
+  \hspace{0.02\textwidth}
+  \begin{subfigure}[b]{0.23\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/botanic_garden/g70360.png}
+      \caption{Subfigure 6}
+      \label{fig:sub6}
+  \end{subfigure}
+
+  \vspace{0.5cm} % Adds some vertical space between the rows
+
+  % Third row of 2 subfigures
+  \begin{subfigure}[b]{0.23\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/botanic_garden/g56365.png}
+      \caption{Subfigure 7}
+      \label{fig:sub7}
+  \end{subfigure}
+  \hspace{0.02\textwidth}
+  \begin{subfigure}[b]{0.23\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/botanic_garden/g65445.png}
+    \caption{Subfigure 8}
+    \label{fig:sub8}
+  \end{subfigure}
+
+  \caption{Main figure caption with 8 subfigures}
+  \label{fig:main2}
+\end{figure}
+
+    
+\begin{figure}[h!]
+  \centering
+  % First row of 3 subfigures
+  \begin{subfigure}[b]{0.23\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/urbanNav_10sec/g8810.png}
+      \caption{Subfigure 1}
+      \label{fig:sub1}
+  \end{subfigure}
+  \hspace{0.02\textwidth}
+  \begin{subfigure}[b]{0.23\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/urbanNav_10sec/g128268.png}
+      \caption{Subfigure 2}
+      \label{fig:sub2}
+  \end{subfigure}
+  \hspace{0.02\textwidth}
+  \begin{subfigure}[b]{0.23\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/urbanNav_10sec/g128273.png}
+      \caption{Subfigure 3}
+      \label{fig:sub3}
+  \end{subfigure}
+
+  \vspace{0.5cm} % Adds some vertical space between the rows
+
+  % Second row of 3 subfigures
+  \begin{subfigure}[b]{0.23\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/urbanNav_10sec/g128278.png}
+      \caption{Subfigure 4}
+      \label{fig:sub4}
+  \end{subfigure}
+  \hspace{0.02\textwidth}
+  \begin{subfigure}[b]{0.23\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/urbanNav_10sec/g128283.png}
+      \caption{Subfigure 5}
+      \label{fig:sub5}
+  \end{subfigure}
+  \hspace{0.02\textwidth}
+  \begin{subfigure}[b]{0.23\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/urbanNav_10sec/g137605.png}
+      \caption{Subfigure 6}
+      \label{fig:sub6}
+  \end{subfigure}
+
+  \vspace{0.5cm} % Adds some vertical space between the rows
+
+  % Third row of 2 subfigures
+  \begin{subfigure}[b]{0.23\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/urbanNav_10sec/g148660.png}
+      \caption{Subfigure 7}
+      \label{fig:sub7}
+  \end{subfigure}
+  \hspace{0.02\textwidth}
+  \begin{subfigure}[b]{0.23\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/urbanNav_10sec/g159265.png}
+      \caption{Subfigure 8}
+      \label{fig:sub8}
+  \end{subfigure}
+
+  \caption{Main figure caption with 8 subfigures}
+  \label{fig:main3}
+\end{figure}
+
+
+\begin{table}[h!]
+  \centering
+  \caption{Comparison of ground segmentation on SemanticKITTI sequence 00 with vegetation}
+  \resizebox{\columnwidth}{!}{%
+  \begin{tabular}{|p{3cm}|p{3cm}|p{3cm}|p{3cm}|p{3cm}|}
+  \hline
+   Algorithm & Precision \pm SD (\%) & Recall \pm SD (\%) & F1 (\%) & Time (ms)  \\
+  \hline
+  GPF & 94.95\pm4.99 & 79.02\pm27.2 & 86.26 & 13 \\ 
+  \hline
+  RGPF & 59.2\pm11.56 & 96.57\pm1.83 & 73.40 & 18 \\ 
+  \hline
+  RANSAC & 87.52\pm14.63 & 93.35\pm11.38 & 90.84 & 64  \\ 
+  \hline
+  LineFit & 98.15\pm0.97 & 83.05\pm9.94 & 89.97 & 7 \\ 
+  \hline
+  Patchwork & 92.34\pm3.31 & 94.61\pm3.44 & 93.46 & 17 \\ 
+  \hline
+  Patchwork++ & 94.62\pm2.76 & 98.73\pm1.10 & 96.62 & 11  \\ 
+  \hline
+  GroundGrid3D & 94.77\pm4.02 & 90.66\pm5.93 & 92.67 & 179\\ 
+  \hline
+\end{tabular}%
+  }
+  \label{tab:comparison_00_non_downsampled}
 \end{table}
+
+\begin{table}[h!]
+  \centering
+  \caption{Comparison of ground segmentation on SemanticKITTI sequence 00 with vegetation [Downsampled to 10 cm]}
+  \resizebox{\columnwidth}{!}{%
+  \begin{tabular}{|p{3cm}|p{3cm}|p{3cm}|p{3cm}|p{3cm}|}
+  \hline
+   Algorithm & Precision \pm SD (\%) & Recall \pm SD (\%) & F1 (\%) & Time (ms)  \\
+  \hline
+  GPF & 93.48\pm3.50 & 76.93\pm21.67  & 84.46 & 5 \\ 
+  \hline
+  RGPF & 52.61\pm9.35 & 93.59\pm2.92 & 67.35 & 8 \\ 
+  \hline
+  RANSAC & 83.82\pm12.88 & 92.17\pm7.90 & 87.80 & 28  \\ 
+  \hline
+  LineFit & 97.34\pm1.25  & 78.48\pm9.39  & 86.91 & 3 \\ 
+  \hline
+  Patchwork & 88.62\pm3.96 & 91.76\pm4.57 & 90.17 & 7 \\ 
+  \hline
+  Patchwork++ & 91.66\pm2.87 & 97.31\pm2.98 &  94.40 & 6  \\ 
+  \hline
+  GroundGrid3D & 93.81\pm4.42  & 85.45\pm6.42  & 89.44  & 80\\ 
+  \hline
+\end{tabular}%
+  }
+  \label{tab:comparison_00_downsampled}
+\end{table}
+
 
 \section*{Acknowledgment}
 \todo{Proudly presented by \ldots{} But funding should be mentioned in footnote on first page}

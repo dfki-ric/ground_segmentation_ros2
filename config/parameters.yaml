@@ -1,7 +1,13 @@
 ground_segmentation:
   ros__parameters:
     # pre processing
-    target_frame: "base_link"
+    #target_frame: "base_link"
+    #target_frame: "base_link/base_link"
+    target_frame: "velodyne"
+    #target_frame: "laser_data_frame"
+    #target_frame: "arter/base_link"
+    #target_frame: "zed2_left_camera_frame"
+    #target_frame: "ouster00"
     #target_frame: "map"
     #target_frame: "velodyne_top"
     #target_frame: "husky"
@@ -15,7 +21,7 @@ ground_segmentation:
     minY: -80.0
     maxZ:  80.0
     minZ: -80.0
-    downsample: true
+    downsample: false
     downsample_resolution: 0.1
 
     # ground detection
@@ -23,7 +29,7 @@ ground_segmentation:
     cellSizeY: 2.0
     cellSizeZ: 10.0
     startCellDistanceThreshold: 80.0
-    slopeThresholdDegrees: 20.0
+    slopeThresholdDegrees: 30.0
     groundInlierThreshold: 0.1
     neighborsIndexThreshold: 1
     minPoints: 5

@@ -90,6 +90,19 @@ void PointXYZILID2XYZI(pcl::PointCloud<PointXYZILID>& src,
   }
 }
 
+double cal_stdev(vector<double> v){
+    double sum = std::accumulate(v.begin(), v.end(), 0.0);
+    double mean = sum / v.size();
+
+    std::vector<double> diff(v.size());
+    std::transform(v.begin(), v.end(), diff.begin(), [mean](double x) { return x - mean; });
+    double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+    double stdev = std::sqrt(sq_sum / v.size());
+
+    return stdev;
+}
+
+
 int count_num_ground(const pcl::PointCloud<PointXYZILID>& pc){
   int num_ground = 0;
 
