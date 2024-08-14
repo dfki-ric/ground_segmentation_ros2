@@ -119,6 +119,8 @@ them into a processing pipeline to achieve effective ground segmentation in dive
     non-ground points \cite{Firkat2023}.
   \item Ground points can be used for traversability analysis, navigation, and
     static map generation.
+  \item A solution is needed which is independent of parameter tuning, sensor configuration,
+  and to an extend the type of environment.
 \end{itemize}
 
 
@@ -156,6 +158,20 @@ most significant differences and features that best suit the requirements of the
 on the traditional approaches. After analyzing the state-of-the-art, we decided
 to combine different approaches as a single solution by utilizing the best of
 all approach.
+
+\subsection{Key Challenges in the Existing Traditional Solutions}
+We noticed some key shortfalls in the existing solutions and aimed to come up with a solution which can solve the open challenges.
+Below we list some of the key challenges. The challenges were found out after careful experimentation of various datasets and sensor 
+configurations. We documented the challenges in the experimentaion section at the end of the paper.
+
+The key challenges faced when working with the existing state-of-the-art solutions are that they;
+\begin{itemize}
+  \item require fine tuning of many algorithm parameters for best performance.
+  \item have high degree of performance dependency on the type of sensor used for the point cloud.
+  \item are developed for the autonomous driving scenario with only a few solutions showcasing adequate performance
+        of rough terrains.
+  \item show good performance on the SemanticKITTI datset but do not adapt to other datasets from the autonomous driving domain.
+\end{itemize}
 
 Below we discuss some some key challenges which researches try to solve in the
 ground segmentation approaches and suggest our selected solution for it.
@@ -230,7 +246,7 @@ to square cells. Various types of polar grid cells have been researched.
 with a fixed grid size performs better than polar cells. The reason in our view
 is that as the distance from the sensor origin increases, the cells get bigger
 and as a concequence, results in the deterioration of the performance of the
-plane fitting based segmentation. \todo{TODO} How does CZH work in relation to this?
+plane fitting based segmentation.
 
 \subsection{False positive flat surfaces e.g. table top, car roof etc.}
 The gradient of the fitting plane to a grid cell can not be used as the sole
@@ -549,7 +565,7 @@ The seed cells are selected from the tentative Ground cells based on the followi
   \item \textbf{Final Seed Cells:} After the selection process, one seed cell is chosen from each of the four quadrants.
   \end{enumerate}
 
-\subsection{Region Growth}
+\subsection{Ground Region Growth}
 We recursively expand all ground neighbors of the seed cells. This region-wise growth process ensures that cells falsely 
 classified as ground cells (i.e., cells that meet the slope criteria but are not truly ground) are not included in the final result.
 
@@ -609,18 +625,41 @@ classification. This approach helps in reducing false positives and ensuring tha
 true nature of the environment.
 
 \section{Experiments}
-We tested our ground segmentation on various indoor and outdoor scenarios on a
-number of different robotic systems.
 
-\subsection{Experimental Setup}
-We test the algorithm on a various indoor and outdoor datasets. The key point in
-these tests is that we do not change the parameters of the algorithm. This is
-done to support our initial claim that the algorithm can work in various types
-of indoor and outdoor environments without the need to manually tune parameters.
-\subsection{Datasets and Evaluation Metrics}
+The experimentation was performed exclusively on datasets with real world point cloud data. We did not limit our experiementation merely to the SemanticKITTI
+dataset and carefully selected a diverse set of datasets. The datasets are from urban and natural environments and all datasets use a different sensor configuration.
+An ground segmentation solution must be able to perform well indepdently of the sensor configuration and without and parameter tuning. We also selected a handheld 
+dataset to test the adaptability to a changing height of the sensor. Most existing solutions require a sensor height as a parameter with the assumption that the height
+of the sensor is unchanged. This assumption does not hold in case of handheld or UAV based point cloud datasets.
 
-We test our solution on various available datasets with the same set of parameters.
-The parameters used are:
+\subsection{Performance Metrics}
+
+We use precision, recall and F1 score as a metrics to compare the algorithms. Not all datasets provided labelled point clouds, therefore the performance metrics were 
+collected only on the SemanticKITTI dataset. Visual analysis of ground segmentation results on other datasets was enough to compare the performance of the propose and
+state-of-the-art solutions.
+
+\begin{equation}
+\text{Precision} = \frac{\text{NTP}}{\text{NTP} + \text{NFP}}
+\end{equation}
+
+\begin{equation}
+\text{Recall} = \frac{\text{NTP}}{\text{NTP} + \text{NFN}}
+\end{equation}
+
+\begin{equation}
+\text{F1 Score} = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}
+\end{equation}
+
+Where:
+\begin{enumerate}
+  \item NTP = Number of True Positives (correctly predicted positives)
+  \item NFP = Number of False Positives (incorrectly predicted positives)
+  \item NFN = Number of False Negatives (positives that were incorrectly predicted as negative) 
+\end{enumerate}
+
+\subsection{Parameters}
+One of our main objectives was to develop and algorithm which does not require parameter tuning. We achieved our target and
+all the experimantal results from various datasets use a single set of parameters.
 
 \begin{table}[h!]
   \centering
@@ -642,7 +681,8 @@ The parameters used are:
   \hline
   \textbf{groundInlierThreshold} & 0.1 & Inlier threshold (in meters) for the plane model fitting to points in a grid cell. \\ 
   \hline
-  \textbf{neighborsIndexThreshold} & 1 & Number of neighbors analyzed for neighborhood analysis. \\
+  \textbf{neighborsIndexThreshold} & 1 & Number of neighbors analyzed for neighborhood analysis. A value of 1 means that a single layer
+                                         of neighbors (comprising of 24 neighbors) are evaluated. \\
   \hline
   \textbf{minPoints} & 5 & Minimum number of points assigned to a cell for plane model fitting. \\
   \hline
@@ -652,6 +692,11 @@ The parameters used are:
   }
   \label{tab:parameters}
 \end{table}
+
+\subsection{Datasets}
+We used a varied set of available datasets to test the adaptability of GroundGrid3D to new sensors and environments. The datasets provide data from
+urban and natural environments. Each dataset uses a different type of sensors. The platforms used for data collection are Car, Mobile Robot and Handheld.
+Our solution is independent of the sensor height or sensor type but most of the other state-of-the-art solutions depend on them. 
 
 \begin{table}[h!]
   \centering
@@ -675,7 +720,6 @@ The parameters used are:
   }
   \label{tab:phase_behavior}
   \end{table}
-
 
 \subsubsection{KITTI}
 The KITTI dataset \cite{Geiger2013IJRR} is a comprehensive collection of real-world data designed to
