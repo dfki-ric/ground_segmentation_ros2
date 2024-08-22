@@ -1,9 +1,9 @@
 ground_segmentation:
   ros__parameters:
     # pre processing
-    #target_frame: "base_link"
+    target_frame: "base_link"
     #target_frame: "base_link/base_link"
-    target_frame: "velodyne"
+    #target_frame: "velodyne"
     #target_frame: "laser_data_frame"
     #target_frame: "arter/base_link"
     #target_frame: "zed2_left_camera_frame"
@@ -27,9 +27,9 @@ ground_segmentation:
     # ground detection
     cellSizeX: 2.0
     cellSizeY: 2.0
-    cellSizeZ: 10.0
+    cellSizeZ: 4.0
     startCellDistanceThreshold: 80.0
-    slopeThresholdDegrees: 30.0
+    slopeThresholdDegrees: 20.0
     groundInlierThreshold: 0.1
     neighborsIndexThreshold: 1
     minPoints: 5
