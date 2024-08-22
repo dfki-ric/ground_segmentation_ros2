@@ -83,7 +83,7 @@ public:
         publisher_start_cells = this->create_publisher<visualization_msgs::msg::MarkerArray>("/ground_segmentation/start_cells", 10);
 
         pub_tp = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/TP", 10);
-        pub_fn = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/TN", 10);
+        pub_fn = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/FN", 10);
         pub_fp = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/FP", 10);
 
         pre_grid_map_publisher = this->create_publisher<ground_segmentation::msg::GridMap>("/ground_segmentation/pre_grid_map", 10);
@@ -371,10 +371,10 @@ private:
             pcl::PointCloud<PointType> FP;
             pcl::PointCloud<PointType> FN;
             pcl::PointCloud<PointType> TN;
-            discern_ground(*final_ground_points, TP, FP);
-            //discern_ground_without_vegetation(*final_ground_points, TP, FP);
-            discern_ground(*final_non_ground_points, FN, TN);
-            //discern_ground_without_vegetation(*final_non_ground_points, FN, TN);
+            //discern_ground(*final_ground_points, TP, FP);
+            discern_ground_without_vegetation(*final_ground_points, TP, FP);
+            //discern_ground(*final_non_ground_points, FN, TN);
+            discern_ground_without_vegetation(*final_non_ground_points, FN, TN);
 
             //Print TPFN
             cout << "TP: " << TP.points.size();
