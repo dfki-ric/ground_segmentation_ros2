@@ -114,8 +114,6 @@ public:
         pre_processor_config.ransac_iterations = ransac_iterations;
 
         post_processor_config = pre_processor_config;
-        //post_processor_config.cellSizeX = 0.7;
-        //post_processor_config.cellSizeY = 0.7;
         post_processor_config.cellSizeZ = 0.2;
         post_processor_config.processing_phase = 2;
 
@@ -406,12 +404,26 @@ private:
         }
 
         if (show_seed_cells){
+
+            auto grid_cells = pre_processor->getGridCells();
+
             visualization_msgs::msg::MarkerArray markers;
-            std::vector<pointcloud_obstacle_detection::GridCell<PointType>> pre_start_cells  = pre_processor->getStartCells();
-            std::vector<pointcloud_obstacle_detection::GridCell<PointType>> post_start_cells = post_processor->getStartCells();
+            std::vector<Index3D> pre_start_cells  = pre_processor->getStartCellsFront();
+            std::vector<Index3D> post_start_cells = post_processor->getStartCellsBack();
+
+            std::vector<Index3D> combined;
+            combined.reserve(pre_start_cells.size() + post_start_cells.size()); // Allocate memory to avoid reallocations
+
+            // Copy vec1 and vec2 into combined
+            std::copy(pre_start_cells.begin(), pre_start_cells.end(), std::back_inserter(combined));
+            std::copy(post_start_cells.begin(), post_start_cells.end(), std::back_inserter(combined));
+
             int marker_count{0};
-            for (const auto& start_cell : post_start_cells){
+            for (const auto& start_cell_id : combined){
                 // Creating the marker and initialising its fields
+
+                auto start_cell = grid_cells[start_cell_id];
+
                 geometry_msgs::msg::Pose pose;
                 pose.position.x = start_cell.centroid.x();
                 pose.position.y = start_cell.centroid.y();
@@ -443,6 +455,7 @@ private:
             publisher_start_cells->publish(markers);
         }
 
+
         ground_segmentation::msg::GridMap pre_grid_map_msg;
         pre_grid_map_msg.cell_size_x = pre_processor_config.cellSizeX;
         pre_grid_map_msg.cell_size_y = pre_processor_config.cellSizeY;
@@ -450,31 +463,27 @@ private:
         pre_grid_map_msg.header.frame_id = this->get_parameter("target_frame").as_string();
 
         RCLCPP_INFO_STREAM(this->get_logger(), "Reading Grid Map");
+
         auto pre_grid_cells = pre_processor->getGridCells();
 
-        for (auto& rowPair : pre_grid_cells){
-            for (auto& colPair : rowPair.second){
-                for (auto& heightPair : colPair.second){
-                    pointcloud_obstacle_detection::GridCell<PointType>& cell = heightPair.second;
+        for (auto& cellPair : pre_grid_cells){
+            auto& cell = cellPair.second;
 
-                    if (cell.points->size() < 1){
-                        continue;
-                    }
-
-                    ground_segmentation::msg::GridCell cell_msg;
-
-                    cell_msg.position.x = cell.row * pre_processor_config.cellSizeX;
-                    cell_msg.position.y = cell.col * pre_processor_config.cellSizeY;
-                    cell_msg.position.z = cell.height * pre_processor_config.cellSizeZ;
-
-                    cell_msg.color.r = 0;
-                    cell_msg.color.g = 1;
-                    cell_msg.color.b = 0;
-                    cell_msg.color.a = 1;
-
-                    pre_grid_map_msg.cells.push_back(cell_msg);
-                }
+            if (cell.points->size() < 1){
+                continue;
             }
+            ground_segmentation::msg::GridCell cell_msg;
+
+            cell_msg.position.x = cell.x * pre_processor_config.cellSizeX;
+            cell_msg.position.y = cell.y * pre_processor_config.cellSizeY;
+            cell_msg.position.z = cell.z * pre_processor_config.cellSizeZ;
+
+            cell_msg.color.r = 0;
+            cell_msg.color.g = 1;
+            cell_msg.color.b = 0;
+            cell_msg.color.a = 1;
+
+            pre_grid_map_msg.cells.push_back(cell_msg);
         }
 
         pre_grid_map_publisher->publish(pre_grid_map_msg);
@@ -488,29 +497,25 @@ private:
         RCLCPP_INFO_STREAM(this->get_logger(), "Reading Grid Map");
         auto post_grid_cells = post_processor->getGridCells();
 
-        for (auto& rowPair : post_grid_cells){
-            for (auto& colPair : rowPair.second){
-                for (auto& heightPair : colPair.second){
-                    pointcloud_obstacle_detection::GridCell<PointType>& cell = heightPair.second;
+        for (auto& cellPair : post_grid_cells){
+            auto& cell = cellPair.second;
 
-                    if (cell.points->size() < 1){
-                        continue;
-                    }
-
-                    ground_segmentation::msg::GridCell cell_msg;
-
-                    cell_msg.position.x = cell.row * post_processor_config.cellSizeX;
-                    cell_msg.position.y = cell.col * post_processor_config.cellSizeY;
-                    cell_msg.position.z = cell.height * post_processor_config.cellSizeZ;
-
-                    cell_msg.color.r = 0;
-                    cell_msg.color.g = 1;
-                    cell_msg.color.b = 0;
-                    cell_msg.color.a = 1;
-                    
-                    post_grid_map_msg.cells.push_back(cell_msg);
-                }
+            if (cell.points->size() < 1){
+                continue;
             }
+
+            ground_segmentation::msg::GridCell cell_msg;
+
+            cell_msg.position.x = cell.x * post_processor_config.cellSizeX;
+            cell_msg.position.y = cell.y * post_processor_config.cellSizeY;
+            cell_msg.position.z = cell.z * post_processor_config.cellSizeZ;
+
+            cell_msg.color.r = 0;
+            cell_msg.color.g = 1;
+            cell_msg.color.b = 0;
+            cell_msg.color.a = 1;
+            
+            post_grid_map_msg.cells.push_back(cell_msg);
         }
 
         post_grid_map_publisher->publish(post_grid_map_msg);
