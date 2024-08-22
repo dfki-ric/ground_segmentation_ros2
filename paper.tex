@@ -399,19 +399,20 @@ cells into three categories.
 
 \begin{description}[style=nextline]
   \item[Line Cell]
-  A high ratio in range [0.9, 1.0] indicates that $\lambda_1$ is significantly larger than $\lambda_2$ and $\lambda_3$, which suggests that the points 
+  A high ratio in range $[0.9, 1.0]$ indicates that $\lambda_1$ is significantly larger than $\lambda_2$ and $\lambda_3$, which suggests that the points 
   are distributed along a line. In this case, the distribution is highly elongated along one direction with minimal variation 
   in the other directions.
-  
+%
   \item[Plane Cell]
-  A ratio in this range [0.4, 0.9) indicates that $\lambda_1$ is moderately larger than $\lambda_2$ and $\lambda_3$, suggesting that the points 
+  A ratio in this range $[0.4, 0.9)$ indicates that $\lambda_1$ is moderately larger than $\lambda_2$ and $\lambda_3$, suggesting that the points 
   are more aligned with a planar surfaceFinal Ground Segmentation
-
+%
   \item[Non-Plane Cell]
-  A ratio in this range [0.4, 0.9) indicates that $\lambda_1$ is moderately larger than $\lambda_2$ and $\lambda_3$, suggesting that the points 
+  A ratio in this range $[0.4, 0.9)$ indicates that $\lambda_1$ is moderately larger than $\lambda_2$ and $\lambda_3$, suggesting that the points 
   are more aligned with a planar surfaceFinal Ground Segmentation
 \end{description}
 
+\begin{table}
 \begin{tabular}{@{}ll@{}}
 \toprule
 \textbf{Cell Type} & \textbf{Threshold} \\
@@ -420,9 +421,9 @@ Line Cell      & $> 0.95$ \\
 Plane Cell     & $\ge 0.40$ \\
 Non-Plane Cell   & $< 0.40$ \\
 \bottomrule
+\end{tabular}
 \caption{Largest eigen to the sum ratio}
 \label{tab:eigen-ratio}
-\end{tabular}
 \end{table}
 
 Each type of cell is processed using a distinct algorithm, and we refer to these cells as Line, Plane, and Non-Planar cells:
@@ -984,58 +985,41 @@ understanding complex 3D structures and diverse landscapes is crucial.
   \label{fig:main3}
 \end{figure}
 
-
-\begin{table}[h!]
+\begin{table}[tbp]
   \centering
   \caption{Comparison of ground segmentation on SemanticKITTI sequence 00 with vegetation}
-  \resizebox{\columnwidth}{!}{%
-  \begin{tabular}{|p{3cm}|p{3cm}|p{3cm}|p{3cm}|p{3cm}|}
-  \hline
-   Algorithm & Precision \pm SD (\%) & Recall \pm SD (\%) & F1 (\%) & Time (ms)  \\
-  \hline
-  GPF & 94.95\pm4.99 & 79.02\pm27.2 & 86.26 & 13 \\ 
-  \hline
-  RGPF & 59.2\pm11.56 & 96.57\pm1.83 & 73.40 & 18 \\ 
-  \hline
-  RANSAC & 87.52\pm14.63 & 93.35\pm11.38 & 90.84 & 64  \\ 
-  \hline
-  LineFit & 98.15\pm0.97 & 83.05\pm9.94 & 89.97 & 7 \\ 
-  \hline
-  Patchwork & 92.34\pm3.31 & 94.61\pm3.44 & 93.46 & 17 \\ 
-  \hline
-  Patchwork++ & 94.62\pm2.76 & 98.73\pm1.10 & 96.62 & 11  \\ 
-  \hline
-  GroundGrid3D & 94.77\pm4.02 & 90.66\pm5.93 & 92.67 & 179\\ 
-  \hline
-\end{tabular}%
-  }
   \label{tab:comparison_00_non_downsampled}
+  \begin{tabular}{@{}ll@{\ \ }l@{\ \ }l@{\ \ }r@{}}
+  \toprule
+   Algorithm   & Precision$\pm$SD (\%) & Recall$\pm$SD (\%) & F1 (\%) & Time (ms)  \\
+\midrule
+  GPF          & $94.95\pm 4.99$ & $79.02\pm27.20$ & 86.26 & 13 \\ 
+  RGPF         & $59.20\pm11.56$ & $96.57\pm 1.83$ & 73.40 & 18 \\ 
+  RANSAC       & $87.52\pm14.63$ & $93.35\pm11.38$ & 90.84 & 64  \\ 
+  LineFit      & $98.15\pm 0.97$ & $83.05\pm 9.94$ & 89.97 & 7 \\ 
+  Patchwork    & $92.34\pm 3.31$ & $94.61\pm 3.44$ & 93.46 & 17 \\ 
+  Patchwork++  & $94.62\pm 2.76$ & $98.73\pm 1.10$ & 96.62 & 11  \\ 
+  GroundGrid3D & $94.77\pm 4.02$ & $90.66\pm 5.93$ & 92.67 & 179\\ 
+  \bottomrule
+\end{tabular}%
 \end{table}
 
-\begin{table}[h!]
+\begin{table}[tbp]
   \centering
   \caption{Comparison of ground segmentation on SemanticKITTI sequence 00 with vegetation [Downsampled to 10 cm]}
-  \resizebox{\columnwidth}{!}{%
-  \begin{tabular}{|p{3cm}|p{3cm}|p{3cm}|p{3cm}|p{3cm}|}
-  \hline
-   Algorithm & Precision \pm SD (\%) & Recall \pm SD (\%) & F1 (\%) & Time (ms)  \\
-  \hline
-  GPF & 93.48\pm3.50 & 76.93\pm21.67  & 84.46 & 5 \\ 
-  \hline
-  RGPF & 52.61\pm9.35 & 93.59\pm2.92 & 67.35 & 8 \\ 
-  \hline
-  RANSAC & 83.82\pm12.88 & 92.17\pm7.90 & 87.80 & 28  \\ 
-  \hline
-  LineFit & 97.34\pm1.25  & 78.48\pm9.39  & 86.91 & 3 \\ 
-  \hline
-  Patchwork & 88.62\pm3.96 & 91.76\pm4.57 & 90.17 & 7 \\ 
-  \hline
-  Patchwork++ & 91.66\pm2.87 & 97.31\pm2.98 &  94.40 & 6  \\ 
-  \hline
-  GroundGrid3D & 93.81\pm4.42  & 85.45\pm6.42  & 89.44  & 80\\ 
-  \hline
+  \begin{tabular}{@{}ll@{\ \ }l@{\ \ }l@{\ \ }r@{}}
+  \toprule
+   Algorithm & Precision$\pm$SD (\%) & Recall$\pm$SD (\%) & F1 (\%) & Time (ms)  \\
+\midrule
+  GPF          & $93.48\pm3.50$ & $76.93\pm21.67$& 84.46 & 5 \\ 
+  RGPF         & $52.61\pm9.35$ & $93.59\pm2.92$ & 67.35 & 8 \\ 
+  RANSAC       & $83.82\pm12.88$& $92.17\pm7.90$ & 87.80 & 28  \\ 
+  LineFit      & $97.34\pm1.25$ & $78.48\pm9.39$ & 86.91 & 3 \\ 
+  Patchwork    & $88.62\pm3.96$ & $91.76\pm4.57$ & 90.17 & 7 \\ 
+  Patchwork++  & $91.66\pm2.87$ & $97.31\pm2.98$ & 94.40 & 6  \\ 
+  GroundGrid3D & $93.81\pm4.42$ & $85.45\pm6.42$ & 89.44 & 80\\ 
+  \bottomrule
 \end{tabular}%
-  }
   \label{tab:comparison_00_downsampled}
 \end{table}
 
