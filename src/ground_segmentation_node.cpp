@@ -114,7 +114,7 @@ public:
         pre_processor_config.ransac_iterations = ransac_iterations;
 
         post_processor_config = pre_processor_config;
-        post_processor_config.cellSizeZ = 0.2;
+        post_processor_config.cellSizeZ = 0.5;
         post_processor_config.processing_phase = 2;
 
         pre_processor = std::make_unique<PointCloudGrid<PointType>>(pre_processor_config);
@@ -405,21 +405,13 @@ private:
 
         if (show_seed_cells){
 
-            auto grid_cells = pre_processor->getGridCells();
+            auto grid_cells = post_processor->getGridCells();
 
             visualization_msgs::msg::MarkerArray markers;
-            std::vector<Index3D> pre_start_cells  = pre_processor->getStartCellsFront();
-            std::vector<Index3D> post_start_cells = post_processor->getStartCellsBack();
-
-            std::vector<Index3D> combined;
-            combined.reserve(pre_start_cells.size() + post_start_cells.size()); // Allocate memory to avoid reallocations
-
-            // Copy vec1 and vec2 into combined
-            std::copy(pre_start_cells.begin(), pre_start_cells.end(), std::back_inserter(combined));
-            std::copy(post_start_cells.begin(), post_start_cells.end(), std::back_inserter(combined));
+            std::vector<Index3D> post_start_cells = post_processor->getSeedCells();
 
             int marker_count{0};
-            for (const auto& start_cell_id : combined){
+            for (const auto& start_cell_id : post_start_cells){
                 // Creating the marker and initialising its fields
 
                 auto start_cell = grid_cells[start_cell_id];
@@ -428,6 +420,7 @@ private:
                 pose.position.x = start_cell.centroid.x();
                 pose.position.y = start_cell.centroid.y();
                 pose.position.z = start_cell.centroid.z();
+                
                 pose.orientation.x = 0;
                 pose.orientation.y = 0;
                 pose.orientation.z = 0;
