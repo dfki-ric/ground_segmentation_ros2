@@ -1,11 +1,11 @@
 ground_segmentation:
   ros__parameters:
     # pre processing
-    target_frame: "base_link"
+    #target_frame: "base_link"
     #target_frame: "base_link/base_link"
     #target_frame: "velodyne"
     #target_frame: "laser_data_frame"
-    #target_frame: "arter/base_link"
+    target_frame: "arter/base_link"
     #target_frame: "zed2_left_camera_frame"
     #target_frame: "ouster00"
     #target_frame: "map"
@@ -27,13 +27,10 @@ ground_segmentation:
     # ground detection
     cellSizeX: 2.0
     cellSizeY: 2.0
-    cellSizeZ: 4.0
+    cellSizeZ: 10.0
     startCellDistanceThreshold: 10.0
     slopeThresholdDegrees: 30.0
     groundInlierThreshold: 0.1
-    neighborsIndexThreshold: 3
-    minPoints: 5
-    ransac_iterations: 1000
 
     #post processing
     use_convex_hulls_3d: false

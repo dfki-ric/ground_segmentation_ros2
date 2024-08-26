@@ -95,9 +95,6 @@ public:
         double startCellDistanceThreshold = this->get_parameter("startCellDistanceThreshold").as_double();
         double slopeThresholdDegrees = this->get_parameter("slopeThresholdDegrees").as_double();
         double groundInlierThreshold = this->get_parameter("groundInlierThreshold").as_double();
-        double neighborsIndexThreshold = this->get_parameter("neighborsIndexThreshold").as_int();
-        double minPoints = this->get_parameter("minPoints").as_int();
-        double ransac_iterations = this->get_parameter("ransac_iterations").as_int();
 
         use_convex_hulls_3d = this->get_parameter("use_convex_hulls_3d").as_bool();
         show_benchmark = this->get_parameter("show_benchmark").as_bool();
@@ -109,9 +106,6 @@ public:
         pre_processor_config.startCellDistanceThreshold = startCellDistanceThreshold;
         pre_processor_config.slopeThresholdDegrees = slopeThresholdDegrees;
         pre_processor_config.groundInlierThreshold = groundInlierThreshold;             
-        pre_processor_config.neighborsIndexThreshold = neighborsIndexThreshold;
-        pre_processor_config.minPoints = minPoints;
-        pre_processor_config.ransac_iterations = ransac_iterations;
 
         post_processor_config = pre_processor_config;
         post_processor_config.cellSizeZ = 0.5;
