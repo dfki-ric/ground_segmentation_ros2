@@ -628,19 +628,20 @@ true nature of the environment.
 \section{Experiments}
 
 The experimentation was performed exclusively on datasets with real world point cloud data. We did not limit our experiementation merely to the SemanticKITTI
-dataset and carefully selected a diverse set of datasets. The datasets are from urban and natural environments and all datasets use a different sensor configuration.
-An ground segmentation solution must be able to perform well indepdently of the sensor configuration and without and parameter tuning. We also selected a handheld 
-dataset to test the adaptability to a changing height of the sensor. Most existing solutions require a sensor height as a parameter with the assumption that the height
-of the sensor is unchanged. This assumption does not hold in case of handheld or UAV based point cloud datasets.
+dataset. We selected a diverse set of datasets from urban and natural environments. Additonally, the datasets use a different sensor type of sensor and configuration.
+n ground segmentation solution must be able to perform robustly for various sensor types and configurations without parameter tuning. To showcase that our solution is not
+bound to a sensor height, we selected a handheld dataset to test the adaptability of our ground segmentation to a changing height of the sensor. In contrast, most existing 
+solutions require a sensor height as a parameter with the assumption that the height of the sensor is unchanged. This assumption does not hold in case of handheld or UAV 
+based point cloud datasets. Futhermore, the constant sensor height assumption does not hold for mobile robots with the capability to change their height.
 
 \subsection{Performance Metrics}
 
 We use precision, recall and F1 score as a metrics to compare the algorithms. Not all datasets provided labelled point clouds, therefore the performance metrics were 
-collected only on the SemanticKITTI dataset. Visual analysis of ground segmentation results on other datasets was enough to compare the performance of the propose and
+collected only on the SemanticKITTI dataset. Visual analysis of ground segmentation results on other datasets was enough to compare the performance of GroundGrid3D and
 state-of-the-art solutions.
 
 \begin{equation}
-\text{Precision} = \frac{\text{NTP}}{\text{NTP} + \text{NFP}}
+\text{Precision} = \frac{\text{NTP}}{\text{NTP} + \text{NFP}}the proposed
 \end{equation}
 
 \begin{equation}
@@ -660,7 +661,7 @@ Where:
 
 \subsection{Parameters}
 One of our main objectives was to develop and algorithm which does not require parameter tuning. We achieved our target and
-all the experimantal results from various datasets use a single set of parameters.
+all the experimantal results from various datasets use a single set of parameters. 
 
 \begin{table}[h!]
   \centering
@@ -670,24 +671,17 @@ all the experimantal results from various datasets use a single set of parameter
   \hline
   \textbf{Parameter} & \textbf{Value} & \textbf{Description} \\
   \hline
-  \textbf{(maxX, minX, maxY, minY, maxZ, minZ)} & (500, -500, 500, -500, 500, -500) & Region of interest (in meters) of the point cloud in Euclidean space. \\ 
+  \textbf{(maxX, minX, maxY, minY, maxZ, minZ)} & (80, -80, 80, -80, 80, -80) & Region of interest (in meters) of the point cloud in Euclidean space. \\ 
   \hline
-  \textbf{downsample} & True & Toggle to downsample the point cloud to a user-defined resolution in meters. \\ 
+  \textbf{downsample} & False & Toggle to downsample the point cloud to a user-defined resolution in meters. \\ 
   \hline
   \textbf{downsample\_resolution} & 0.1 & Point cloud is downsampled to 10 cm. \\ 
   \hline
   \textbf{(cellSizeX, cellSizeY, cellSizeZ)} & (2, 2, 10) & Size (in meters) of the grid cell in three-dimensional space. \\ 
   \hline
-  \textbf{startCellDistanceThreshold} & 80 & Maximum distance for selection of seed cells used as start cells for region growing. \\
+  \textbf{startCellDistanceThreshold} & 10 & Maximum distance for selection of seed cells used as start cells for region growing. \\
   \hline
   \textbf{groundInlierThreshold} & 0.1 & Inlier threshold (in meters) for the plane model fitting to points in a grid cell. \\ 
-  \hline
-  \textbf{neighborsIndexThreshold} & 1 & Number of neighbors analyzed for neighborhood analysis. A value of 1 means that a single layer
-                                         of neighbors (comprising of 24 neighbors) are evaluated. \\
-  \hline
-  \textbf{minPoints} & 5 & Minimum number of points assigned to a cell for plane model fitting. \\
-  \hline
-  \textbf{ransac\_iterations} & 1000 & Number of iterations of RANSAC for plane model fitting. \\
   \hline
   \end{tabular}%
   }
@@ -697,7 +691,6 @@ all the experimantal results from various datasets use a single set of parameter
 \subsection{Datasets}
 We used a varied set of available datasets to test the adaptability of GroundGrid3D to new sensors and environments. The datasets provide data from
 urban and natural environments. Each dataset uses a different type of sensors. The platforms used for data collection are Car, Mobile Robot and Handheld.
-Our solution is independent of the sensor height or sensor type but most of the other state-of-the-art solutions depend on them. 
 
 \begin{table}[h!]
   \centering
@@ -707,23 +700,23 @@ Our solution is independent of the sensor height or sensor type but most of the 
   \hline
   \textbf{Dataset} & \textbf{Environment} & \textbf{Sensor} & \textbf{Year} & \textbf{Platform} & \textbf{Sensor Height (m)}\\
   \hline
-  \textbf{KITTI \cite{todo}} & Urban & Velodyne HDL-64E & 2013 & Car & 1.723 \\ 
+  \textbf{SemanticKITTI \cite{todo}} & Urban & Velodyne HDL-64E & 2013 & Car & 1.723 \\ 
   \hline
-  \textbf{UrbanNav \cite{todo}} & Urban & Velodyne HDL-32E & 2021 & Car & 1.832 \\ 
+  \textbf{UrbanNav \cite{todo}} & Urban & Velodyne HDL-32E & 2021 & Car & 2.1 \\ 
   \hline
   \textbf{DOALS \cite{todo}} & Urban & Ouster OS0 128 & 2021 & Handheld & 2 \\ 
   \hline
-  \textbf{BotanicGarden \cite{todo}} & Natural  & Velodyne VLP-16 & 2024 & Mobile Robot & 1.164 \\
+  \textbf{RELLIS-3D \cite{todo}} & Natural & Ouster OS1 64 & 2022 & Mobile Robot & 1.16 \\
   \hline
-  \textbf{RELLIS-3D \cite{todo}} & Natural & Velodyne VLP-32C & 2022 & Mobile Robot &  \\
+  \textbf{BotanicGarden \cite{todo}} & Natural  & Velodyne VLP-16 & 2024 & Mobile Robot & 1.164 \\
   \hline
   \end{tabular}%
   }
   \label{tab:phase_behavior}
   \end{table}
 
-\subsubsection{KITTI}
-The KITTI dataset \cite{Geiger2013IJRR} is a comprehensive collection of real-world data designed to
+\subsubsection{SemanticKITTI}
+The SemanticKITTI dataset \cite{Geiger2013IJRR} is a comprehensive collection of real-world data designed to
 facilitate research in autonomous driving and computer vision. Collected by the
 Karlsruhe Institute of Technology and the Toyota Technological Institute at
 Chicago, it includes data captured from a vehicle equipped with various sensors,
@@ -766,223 +759,68 @@ understanding complex 3D structures and diverse landscapes is crucial.
 
 \section{Results and Discussion}
 
-\begin{figure}
+\begin{figure}[h!]
   \centering
-  \includegraphics[width=\linewidth]{urban_nav_all.png}
-  \caption{UrbanNav: UrbanNav Hong Kong Tunnel}
-  \label{fig:urban_nav_all}
-\end{figure}
-
-\begin{figure}
-  \centering
-  \includegraphics[width=\linewidth]{nierendorf_final.png}
-  \caption{DOALS: Nierendorf}
-  \label{fig:nierendorf_final}
-\end{figure}
-
-\begin{figure}
-  \centering
-  \includegraphics[width=\linewidth]{bg_all.png}
-  \caption{BotanicGarden: ?}
-  \label{fig:bg_all}
-\end{figure}
-
-\begin{figure}
-  \centering
-  \includegraphics[width=\linewidth]{r3d_all.png}
-  \caption{RELLIES-3D: ?}
-  \label{fig:r3d_all}
+  \begin{subfigure}[b]{0.5\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/graphs/00.jpg}
+      \label{fig:subfig1}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.5\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/graphs/01.jpg}
+      \label{fig:subfig2}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.5\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/graphs/04.jpg}
+      \label{fig:subfig3}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.5\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/graphs/09.jpg}
+      \label{fig:subfig4}
+  \end{subfigure}
+  \caption{A main caption describing all four subfigures}
+  \label{fig:main_fig}
 \end{figure}
 
 \begin{figure}[h!]
   \centering
-  \begin{subfigure}[b]{0.23\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{figures/00_499/gpf.png}
-    \caption{Subfigure 1}
-    \label{fig:sub1}
-  \end{subfigure}
-  \hspace{0.02\textwidth}
-  \begin{subfigure}[b]{0.23\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{figures/00_499/rgpf.png}
-    \caption{Subfigure 2}
-    \label{fig:sub2}
-  \end{subfigure}
-  \hspace{0.02\textwidth}
-  \begin{subfigure}[b]{0.23\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{figures/00_499/linefit.png}
-    \caption{Subfigure 3}
-    \label{fig:sub3}
-  \end{subfigure}
-  
-  \vspace{0.5cm} % Adds some vertical space between the rows
-  
-  \begin{subfigure}[b]{0.23\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{figures/00_499/ransac.png}
-    \caption{Subfigure 4}
-    \label{fig:sub4}
-  \end{subfigure}
-  \hspace{0.02\textwidth}
-  \begin{subfigure}[b]{0.23\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{figures/00_499/patchwork.png}
-    \caption{Subfigure 5}
-    \label{fig:sub5}
-  \end{subfigure}
-  \hspace{0.02\textwidth}
-  \begin{subfigure}[b]{0.23\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{figures/00_499/patchworkpp.png}
-    \caption{Subfigure 6}
-    \label{fig:sub6}
-  \end{subfigure}
-  
-  \vspace{0.5cm} % Adds some vertical space between the rows
-  
-  \begin{subfigure}[b]{0.23\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{figures/00_499/groundgrid3d.png}
-    \caption{Subfigure 7}
-    \label{fig:sub7}
-  \end{subfigure}
-  \caption{Main figure caption with 8 subfigures}
-  \label{fig:main1}
-  \end{figure}  
-
-\begin{figure}[h!]
-  \centering
-  \begin{subfigure}[b]{0.23\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/botanic_garden/input.png}
-      \caption{Subfigure 1}
-      \label{fig:sub1}
-  \end{subfigure}
-  \hspace{0.02\textwidth}
-  \begin{subfigure}[b]{0.23\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/botanic_garden/gpf.png}
-      \caption{Subfigure 2}
-      \label{fig:sub2}
-  \end{subfigure}
-  \hspace{0.02\textwidth}
-  \begin{subfigure}[b]{0.23\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/botanic_garden/rgpf.png}
-      \caption{Subfigure 3}
-      \label{fig:sub3}
-  \end{subfigure}
-
-  \vspace{0.5cm} % Adds some vertical space between the rows
-
-  \begin{subfigure}[b]{0.23\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/botanic_garden/linefit.png}
-      \caption{Subfigure 4}
-      \label{fig:sub4}
-  \end{subfigure}
-  \hspace{0.02\textwidth}
-  \begin{subfigure}[b]{0.23\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/botanic_garden/ransac.png}
-      \caption{Subfigure 5}
-      \label{fig:sub5}
-  \end{subfigure}
-  \hspace{0.02\textwidth}
-  \begin{subfigure}[b]{0.23\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/botanic_garden/patchwork.png}
-      \caption{Subfigure 6}
-      \label{fig:sub6}
-  \end{subfigure}
-
-  \vspace{0.5cm} % Adds some vertical space between the rows
-
-  \begin{subfigure}[b]{0.23\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/botanic_garden/patchworkpp.png}
-      \caption{Subfigure 7}
-      \label{fig:sub7}
-  \end{subfigure}
-  \hspace{0.02\textwidth}
-  \begin{subfigure}[b]{0.23\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{figures/botanic_garden/groundgrid3d.png}
-    \caption{Subfigure 8}
-    \label{fig:sub8}
-  \end{subfigure}
-
-  \caption{Main figure caption with 8 subfigures}
-  \label{fig:main2}
+  \includegraphics[width=0.5\textwidth]{figures/grouped_figures/botanic_garden_all.png}
+  \caption{BotanicGarden}
+  \label{fig:botanic_garden}
 \end{figure}
 
-    
 \begin{figure}[h!]
   \centering
-  \begin{subfigure}[b]{0.23\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/urbanNav_10sec/input.png}
-      \caption{Subfigure 1}
-      \label{fig:sub1}
-  \end{subfigure}
-  \hspace{0.02\textwidth}
-  \begin{subfigure}[b]{0.23\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/urbanNav_10sec/gpf.png}
-      \caption{Subfigure 2}
-      \label{fig:sub2}
-  \end{subfigure}
-  \hspace{0.02\textwidth}
-  \begin{subfigure}[b]{0.23\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/urbanNav_10sec/rgpf.png}
-      \caption{Subfigure 3}
-      \label{fig:sub3}
-  \end{subfigure}
+  \includegraphics[width=0.5\textwidth]{figures/grouped_figures/doals_all.png}
+  \caption{DOALS}
+  \label{fig:doals}
+\end{figure}
 
-  \vspace{0.5cm} % Adds some vertical space between the rows
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.5\textwidth]{figures/grouped_figures/kitti_all.png}
+  \caption{SemanticKITTI}
+  \label{fig:single_fig}
+\end{figure}
 
-  \begin{subfigure}[b]{0.23\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/urbanNav_10sec/linefit.png}
-      \caption{Subfigure 4}
-      \label{fig:sub4}
-  \end{subfigure}
-  \hspace{0.02\textwidth}
-  \begin{subfigure}[b]{0.23\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/urbanNav_10sec/ransac.png}
-      \caption{Subfigure 5}
-      \label{fig:sub5}
-  \end{subfigure}
-  \hspace{0.02\textwidth}
-  \begin{subfigure}[b]{0.23\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/urbanNav_10sec/patchwork.png}
-      \caption{Subfigure 6}
-      \label{fig:sub6}
-  \end{subfigure}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.5\textwidth]{figures/grouped_figures/rellies3d_all.png}
+  \caption{Rellies3D}
+  \label{fig:rellies_3d}
+\end{figure}
 
-  \vspace{0.5cm} % Adds some vertical space between the rows
-
-  \begin{subfigure}[b]{0.23\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/urbanNav_10sec/patchworkpp.png}
-      \caption{Subfigure 7}
-      \label{fig:sub7}
-  \end{subfigure}
-  \hspace{0.02\textwidth}
-  \begin{subfigure}[b]{0.23\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/urbanNav_10sec/groundgrid3d.png}
-      \caption{Subfigure 8}
-      \label{fig:sub8}
-  \end{subfigure}
-
-  \caption{Main figure caption with 8 subfigures}
-  \label{fig:main3}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.5\textwidth]{figures/grouped_figures/urban_nav_all.png}
+  \caption{UrbanNav}
+  \label{fig:urban_nav}
 \end{figure}
 
 \begin{table}[tbp]
@@ -999,7 +837,7 @@ understanding complex 3D structures and diverse landscapes is crucial.
   LineFit      & $98.15\pm 0.97$ & $83.05\pm 9.94$ & 89.97 & 7 \\ 
   Patchwork    & $92.34\pm 3.31$ & $94.61\pm 3.44$ & 93.46 & 17 \\ 
   Patchwork++  & $94.62\pm 2.76$ & $98.73\pm 1.10$ & 96.62 & 11  \\ 
-  GroundGrid3D & $94.77\pm 4.02$ & $90.66\pm 5.93$ & 92.67 & 115\\ 
+  GroundGrid3D & $95.34\pm 3.33$ & $87.02\pm 11.68$ & 91 & 89\\ 
   \bottomrule
 \end{tabular}%
 \end{table}
@@ -1017,11 +855,38 @@ understanding complex 3D structures and diverse landscapes is crucial.
   LineFit      & $97.34\pm1.25$ & $78.48\pm9.39$ & 86.91 & 3 \\ 
   Patchwork    & $88.62\pm3.96$ & $91.76\pm4.57$ & 90.17 & 7 \\ 
   Patchwork++  & $91.66\pm2.87$ & $97.31\pm2.98$ & 94.40 & 6  \\ 
-  GroundGrid3D & $93.81\pm4.42$ & $85.45\pm6.42$ & 89.44 & 50\\ 
+  GroundGrid3D & $93.88\pm3.92$ & $81.83\pm11.57$ & 87.44 & 42\\ 
   \bottomrule
 \end{tabular}%
   \label{tab:comparison_00_downsampled}
 \end{table}
+
+\begin{table}[h!]
+  \centering
+  \caption{Data Sources}
+  \resizebox{\columnwidth}{!}{%
+  \begin{tabular}{|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
+  \hline
+  \textbf{Dataset} & \textbf{Pointclouds} & \textbf{Average Points} & \textbf{Average Time (ms)} \\
+  \hline
+  \textbf{SemanticKITTI \cite{todo}} & 500 & 121253 & 86 \\ 
+  \hline
+  \textbf{UrbanNav \cite{todo}} & 500 & 56639 & 42 \\ 
+  \hline
+  \textbf{DOALS \cite{todo}} & 500 & 130895 & 60 \\ 
+  \hline
+  \textbf{BotanicGarden \cite{todo}} & 500 & 25016 & 21 \\
+  \hline
+  \textbf{RELLIS-3D \cite{todo}} & 500 & 131071 & 82 \\
+  \hline
+  \end{tabular}%
+  }
+  \label{tab:phase_behavior}
+  \end{table}
+
+
+
+
 
 
 \section*{Acknowledgment}
