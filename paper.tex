@@ -293,8 +293,6 @@ time period. The exact time requirements may vary based on the industry.
 
 \section{Core Components}
 
-\todo{Need a picture of the pipeline}
-
 \subsection{Data Preparation and Filtering}
 The input point cloud is cropped to a user-defined region of interest, which varies depending on the application. 
 For autonomous driving, a larger region of interest is preferred, while mobile robotics typically require a smaller
@@ -306,6 +304,13 @@ The downsampling and the respective resolution is determined by specific algorit
 The segmentation process is divided into two distinct phases to address different challenges in point classification. 
 Each phase uses grid cells of varying heights to improve the accuracy of ground and obstacle detection, 
 while also managing potential misclassifications.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.5\textwidth]{figures/overview/stages.png}
+  \caption{Stages}
+  \label{fig:pipeline}
+\end{figure}
 
 \textbf{First Phase: Large Grid Cell Height}: In the first phase of segmentation, a large height for the grid cells in the \( z \)-direction is employed. 
 This approach is designed to capture as many obstacles as possible within each grid cell. The larger cell size helps 
@@ -323,10 +328,17 @@ During the post-processing phase, any points that were incorrectly classified as
 are actually ground are reclassified and added back to the ground points. This correction ensures that the final 
 classification is accurate, reflecting the true distribution of ground and non-ground points.
 
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.5\textwidth]{figures/overview/pipeline.png}
+  \caption{Pipeline}
+  \label{fig:pipeline}
+\end{figure}
 
 The steps involved in the segmentation process are:
 
 \begin{itemize}
+  \item Grid Representation
   \item Local Eigen Analysis (LEA)
   \item Surface Gradient Analysis (SGA)
   \item Ground Region Growth (GRG)

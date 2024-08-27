@@ -461,9 +461,9 @@ private:
             }
             ground_segmentation::msg::GridCell cell_msg;
 
-            cell_msg.position.x = cell.x * pre_processor_config.cellSizeX;
-            cell_msg.position.y = cell.y * pre_processor_config.cellSizeY;
-            cell_msg.position.z = cell.z * pre_processor_config.cellSizeZ;
+            cell_msg.position.x = (cell.x * pre_processor_config.cellSizeX) + pre_processor_config.cellSizeX/2;
+            cell_msg.position.y = (cell.y * pre_processor_config.cellSizeY) + pre_processor_config.cellSizeY/2;
+            cell_msg.position.z = (cell.z * pre_processor_config.cellSizeZ) + pre_processor_config.cellSizeZ/2;
 
             cell_msg.color.r = 0;
             cell_msg.color.g = 1;
@@ -493,9 +493,9 @@ private:
 
             ground_segmentation::msg::GridCell cell_msg;
 
-            cell_msg.position.x = cell.x * post_processor_config.cellSizeX;
-            cell_msg.position.y = cell.y * post_processor_config.cellSizeY;
-            cell_msg.position.z = cell.z * post_processor_config.cellSizeZ;
+            cell_msg.position.x = (cell.x * post_processor_config.cellSizeX) + post_processor_config.cellSizeX/2;
+            cell_msg.position.y = (cell.y * post_processor_config.cellSizeY) + post_processor_config.cellSizeY/2;
+            cell_msg.position.z = (cell.z * post_processor_config.cellSizeZ) + post_processor_config.cellSizeZ/2;
 
             cell_msg.color.r = 0;
             cell_msg.color.g = 1;
