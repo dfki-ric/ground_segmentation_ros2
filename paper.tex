@@ -706,7 +706,7 @@ urban and natural environments. Each dataset uses a different type of sensors. T
 
 \begin{table}[h!]
   \centering
-  \caption{Data Sources}
+  \caption{Datasets from natural and urban environments for experiementation}
   \resizebox{\columnwidth}{!}{%
   \begin{tabular}{|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
   \hline
@@ -758,7 +758,7 @@ The BotanicGarden dataset is a used to test the ground segmentation capabilities
 dataset provides data from wide varierty of sensors, including high-res and high-rate stereo gray and RGB cameras, 
 spinning and MEMS 3D LiDARs, and low-cost and industrial-grade IMUs, supporting a wide range of applications. 
 
-\subsubsection{RELLIES-3 \cite{todo}}
+\subsubsection{RELLIS-3D \cite{todo}}
 The Rellis-3D dataset, developed by Texas A\&M University, is an advanced dataset
 aimed at improving semantic segmentation in outdoor environments. Named after
 the RELLIS Campus, it features high-resolution LiDAR and camera data captured in
@@ -770,6 +770,13 @@ robotics, autonomous navigation, and environmental perception, where
 understanding complex 3D structures and diverse landscapes is crucial.
 
 \section{Results and Discussion}
+
+
+\subsection{Performance Vs Distance}
+We wanted to see how the performance metrics are affected as the distance of points increases. We can see from the plots that the precision is least affected by increasing
+point distance. The recall is slighly reduced with increases distances and this is due to the region growth step in our solution. As the distance between the scan lines
+inceases, the far off points beloging to scan lines with gaps greator than the cell size are ignored in the region growth. The reduced recall scores are specially evident
+in the Sequence 1 because of gaps in point cloud samples due to occlusions and separatation between the two streets.
 
 \begin{figure}[h!]
   \centering
@@ -800,40 +807,88 @@ understanding complex 3D structures and diverse landscapes is crucial.
   \label{fig:main_fig}
 \end{figure}
 
+
+\subsection{Experiements on Datasets}
+
+The ground segmentation on various datasets was performed without any paramter tuning. The ground points [pink] and non-ground points [blue] are shown.
+
 \begin{figure}[h!]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/grouped_figures/botanic_garden_all.png}
-  \caption{BotanicGarden}
+  \includegraphics[width=0.5\textwidth, height=4cm]{figures/grouped_figures/botanic_garden_all.png}
+  \caption{Ground segmentation results from the BotanicGarden dataset}
   \label{fig:botanic_garden}
 \end{figure}
 
 \begin{figure}[h!]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/grouped_figures/doals_all.png}
-  \caption{DOALS}
+  \includegraphics[width=0.5\textwidth, height=4cm]{figures/grouped_figures/doals_all.png}
+  \caption{Ground segmentation results from the DOALS dataset}
   \label{fig:doals}
 \end{figure}
 
 \begin{figure}[h!]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/grouped_figures/kitti_all.png}
-  \caption{SemanticKITTI}
+  \includegraphics[width=0.5\textwidth, height=4cm]{figures/grouped_figures/kitti_all.png}
+  \caption{Ground segmentation results from the SemanticKITTI dataset}
   \label{fig:single_fig}
 \end{figure}
 
 \begin{figure}[h!]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/grouped_figures/rellies3d_all.png}
-  \caption{Rellies3D}
+  \includegraphics[width=0.5\textwidth, height=4cm]{figures/grouped_figures/rellies3d_all.png}
+  \caption{Ground segmentation results from the Rellis-3D dataset}
   \label{fig:rellies_3d}
 \end{figure}
 
 \begin{figure}[h!]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/grouped_figures/urban_nav_all.png}
-  \caption{UrbanNav}
+  \includegraphics[width=0.5\textwidth, height=4cm]{figures/grouped_figures/urban_nav_all.png}
+  \caption{Ground segmentation results from the UrbanNav Tokyo dataset}
   \label{fig:urban_nav}
 \end{figure}
+
+\subsection{Comparison with Other Solutions}
+
+In the section, we compare the results of GroundGrid3D with other ground segmentation solutions on the SemanticKITTI dataset. This is done due to availability of labelled
+data and also because the other solutions show case best performance on SemanticKITTI dataset. Each compare the frames where other solutions fail to give satisfactory
+segmentation with out proposed solution. The True Positive [yellow], False Positive [Blue], and False Negative [Purple] points are shown. 
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.5\textwidth]{figures/metrics/group_frame_20.png}
+  \caption{Frame 20 of the 0th sequence in the SemanticKITTI dataset}
+  \label{fig:group_frame_20}
+\end{figure}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.5\textwidth]{figures/metrics/group_frame_100.png}
+  \caption{Frame 100 of the 0th sequence in the SemanticKITTI dataset. Notice the significantly greater number of false positives [blue] points in the
+  Patchwork and Patchwork++ solutions}
+  \label{fig:group_frame_100}
+\end{figure}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.5\textwidth]{figures/metrics/group_frame_140.png}
+  \caption{Frame 140 of the 0th sequence in the SemanticKITTI dataset}
+  \label{fig:group_frame_140}
+\end{figure}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.5\textwidth]{figures/metrics/group_frame_150.png}
+  \caption{Frame 150 of the 0th sequence in the SemanticKITTI dataset}
+  \label{fig:group_frame_150}
+\end{figure}
+
+\begin{figure*}[h!]
+  \centering
+  \includegraphics[width=16cm, height=10cm]{figures/datasets/UrbanNav/combined.png}
+  \caption{UrbanNav Tokyo Dataset}
+  \label{fig:urbannav_combined}
+\end{figure*}
+
 
 \begin{table}[tbp]
   \centering
@@ -849,6 +904,7 @@ understanding complex 3D structures and diverse landscapes is crucial.
   LineFit      & $98.15\pm 0.97$ & $83.05\pm 9.94$ & 89.97 & 7 \\ 
   Patchwork    & $92.34\pm 3.31$ & $94.61\pm 3.44$ & 93.46 & 17 \\ 
   Patchwork++  & $94.62\pm 2.76$ & $98.73\pm 1.10$ & 96.62 & 11  \\ 
+  \bottomrule
   GroundGrid3D & $95.34\pm 3.33$ & $87.02\pm 11.68$ & 91 & 89\\ 
   \bottomrule
 \end{tabular}%
@@ -867,6 +923,7 @@ understanding complex 3D structures and diverse landscapes is crucial.
   LineFit      & $97.34\pm1.25$ & $78.48\pm9.39$ & 86.91 & 3 \\ 
   Patchwork    & $88.62\pm3.96$ & $91.76\pm4.57$ & 90.17 & 7 \\ 
   Patchwork++  & $91.66\pm2.87$ & $97.31\pm2.98$ & 94.40 & 6  \\ 
+  \bottomrule
   GroundGrid3D & $93.88\pm3.92$ & $81.83\pm11.57$ & 87.44 & 42\\ 
   \bottomrule
 \end{tabular}%
@@ -875,7 +932,7 @@ understanding complex 3D structures and diverse landscapes is crucial.
 
 \begin{table}[h!]
   \centering
-  \caption{Data Sources}
+  \caption{Runtime of GroundGrid3D on varied datasets}
   \resizebox{\columnwidth}{!}{%
   \begin{tabular}{|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
   \hline
@@ -901,7 +958,7 @@ understanding complex 3D structures and diverse landscapes is crucial.
 
 
 
-\section*{Acknowledgment}
+\section{Acknowledgment}
 \todo{Proudly presented by \ldots{} But funding should be mentioned in footnote on first page}
 \iffalse
 
