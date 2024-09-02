@@ -24,7 +24,7 @@
 
 \begin{document}
 
-\title{A Robust 3D Grid-Based Hybrid Approach for Ground Segmentation in Point Clouds Across Varied Terrains
+\title{GroundSeg3D: A Robust 3D Grid-Based Hybrid Approach for Ground Segmentation in Point Clouds Across Varied Terrains
 \thanks{Funded via some awesome projects}
 }
 
@@ -45,24 +45,18 @@ christoph.hertzberg@dfki.de}%
 
 \begin{abstract}
 Ground segmentation in point cloud data is the process of separating the points
-into ground and non-ground. It is a key component in the perception pipeline of
-an autonomous system. Many solutions have been published in literature but
-they are targeted to solve the ground segmentation challenge for autonomous
-driving and are based on the assumption that the ground surface is composed of
-flat surfaces. There are very few solutions which are capable of performing in
-indoor and outdoor environments with various degrees of terrain roughness. Additionally,
-the existing solutions usually require hand tuning of many parameters for
-optimal performance and are specific for certain type of LIDAR sensors and
-sensor configurations. There is a need to have a general purpose, easy to use,
-all-terrain capable ground segmentation solution which does not require
-extensive tuning of parameters. In this work, we provide such a solution for
-rough terrain indoor and outdoor mobile robotics and autonomous driving applications. Our solution
+into ground and non-ground points. It is a key component in the perception pipeline of
+an autonomous system. The state-of-the-art solutions for ground segmentation are often designed for use-cases from
+urban environments. The performance of such solutions is tightly linked to certain assumptions about the environment and the
+sensor configuration. Additionally, they require hand tuning of parameters. There is a need to have a robust,
+multi-terrain capable ground segmentation solution which does not require tuning of parameters. In this work, we provide such a solution for
+indoor and outdoor mobile robotics and autonomous driving applications. Our solution
 combines the strengths of different approaches as a single solution and produces
-good ground segmentation on varied terrains.
+good ground segmentation of point cloud data on varied terrains.
 \end{abstract}
 
 \begin{IEEEkeywords}
-LIDAR, Ground segmentation, Mobile Robotics, Rough Terrain, Autonomous Driving
+Ground Segmentation, Mobile Robotics, Autonomous Driving, Rough Terrain, LIDAR, Point Clouds, 3D Grid-Based Approach
 \end{IEEEkeywords}
 
 \section{Introduction}
@@ -94,8 +88,7 @@ The segmentation task is performed by a ground segmentation algorithm and it has
 \begin{figure*}
   \centering
   \includegraphics[width=\linewidth]{intro.png}
-  \caption{Results of the ground segmentation pipeline
-  \todo[inline]{Split into subfigures. Move this or some figure into intro-section}}
+  \caption{GroundSeg3D: The original point cloud (represented as white points) is segmented into ground points (magenta) and non-ground points (blue).}
   \label{fig:results}
 \end{figure*}
 
@@ -109,7 +102,7 @@ easy to understand, and do not require advanced domain knowledge. The segmentati
 model fitting, and region-growing algorithms. We explore the strengths and weaknesses of these approaches and integrate 
 them into a processing pipeline to achieve effective ground segmentation in diverse indoor and outdoor scenarios.
 
-\subsection{Statement of Need}
+\subsection{Benefits of Ground Segmentation}
 \begin{itemize}
   \item Detection of ground points is a necessary precursor step for extraction
     of useful information from point cloud data for downstream tasks in mobile
@@ -120,8 +113,6 @@ them into a processing pipeline to achieve effective ground segmentation in dive
     non-ground points \cite{Firkat2023}.
   \item Ground points can be used for traversability analysis, navigation, and
     static map generation.
-  \item A solution is needed which is independent of parameter tuning, sensor configuration,
-  and to an extend the type of environment.
 \end{itemize}
 
 
@@ -146,17 +137,15 @@ on Conditional Random Field (CRF) and Markov Random Field (MRF) have been used
 \subsection{Learning Solutions}
 The advancements in deep learning meant that some researchers used the existing
 CNN networks originally used for object detection for ground segmentation using
-range images generated from the point cloud data.
-The development of PointNet \cite{qi2017pointnet} and its successor PointNet++ \cite{qi2017pointnet++} give a unified
-solution for various applications e.g. object and scene segmentation. Various
-other solutions like GndNet \cite{paigwar2020gndnet}, PointPillars \cite{lang2019pointpillars}, JCP \cite{todo}, SectorGSnet \cite{todo}
+range images generated from the point cloud data. The development of PointNet \cite{qi2017pointnet} and its successor 
+PointNet++ \cite{qi2017pointnet++} give a unified
+solution for various applications e.g. object and 
+scene segmentation. Various other solutions like GndNet \cite{paigwar2020gndnet}, PointPillars \cite{lang2019pointpillars}, JCP \cite{todo}, SectorGSnet \cite{todo}
 showcase good results.
 
 \section{Proposed Solution}
-When selecting a ground segmentation algorithm, it is crucial to understand their
-most significant differences and features that best suit the requirements of the
-ﬁnal application. Our goal was to develop a ground segmentation solution based
-on the traditional approaches. After analyzing the state-of-the-art, we decided
+Our goal was to develop a ground segmentation solution based
+on the traditional approaches and after analyzing the state-of-the-art, we decided
 to combine different approaches as a single solution by utilizing the best of
 all approach.
 
@@ -170,7 +159,7 @@ The key challenges faced when working with the existing state-of-the-art solutio
   \item require fine tuning of many algorithm parameters for best performance.
   \item have high degree of performance dependency on the type of sensor used for the point cloud.
   \item are developed for the autonomous driving scenario with only a few solutions showcasing adequate performance
-        of rough terrains.
+        on rough uneven terrains.
   \item show good performance on the SemanticKITTI datset but do not adapt to other datasets from the autonomous driving domain.
 \end{itemize}
 
@@ -190,9 +179,9 @@ where each grid cell contain its assigned points and can be processed individual
 
 \subsection{Terrain Roughness}
 The assumption of flat ground surfaces may be plausible in a urban environment but it 
-does not always hold for the mobile robots. Moble robots usually have to navigate 
+does not always hold. Autonomous systems usually have to navigate 
 on uneven terrain with varying degrees of roughness. Therefore, the ground segementation algorithms
-are not always easily applicable for mobile robots.
+are not always easily applicable for msuch systems.
 
 \paragraph*{Solution} We use a combination of local and global terrain properties e.g. surface gradiant,
 local spacial distribution of points, and global connectivity. We apply local eigen analysis to extract local 
@@ -213,7 +202,7 @@ are assigned points far away from the robot are more likely to have only single
 scan lines assigned to them. A plane fitting algorithm can fit a plane to the
 line of points but the slope estimate is highly uncertain and is usually
 unreliable. Additionally to this, a small cell size is more sensitive to noisy 
-sensor data.
+sensor data and has high computational costs.
 
 Furthermore, the size of the grid cells is also closely related to the type of
 application and environment. In indoor environments with flat surfaces, it is
@@ -228,17 +217,16 @@ ground points of the first phase and we use a small height for the grid cells to
 remove any false positive ground points.
 
 \subsection{Point Sparsity}
-As mentioned earlier, the point assignment to grid cells is non uniform and
-depends on various factors. It is not feasible to blindly fit a plane to all
+The point assignment to grid cells is non-uniform and
+depends on various factors. It is not feasible to fit a plane to all
 grid cells because some cells may have a single line of points or a random
 distribution of points. This is especially the case when using a fixed grid size
 and the distance of the cell from the point cloud origin increases.
 
 \paragraph*{Solution} We perform local eigen analysis on each grid cell. The eigen values
 encode a good representation of the spacial distribution of the points assigned to the cell. 
-Afterwards, we classify each grid cell into one of the two classes: Line and Plane. Each 
-cell type is handed with a different technique most appropritate for it. We explain the
-details in the section X.Y.
+Afterwards, we classify each grid cell into one of the three classes: Line, Planar, Non-Planar. Each 
+cell type is handed with a different technique most appropritate for it. 
 
 \subsection{Polar \& Square Coordinates}
 Literature review has shown that researchers prefer polar grid cells as compared
@@ -246,7 +234,7 @@ to square cells. Various types of polar grid cells have been researched.
 \paragraph*{Solution} However, in our experiments we found a square grid cell
 with a fixed grid size performs better than polar cells. The reason in our view
 is that as the distance from the sensor origin increases, the cells get bigger
-and as a concequence, results in the deterioration of the performance of the
+and as a consequence, results in the deterioration of the performance of the
 plane fitting based segmentation.
 
 \subsection{False positive flat surfaces e.g. table top, car roof etc.}
@@ -262,15 +250,15 @@ The results of the segmentation depend on the handling of junctions between
 ground and non-ground points. This is where the majority of cases of under and over
 segmentation occur. 
 
-\paragraph*{Solution} A point-wise inlier check is used at the
-junction of ground and obstacle cells to detect and correct over and under segmentation.
+\paragraph*{Solution} A point-wise inlier check utilizing KDTree’s is used at the
+junction of ground and non-ground cells to detect and correct over and under segmentation.
 
 \subsection{Influence of grid cell height on the performance of segmentation}
-The height of the grid cell plays a key role in identification of obstacles in
-the point cloud. The key challenge here is to detect tall obstacles in the grid
-cells but without false detection the underlying ground points as obstacles.
+The height of the grid cell plays a key role in identification of non-ground points in
+the point cloud. The key challenge here is to detect tall non-ground objects in the grid
+cells but without false detection the underlying ground points as non-ground points.
 This challenge is evident in the tree canopy situation where the ground points
-in the grid cell are falsely identified as obstacle points because of the large
+in the grid cell are falsely identified as non-ground points because of the large
 height of the grid cell.
 \paragraph*{Solution} The point space is sub-divided into 3D grid cells for a clear distinction
 between ground and non-ground points. Additionally, we use the same strategy as mentioned in the 
@@ -294,6 +282,9 @@ time period. The exact time requirements may vary based on the industry.
 
 \section{Core Components}
 
+GroundSeg3D uses a one-shot processing approach for the point cloud data. The input to the algorithm is a single sample of point cloud and the output is 
+ground and non-ground points. In the section, we explain the key processing steps performed on each input for robust ground segmentation.
+
 \subsection{Data Preparation and Filtering}
 The input point cloud is cropped to a user-defined region of interest, which varies depending on the application. 
 For autonomous driving, a larger region of interest is preferred, while mobile robotics typically require a smaller
@@ -301,37 +292,39 @@ to medium-sized region.
 
 \section{Two-Phase Segmentation of Points Based on Local Surface Properties and Neighborhood Analysis}
 
-The segmentation process is divided into two distinct phases to address different challenges in point classification. 
-Each phase uses grid cells of varying heights to improve the accuracy of ground and obstacle detection, 
-while also managing potential misclassifications.
+The segmentation process is divided into two distinct phases to address different challenges in point segmentation. 
+Each phase uses grid cells of varying heights to improve the accuracy of ground and non-ground detection, 
+while also managing potential false segmentation.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.5\textwidth]{figures/overview/stages.png}
-  \caption{Stages}
+  \caption{A two phase approach is developed for robust segmentation of ground and non-ground points. Phase-I uses grid cells with large height
+  to capture tall structures as non-ground points. The coarse ground points from Phase-I are subsequently used as
+  input for Phase-II in which the coarse ground points are processed using grid cells with small height. The small height ensures only actual ground
+  cells are expanded.}
   \label{fig:pipeline}
 \end{figure}
 
 \textbf{First Phase: Large Grid Cell Height}: In the first phase of segmentation, a large height for the grid cells in the \( z \)-direction is employed. 
-This approach is designed to capture as many obstacles as possible within each grid cell. The larger cell size helps 
-in identifying obstacles that might otherwise be missed.
-
-However, this method comes with a trade-off. The increased cell height can lead to the misclassification of ground points, 
+This approach is designed to capture as many non-grounds structures as possible within each grid cell. However, this method comes with a trade-off. 
+The increased cell height can lead to the false segmentation of ground points, 
 especially in scenarios where the ground is obscured by overhead objects, such as tree canopies. As a result, some ground 
 points may be incorrectly labeled as non-ground. These false detections are addressed in subsequent stages of the segmentation process.
 
 \textbf{Second Phase: Small Grid Cell Height}: The second phase of segmentation uses a smaller height for the grid cells. This smaller cell size is crucial for 
 refining the segmentation results by minimizing false positives identified as ground points in the first phase. 
-The reduced cell height allows for more precise detection of ground and obstacle points.
+The reduced cell height allows for more precise detection of ground and non-ground points.
 
 During the post-processing phase, any points that were incorrectly classified as non-ground in the first phase but 
 are actually ground are reclassified and added back to the ground points. This correction ensures that the final 
-classification is accurate, reflecting the true distribution of ground and non-ground points.
+classification is accurate, reflecting the true distribution of ground and non-ground points. Additionally, false positive ground points from Phase-I are
+added back to the pool of non-ground points at the end of Phase-II.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.5\textwidth]{figures/overview/pipeline.png}
-  \caption{Pipeline}
+  \caption{The core stages in the pipeline of GroundSeg3D. The same steps in the pipeline are used in both phases with slight modifications.}
   \label{fig:pipeline}
 \end{figure}
 
@@ -349,7 +342,7 @@ The behavior of these steps varies between the first and second phases. The tabl
 
 \begin{table}[H]
   \centering
-  \caption{Behavior of steps in the first and second phases of segmentation}
+  \caption{Behavior of steps in the first and second phase of segmentation}
   \resizebox{\columnwidth}{!}{%
   \begin{tabular}{|p{4cm}|p{2cm}|p{2cm}|}
   \hline
@@ -374,8 +367,6 @@ The behavior of these steps varies between the first and second phases. The tabl
 \subsection{Grid Representation}
 The points are assigned to cells within a 3D grid in Euclidean space based on their positions. This 3D grid is crucial 
 for modeling and detecting empty spaces, as the height of each grid cell helps identify voids or gaps in the environment. 
-The dimensions of the grid cells in the x, y, and z axes are determined by three specific algorithm parameters, ensuring 
-that the grid accurately represents the spatial characteristics of the point cloud.
 \begin{align}
 cell_x &= point_x / cellsize_x \\
 cell_y &= point_y / cellsize_y \\
@@ -415,7 +406,7 @@ cells into three categories.
   are distributed along a line. In this case, the distribution is highly elongated along one direction with minimal variation
   in the other directions.
 %
-  \item[Plane Cell]
+  \item[Planar Cell]
   A ratio in this range $[0.4, 0.9)$ indicates that $\lambda_1$ is moderately larger than $\lambda_2$ and $\lambda_3$, suggesting that the points 
   are more aligned with a planar surface.
 %
@@ -445,7 +436,7 @@ Each type of cell is processed using a distinct algorithm, and we refer to these
   \centering
   \includegraphics[width=\linewidth]{line_cell.png}
   \caption{Points (white) assigned to a grid cell and the 
-  corresponding eigen vectors (green) are shown. 
+  corresponding eigen vectors (black) are shown. 
   The eigen vector along the line of points is the single dominant eigen value. 
   The cell is classified as Line based of the local eigen analysis.}
   \label{fig:LineCell}
@@ -477,7 +468,7 @@ as tentative Obstacle until further analysis can confirm their true classificati
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{plane_cell.png}
-  \caption{Points (white) assigned to a grid cell and the corresponding eigen vectors (green) are shown. 
+  \caption{Points (white) assigned to a grid cell and the corresponding eigen vectors (black) are shown. 
   Two dominant eigen vectors and shown and the third vector is negligible in comparison. 
   The cell is classified as Plane based on the local eigen analysis.}
   \label{fig:PlaneCell}
@@ -499,17 +490,16 @@ exhibiting a planar distrubtion of points is a car roof top or the top of an obs
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{unknown_cell.png}
-  \caption{Points (white) assigned to a grid cell and the corresponding eigen vectors (green) are shown. 
-  There is no dominance of a single or two eigen vectors. 
-  The cell is classified as Unknown based on the local eigen analysis.}
+  \caption{Points (white) assigned to a grid cell and the corresponding eigen vectors (black) are shown. 
+  There is no dominance of a single or two eigen vectors. }
   \label{fig:UnknownCell}
 \end{figure}
 
-If the ratio of the largest eigenvalue to the sum of all eigenvalues is smaller than 0.4, the points are 
-classified as Obstacle. In this scenario, the cell does not exhibit two clearly dominant eigenvalues, 
+If the ratio of the largest eigenvalue to the sum of all eigenvalues is smaller than 0.4, the cell is classified as non-planar. 
+In this scenario, the cell does not exhibit two clearly dominant eigenvalues, 
 suggesting that the points do not align well with a planar surface.
 
-While the threshold of 0.4 helps in distinguishing between Plane and Non-planar cells, it may lead to some false 
+While the threshold of 0.4 helps in distinguishing between Planar and Non-planar cells, it may lead to some false 
 classifications. Specifically, cells that should be classified as Plane or Non-planar might be incorrectly 
 categorized due to the threshold. However, these misclassifications are addressed and corrected automatically 
 during subsequent stages of the processing pipeline. Each Non-planar cell is individually processed in the segmentation stage.
@@ -545,7 +535,7 @@ region-growing algorithm. Cells that do not meet the ground criteria are marked 
 CellType &= 
   \begin{cases}
     \text{Ground} & angle \le Threshold \\
-    \text{Obstacle} & angle < Threshold
+    \text{Non-Ground} & angle < Threshold
   \end{cases}
 \end{align}
 \todo{One comparison needs to be turned}
@@ -648,13 +638,13 @@ true nature of the environment.
 \section{Experiments}
 
 The goal of experimentation was to test not only the ground segmentation but also the adaptability to different environments and sensor configurations. For comparison,
-we selected some of the state-of-the-art ground segmentation works form literature. We used the standard paramters for the algorithms. Since some algorithms require 
+we selected some of the state-of-the-art ground segmentation works form literature. We used the standard parameters for the algorithms. Some algorithms require 
 the sensor height as a parameter. Therefore, sensor height was the only parameter which was updated. Our proposed solution does not require sensor height as a parameter 
-and we did not update any parameters in our tests throughout the experimentation. The results of our GroundGrid3D are with the same set of paramters shown in table.
+and we did not update any parameters in our tests throughout the experimentation. The results of our GroundSeg3D are with the same set of paramters shown in table.
 
 The experimentation was performed exclusively on datasets with real world point cloud data. No simulation data was used during the tests. We did not limit our 
 experiementation merely to the SemanticKITTI
-dataset. We selected a diverse set of datasets from urban and natural environments. Additonally, the datasets use a different sensor type of sensor and configuration.
+dataset. We selected a diverse set of datasets from urban and natural environments. Additonally, the datasets are based on different sensor configurations.
 A ground segmentation solution must be able to perform robustly for various sensor types and configurations without parameter tuning. To showcase that our solution is not
 bound to a sensor height, we selected a handheld dataset to test the adaptability of our ground segmentation to a changing height of the sensor. In contrast, most existing 
 solutions require a sensor height as a parameter with the assumption that the height of the sensor is unchanged. This assumption does not hold in case of handheld or UAV 
@@ -663,7 +653,7 @@ based point cloud datasets. Futhermore, the constant sensor height assumption do
 \subsection{Performance Metrics}
 
 We use precision, recall and F1 score as a metrics to compare the algorithms. Not all datasets provided labelled point clouds, therefore the performance metrics were 
-collected only on the SemanticKITTI dataset. Visual analysis of ground segmentation results on other datasets was enough to compare the performance of GroundGrid3D and
+collected only on the SemanticKITTI dataset. Visual analysis of ground segmentation results on other datasets was enough to compare the performance of GroundSeg3D and
 state-of-the-art solutions.
 
 \begin{equation}
@@ -685,13 +675,13 @@ Where:
   \item NFN = Number of False Negatives (positives that were incorrectly predicted as negative) 
 \end{enumerate}
 
-\subsection{GroundGrid3D Parameters}
+\subsection{GroundSeg3D Parameters}
 One of our main objectives was to develop an algorithm which does not require parameter tuning across various environments and sensor configurations. We achieved our target and
 all the experimental results from various datasets use a single set of parameters. 
 
 \begin{table}[H]
   \centering
-  \caption{Parameters of GroundGrid3D}
+  \caption{Parameters of GroundSeg3D}
   \resizebox{\columnwidth}{!}{%
   \begin{tabular}{|p{4cm}|p{2cm}|p{4cm}|}
   \hline
@@ -715,7 +705,7 @@ all the experimental results from various datasets use a single set of parameter
 \end{table}
 
 \subsection{Datasets}
-We used a varied set of available datasets to test the adaptability of GroundGrid3D to new sensors and environments. The datasets provide data from
+We used a varied set of available datasets to test the adaptability of GroundSeg3D to new sensors and environments. The datasets provide data from
 urban and natural environments. Each dataset uses a different type of sensors. The platforms used for data collection are Car, Mobile Robot and Handheld.
 The selection of the handheld dataset was to test how well the solutions perform in varying sensor heights.
 
@@ -786,62 +776,6 @@ understanding complex 3D structures and diverse landscapes is crucial.
 
 \section{Results and Discussion}
 
-In this section, we discuss the experimentation results. We take the SemanticKITTI sequence 0 to analyze the performance metrics with the state-of-the-art solutions.
-
-\subsection{Performance Vs Distance}
-We wanted to see how the performance metrics are affected as the distance of points increases. We can see from the plots that the precision is least affected by increasing
-point distance. The recall is slighly reduced with increases distances and this is due to the region growth step in our solution. As the distance between the scan lines
-inceases, the far off points beloging to scan lines with gaps greator than the cell size are ignored in the region growth. The reduced recall scores are specially evident
-in the Sequence 1 because of gaps in point cloud samples due to occlusions and separatation between the two streets.
-
-\begin{figure}[H]
-  \centering
-  \begin{subfigure}[b]{0.5\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/graphs/00.jpg}
-      \label{fig:subfig1}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}[b]{0.5\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/graphs/01.jpg}
-      \label{fig:subfig2}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}[b]{0.5\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/graphs/04.jpg}
-      \label{fig:subfig3}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}[b]{0.5\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{figures/graphs/09.jpg}
-      \label{fig:subfig4}
-  \end{subfigure}
-  \caption{Performance metrics of GroundGrid3D wrt Distance}
-  \label{fig:main_fig}
-\end{figure}
-
-\subsection{Neighborhood Correction}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.5\textwidth]{figures/corrections/neighborhood_correction.png}
-  \caption{Correction of under-segmentation of ground points based on neighboring cells}
-  \label{fig:neighborhood_correction}
-\end{figure}
-
-\subsection{Dual-Phase Ground Segmentation}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.5\textwidth]{figures/corrections/dual_phase_segmentation.png}
-  \caption{Correction of over-segmentation of ground points based on dual-phase segmentation}
-  \label{fig:dual_phase_segmentation}
-\end{figure}
-
-
 \subsection{Experiements on Datasets}
 
 The ground segmentation on various datasets was performed without any paramter tuning. The ground points [pink] and non-ground points [blue] are shown. 
@@ -888,6 +822,40 @@ The ground segmentation on various datasets was performed without any paramter t
   \label{fig:ric}
 \end{figure}
 
+We further analyze the runtime of GroundSeg3D on various datasets. This should give the end user a good idea of the expected runtime.
+
+\begin{table}[H]
+  \centering
+  \caption{Runtime of GroundSeg3D on varied datasets}
+  \resizebox{\columnwidth}{!}{%
+  \begin{tabular}{|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
+  \hline
+  \textbf{Dataset} & \textbf{Pointclouds} & \textbf{Average Points} & \textbf{Average Time (ms)} \\
+  \hline
+  \textbf{SemanticKITTI \cite{todo}} & 500 & 121253 & 86 \\ 
+  \hline
+  \textbf{UrbanNav \cite{todo}} & 500 & 56639 & 42 \\ 
+  \hline
+  \textbf{DOALS \cite{todo}} & 500 & 130895 & 60 \\ 
+  \hline
+  \textbf{BotanicGarden \cite{todo}} & 500 & 25016 & 21 \\
+  \hline
+  \textbf{RELLIS-3D \cite{todo}} & 500 & 131071 & 82 \\
+  \hline
+  \end{tabular}%
+  }
+  \label{tab:phase_behavior}
+  \end{table}
+
+\subsection{Dual-Phase Ground Segmentation}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{figures/corrections/dual_phase_segmentation.png}
+  \caption{Correction of over-segmentation of ground points based on dual-phase segmentation}
+  \label{fig:dual_phase_segmentation}
+\end{figure}
+
 \subsection{Performance on Sloped Terrains}
 
 \begin{figure}[H]
@@ -913,6 +881,53 @@ The ground segmentation on various datasets was performed without any paramter t
   \label{fig:kitti_all}
 \end{figure}
 
+\subsection{GroundSeg3D Performance vs. Distance}
+
+In this section, we discuss the experimentation results. We take the SemanticKITTI sequence 0 to analyze the performance metrics with the state-of-the-art solutions. We wanted 
+to see how the performance metrics are affected as the distance of points increases. We can see from the plots that the precision is least affected by increasing
+point distance. The recall is slighly reduced with increases distances and this is due to the region growth step in our solution. As the distance between the scan lines
+inceases, the far off points beloging to scan lines with gaps greator than the cell size are ignored in the region growth. The reduced recall scores are specially evident
+in the Sequence 1 because of gaps in point cloud samples due to occlusions and separatation between the two streets. We believe that although the reduced recall is compensated
+by the capability of GroundSeg3D to exhibit robust performance on varied terrains without parameter tuning and dependence to a particular sensor configuration.
+
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}[b]{0.5\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/graphs/00.jpg}
+      \label{fig:subfig1}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.5\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/graphs/01.jpg}
+      \label{fig:subfig2}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.5\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/graphs/04.jpg}
+      \label{fig:subfig3}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.5\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/graphs/09.jpg}
+      \label{fig:subfig4}
+  \end{subfigure}
+  \caption{Performance metrics of GroundSeg3D vs. Distance}
+  \label{fig:main_fig}
+\end{figure}
+
+\subsection{Neighborhood Correction}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{figures/corrections/neighborhood_correction.png}
+  \caption{Correction of under-segmentation of ground points based on neighboring cells}
+  \label{fig:neighborhood_correction}
+\end{figure}
+
 \subsection {Correction of False Outliers}
 
 \begin{figure}[H]
@@ -936,23 +951,23 @@ The ground segmentation on various datasets was performed without any paramter t
   \label{fig:false_outliers3}
 \end{figure}
 
-\subsection{Comparison with Other Solutions}
+\subsection{Comparison with the state-of-the-art}
 
-In the section, we compare the results of GroundGrid3D with other ground segmentation solutions on the SemanticKITTI dataset. The True Positive [yellow], False Positive [Blue], 
+In the section, we compare the results of GroundSeg3D with other ground segmentation solutions on the SemanticKITTI dataset. The True Positive [yellow], False Positive [Blue], 
 and False Negative [Purple] points are shown. For the sake of conciseness, we selected only a single frame for each solution where the solution under performs. We compare the
-segmentation results of our GroundGrid3D at those frames.
+segmentation results of our GroundSeg3D at those frames.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.5\textwidth]{figures/metrics/group_frame_20.png}
-  \caption{Frame 20 of the 0th sequence in the SemanticKITTI dataset}
+  \caption{Frame 20 of the 0th sequence in the SemanticKITTI}
   \label{fig:group_frame_20}
 \end{figure}
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.5\textwidth]{figures/metrics/group_frame_100.png}
-  \caption{Frame 100 of the 0th sequence in the SemanticKITTI dataset. Notice the significantly greater number of false positives [blue] points in the
+  \caption{Frame 100 of the 0th sequence in the SemanticKITTI. Notice the significantly greater number of false positives [blue] points in the
   Patchwork and Patchwork++ solutions}
   \label{fig:group_frame_100}
 \end{figure}
@@ -960,34 +975,34 @@ segmentation results of our GroundGrid3D at those frames.
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.5\textwidth]{figures/metrics/group_frame_140.png}
-  \caption{Frame 140 of the 0th sequence in the SemanticKITTI dataset}
+  \caption{Frame 140 of the 0th sequence in the SemanticKITTI}
   \label{fig:group_frame_140}
 \end{figure}
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.5\textwidth]{figures/metrics/group_frame_150.png}
-  \caption{Frame 150 of the 0th sequence in the SemanticKITTI dataset}
+  \caption{Frame 150 of the 0th sequence in the SemanticKITTI}
   \label{fig:group_frame_150}
 \end{figure}
 
 \begin{figure*}
   \centering
   \includegraphics[width=16cm, height=8cm]{figures/datasets/UrbanNav/combined.png}
-  \caption{UrbanNav Tokyo Dataset}
+  \caption{Comparison with state-of-the-art solutions on UrbanNav Tokyo Dataset}
   \label{fig:urbannav_combined}
 \end{figure*}
 
 \begin{figure*}
   \centering
   \includegraphics[width=16cm, height=8cm]{figures/datasets/BotanicGarden/combined.png}
-  \caption{BotanicGarden Dataset}
+  \caption{Comparison with state-of-the-art solutions on BotanicGarden Dataset}
   \label{fig:botanicgarden_combined}
 \end{figure*}
 
-We get the second highest precison only second to the LineFit algorithm and fourth highest F1 score. The recall has a high standard deviation because of the inherent nature
-of the region growth algorithm. The state-of-the-art solutions have a clear advantage in terms of runtime over GroundGrid3D. The precision are recall of GroundGrid3D are 
-on par with the other solutions. Furthermore, since GroundGrid3D is not only developed for SemanticKITTI and does not require any parameter tuning, we feel that the 
+We get the third highest precison only second to the LineFit and GPF algorithms and fourth highest F1 score. The recall has a high standard deviation because of the inherent nature
+of the region growth algorithm. The state-of-the-art solutions have a clear advantage in terms of runtime over GroundSeg3D. The precision are recall of GroundSeg3D are 
+on par with the other solutions. Furthermore, since GroundSeg3D is not only developed for SemanticKITTI and does not require any parameter tuning, we feel that the 
 relatively lower recall score is good trade off with the robust applicablity in urban and natural environments.
 
 \begin{table}[H]
@@ -1007,7 +1022,7 @@ relatively lower recall score is good trade off with the robust applicablity in 
   Patchwork    & $92.34\pm 3.31$ & $94.61\pm 3.44$ & 93.46 & 17 \\ 
   Patchwork++  & $94.62\pm 2.76$ & $98.73\pm 1.10$ & 96.62 & 11  \\ 
   \bottomrule
-  GroundGrid3D & $94.79\pm 5.05$ & $86.92\pm 11.47$ & 90.69 & 85\\ 
+  GroundSeg3D & $94.79\pm 5.05$ & $86.92\pm 11.47$ & 90.69 & 85\\ 
   \bottomrule
 \end{tabular}%
 \end{table}
@@ -1029,7 +1044,7 @@ relatively lower recall score is good trade off with the robust applicablity in 
   Patchwork    & $96.00\pm 3.53$ & $89.10\pm 5.23$ & 92.36 & 16 \\ 
   Patchwork++  & $98.40\pm 0.72$ & $96.40\pm 2.92$ & 97.40 & 12  \\ 
   \bottomrule
-  GroundGrid3D & $94.81\pm 4.35$ & $78.35\pm 14.79$ & 85.80 & 81\\ 
+  GroundSeg3D & $94.81\pm 4.35$ & $78.35\pm 14.79$ & 85.80 & 81\\ 
   \bottomrule
 \end{tabular}%
 \end{table}
@@ -1051,7 +1066,7 @@ relatively lower recall score is good trade off with the robust applicablity in 
   Patchwork    & $97.43\pm 1.40$ & $91.25\pm 2.83$ & 94.24 & 17 \\ 
   Patchwork++  & $98.15\pm 0.80$ & $97.18\pm 2.21$ & 97.66 & 13  \\ 
   \bottomrule
-  GroundGrid3D & $97.46\pm 2.14$ & $86.65\pm 14.18$ & 91.74 & 98\\ 
+  GroundSeg3D & $97.46\pm 2.14$ & $86.65\pm 14.18$ & 91.74 & 98\\ 
   \bottomrule
 \end{tabular}%
 \end{table}
@@ -1073,35 +1088,10 @@ relatively lower recall score is good trade off with the robust applicablity in 
   Patchwork    & $92.74\pm 3.26$ & $92.15\pm 4.57$ & 92.44 & 17 \\ 
   Patchwork++  & $95.40\pm 3.40$ & $97.00\pm 3.32$ & 96.14 & 13  \\ 
   \bottomrule
-  GroundGrid3D & $92.84\pm 4.79$ & $88.76\pm 5.71$ & 90.75 & 102\\ 
+  GroundSeg3D & $92.84\pm 4.79$ & $88.76\pm 5.71$ & 90.75 & 102\\ 
   \bottomrule
 \end{tabular}%
 \end{table}
-
-We further analyze the runtime of GroundGrid3D on various datasets. This should give the end user a good idea of the expected runtime.
-
-\begin{table}[H]
-  \centering
-  \caption{Runtime of GroundGrid3D on varied datasets}
-  \resizebox{\columnwidth}{!}{%
-  \begin{tabular}{|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
-  \hline
-  \textbf{Dataset} & \textbf{Pointclouds} & \textbf{Average Points} & \textbf{Average Time (ms)} \\
-  \hline
-  \textbf{SemanticKITTI \cite{todo}} & 500 & 121253 & 86 \\ 
-  \hline
-  \textbf{UrbanNav \cite{todo}} & 500 & 56639 & 42 \\ 
-  \hline
-  \textbf{DOALS \cite{todo}} & 500 & 130895 & 60 \\ 
-  \hline
-  \textbf{BotanicGarden \cite{todo}} & 500 & 25016 & 21 \\
-  \hline
-  \textbf{RELLIS-3D \cite{todo}} & 500 & 131071 & 82 \\
-  \hline
-  \end{tabular}%
-  }
-  \label{tab:phase_behavior}
-  \end{table}
 
 \subsection{Limitations}
 \begin{figure}[H]
