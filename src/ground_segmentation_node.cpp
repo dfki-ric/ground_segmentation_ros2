@@ -206,16 +206,12 @@ private:
         
         //TODO: Read robot orientation
         Eigen::Quaterniond orientation(1.0, 0.0, 0.0, 0.0);
-        std::cout << "Before: Input Cloud Points: " << input_cloud_ptr->points.size() << std::endl;
-
         Eigen::Vector4f min{minX,minY,minZ, 1};
         Eigen::Vector4f max{maxX,maxY,maxZ,1};
 
         //Start time
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
         typename pcl::PointCloud<PointType>::Ptr filtered_cloud_ptr = processor.FilterCloud(input_cloud_ptr, downsample, downsample_resolution, min, max);
-        std::cout << "After: Input Cloud Points: " << filtered_cloud_ptr->points.size() << std::endl;
 
         //PRE
         pre_processor->setInputCloud(filtered_cloud_ptr, orientation);
@@ -326,10 +322,7 @@ private:
 
         //End time
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-
         double rt = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() * 0.001;
-
-        std::cout << "Time difference = " << rt << "[ms]" << std::endl;
 
         if (show_benchmark){
 
@@ -370,12 +363,6 @@ private:
             //discern_ground(*final_non_ground_points, FN, TN);
             discern_ground_without_vegetation(*final_non_ground_points, FN, TN);
 
-            //Print TPFN
-            cout << "TP: " << TP.points.size();
-            cout << " | FP: " << FP.points.size();
-            cout << " | TN: " << TN.points.size() << endl;
-
-            // Convert PCL PointCloud to ROS PointCloud2 message
             pcl::toROSMsg(TP, *msg_TP);
             pcl::toROSMsg(FP, *msg_FP);
             pcl::toROSMsg(FN, *msg_FN);
@@ -383,14 +370,11 @@ private:
             msg_TP->header.frame_id = target_frame;
             msg_TP->header.stamp = this->now();
 
-            // Set the frame ID and timestamp
             msg_FP->header.frame_id = target_frame;
             msg_FP->header.stamp = this->now();
-            // Set the frame ID and timestamp
             msg_FN->header.frame_id = target_frame;
             msg_FN->header.stamp = this->now();
 
-                    // Publish the message
             pub_tp->publish(*msg_TP);
             pub_fp->publish(*msg_FP);
             pub_fn->publish(*msg_FN);
@@ -406,8 +390,6 @@ private:
 
             int marker_count{0};
             for (const auto& start_cell_id : post_start_cells){
-                // Creating the marker and initialising its fields
-
                 auto start_cell = grid_cells[start_cell_id];
 
                 geometry_msgs::msg::Pose pose;
@@ -442,14 +424,11 @@ private:
             publisher_start_cells->publish(markers);
         }
 
-
         ground_segmentation::msg::GridMap pre_grid_map_msg;
         pre_grid_map_msg.cell_size_x = pre_processor_config.cellSizeX;
         pre_grid_map_msg.cell_size_y = pre_processor_config.cellSizeY;
         pre_grid_map_msg.cell_size_z = pre_processor_config.cellSizeZ;
         pre_grid_map_msg.header.frame_id = this->get_parameter("target_frame").as_string();
-
-        RCLCPP_INFO_STREAM(this->get_logger(), "Reading Grid Map");
 
         auto pre_grid_cells = pre_processor->getGridCells();
 
@@ -472,7 +451,6 @@ private:
 
             pre_grid_map_msg.cells.push_back(cell_msg);
         }
-
         pre_grid_map_publisher->publish(pre_grid_map_msg);
 
         ground_segmentation::msg::GridMap post_grid_map_msg;
@@ -481,7 +459,6 @@ private:
         post_grid_map_msg.cell_size_z = post_processor_config.cellSizeZ;
         post_grid_map_msg.header.frame_id = this->get_parameter("target_frame").as_string();
 
-        RCLCPP_INFO_STREAM(this->get_logger(), "Reading Grid Map");
         auto post_grid_cells = post_processor->getGridCells();
 
         for (auto& cellPair : post_grid_cells){
@@ -506,39 +483,24 @@ private:
         }
 
         post_grid_map_publisher->publish(post_grid_map_msg);
-        RCLCPP_INFO_STREAM(this->get_logger(), "Published Grid Map");
 
         //Temp Hack!
-        //typename pcl::PointCloud<PointType>::Ptr final_one(new pcl::PointCloud<PointType>());
-        //sensor_msgs::msg::PointCloud2::SharedPtr final_one_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
-
         typename pcl::PointCloud<PointType>::Ptr final_two(new pcl::PointCloud<PointType>());
         sensor_msgs::msg::PointCloud2::SharedPtr final_two_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
         pcl::toROSMsg(*filtered_cloud_ptr, *raw_ground_points);
+
         pcl::toROSMsg(*final_ground_points, *ground_points);
-        pcl::toROSMsg(*final_non_ground_points, *obstacle_points);
         pcl::fromROSMsg(*ground_points, *final_two);
         pcl::toROSMsg(*final_two, *final_two_msg);
 
-        //pcl::fromROSMsg(*obstacle_points, *final_one);
-        //pcl::toROSMsg(*final_one, *final_one_msg);
-
-        std::cout << "PCL Points: " << final_ground_points->points.size() << std::endl;
-        std::cout << "ROS Points: " << ground_points->width * ground_points->height << std::endl;
+        pcl::toROSMsg(*final_non_ground_points, *obstacle_points);
 
         final_two_msg->header.frame_id = target_frame;
-        final_two_msg->header.stamp = this->now();
-
-        //final_one_msg->header.frame_id = target_frame;
-        //final_one_msg->header.stamp = this->now();
-
         obstacle_points->header.frame_id = target_frame;
-        obstacle_points->header.stamp = this->now();
-
-        ground_points->header.frame_id = target_frame;
-        ground_points->header.stamp = this->now();
-
         raw_ground_points->header.frame_id = target_frame;
+
+        final_two_msg->header.stamp = this->now();
+        obstacle_points->header.stamp = this->now();
         raw_ground_points->header.stamp = this->now();
 
         // Publish the message
