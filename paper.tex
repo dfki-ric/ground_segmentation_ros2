@@ -22,6 +22,10 @@
 
 \graphicspath{{figures}}
 
+
+\newenvironment{smallcases}{\left\{\begin{smallmatrix}}{\end{smallmatrix}\right.}
+
+
 \begin{document}
 
 \title{GroundSeg3D: A Robust 3D Grid-Based Hybrid Approach for Ground Segmentation in Point Clouds Across Varied Terrains
@@ -321,7 +325,7 @@ are actually ground are reclassified and added back to the ground points. This c
 classification is accurate, reflecting the true distribution of ground and non-ground points. Additionally, false positive ground points from Phase-I are
 added back to the pool of non-ground points at the end of Phase-II.
 
-\begin{figure}[H]
+\begin{figure}[tbp]
   \centering
   \includegraphics[width=0.5\textwidth]{figures/overview/pipeline.png}
   \caption{The core stages in the pipeline of GroundSeg3D. The same steps in the pipeline are used in both phases with slight modifications.}
@@ -340,39 +344,33 @@ The steps involved in the segmentation process are:
 
 The behavior of these steps varies between the first and second phases. The table below summarizes the changes in behavior for each step during these phases.
 
-\begin{table}[H]
+\begin{table}[tbp]
   \centering
   \caption{Behavior of steps in the first and second phase of segmentation}
-  \resizebox{\columnwidth}{!}{%
-  \begin{tabular}{|p{4cm}|p{2cm}|p{2cm}|}
-  \hline
-  \textbf{Step} & \textbf{First Phase} & \textbf{Second Phase} \\
-  \hline
-  \textbf{Grid Representation} & Grid cells have a large height & Grid cells have a small height \\
-  \hline
-  \hline
-  \textbf{Local Eigen Analysis} & Unchanged & Unchanged \\
-  \hline
-  \textbf{Surface Gradient Analysis} & Unchanged & Unchanged \\
-  \hline
-  \textbf{Ground Region Growth} & Unchanged & A detailed neighborhood check is performed for neighboring cells during expansion \\
-  \hline
-  \textbf{Final Ground Segmentation} & Unchanged & Unchanged \\
-  \hline
-  \end{tabular}%
-  }
   \label{tab:phase_behavior}
+  \todo[inline]{Only write this inside text}
+  \begin{tabular}{@{}p{3.1cm}p{2cm}p{3cm}@{}}
+\toprule
+  \textbf{Step} & \textbf{First Phase} & \textbf{Second Phase} \\
+\midrule
+  \textbf{Grid Representation} & Grid cells have a large height & Grid cells have a small height \\
+  \textbf{Local Eigen Analysis} & Unchanged & Unchanged \\
+  \textbf{Surface Gradient Analysis} & Unchanged & Unchanged \\
+  \textbf{Ground Region Growth} & Unchanged & A detailed neighborhood check is performed for neighboring cells during expansion \\
+  \textbf{Final Ground Segmentation} & Unchanged & Unchanged \\
+\bottomrule
+  \end{tabular}%
 \end{table}
 
 \subsection{Grid Representation}
 The points are assigned to cells within a 3D grid in Euclidean space based on their positions. This 3D grid is crucial 
 for modeling and detecting empty spaces, as the height of each grid cell helps identify voids or gaps in the environment. 
 \begin{align}
-cell_x &= point_x / cellsize_x \\
-cell_y &= point_y / cellsize_y \\
-cell_z &= point_z / cellsize_z
+cell_{\{x,y,z\}} &= point_{\{x,y,z\}} / cellsize_{\{x,y,z\}},
+%cell_y &= point_y / cellsize_y \\
+%cell_z &= point_z / cellsize_z
 \end{align}
-where $cellsize$ is a parameter. We explain our choice of parameters in the section H.
+where $cellsize$ is a parameter. We explain our choice of parameters in section \ref{sec:parameters}.
 
 \subsection{Local Eigen Analysis}
 In point cloud data, the density of points often decreases as the distance from the sensor increases. 
@@ -386,21 +384,21 @@ helps determine how well a grid cell approximates a planar surface, which is cha
 
 Given a point cloud within a grid cell, we can calculate the eigenvalues of the covariance matrix of the points 
 to assess their spatial distribution. Let CC be the covariance matrix computed for the points in a grid cell. 
-The eigenvalue decomposition of CC yields eigenvalues $\lambda_1$, $\lambda_2$, and $\lambda_3$ (where $\lambda_1$ > $\lambda_2$ > $\lambda_3$).
+The eigenvalue decomposition of CC yields eigenvalues $\lambda_1$, $\lambda_2$, and $\lambda_3$ (where $\lambda_1 > \lambda_2 > \lambda_3$).
 
 We use the ratio of the largest eigenvalue to the sum of all eigenvalues to gauge the point distribution:
-
+%
 \begin{align}
-  \text{Ratio} &= \frac{\lambda_1}{\lambda_1 + \lambda_2 + \lambda_3}
+  \text{Ratio} &= \tfrac{\lambda_1}{\lambda_1 + \lambda_2 + \lambda_3}
 \end{align}  
-
+%
 The ratio of the largest eigenvalue to the sum of all eigenvalues provides an indication of whether the points in 
 a grid cell are more aligned with a planar surface, a line, or a non-planar structure. The ratio is calculated as follows:
 
 We devise three possible conclusions based on the ratio and categorize the grid
 cells into three categories.
 
-\begin{description}[style=nextline]
+\begin{description}%[style=nextline]
   \item[Line Cell]
   A high ratio in range $[0.9, 1.0]$ indicates that $\lambda_1$ is significantly larger than $\lambda_2$ and $\lambda_3$, which suggests that the points 
   are distributed along a line. In this case, the distribution is highly elongated along one direction with minimal variation
@@ -415,6 +413,7 @@ cells into three categories.
   are more aligned with a non-planar surface.
 \end{description}
 
+\iffalse
 \begin{table}
 \begin{tabular}{@{}ll@{}}
 \toprule
@@ -428,33 +427,44 @@ Non-planar Cell   & $< 0.40$ \\
 \caption{Largest eigen to the sum ratio}
 \label{tab:eigen-ratio}
 \end{table}
+\fi
 
 Each type of cell is processed using a distinct algorithm, and we refer to these cells as Line, Plane, and Non-Planar cells:
 
 \subsubsection{Line Cell}
-\begin{figure}
+\begin{figure*}
   \centering
+  \subcaptionbox{Line Cell\label{fig:LineCell}}[0.3\linewidth]{
   \includegraphics[width=\linewidth]{line_cell.png}
+  }
+  \hfil
+  \subcaptionbox{Plane Cell\label{fig:PlaneCell}}[0.3\linewidth]{
+  \includegraphics[width=\linewidth]{plane_cell.png}
+  }
+  \hfil
+  \subcaptionbox{Non-Planar Cell\label{fig:UnknownCell}}[0.3\linewidth]{
+  \includegraphics[width=\linewidth]{unknown_cell.png}
+  }
   \caption{Points (white) assigned to a grid cell and the 
-  corresponding eigen vectors (black) are shown. 
-  The eigen vector along the line of points is the single dominant eigen value. 
-  The cell is classified as Line based of the local eigen analysis.}
-  \label{fig:LineCell}
-\end{figure}
+  dominating Eigen vectors (black) are shown. 
+  The cell is classified as Line~(\subref{fig:LineCell}), Plane~(\subref{fig:PlaneCell}),
+  or Non-Planar~(\subref{fig:UnknownCell})
+  based of the local Eigen analysis.}
+\end{figure*}
 
 If the largest eigenvalue is significantly larger than the other eigenvalues, the cell is categorized as a Line Cell.
 In such cases, the cell exhibits a dominant linear structure. For these cells, we compute the angle between the largest eigenvector 
 (depicted in green in Fig.~\ref{fig:LineCell}) and the positive z-axis (pointing upwards). This angle helps to characterize 
 the orientation of the linear distribution relative to the vertical axis.
-
+%
 \begin{align}
 CellType &= 
-  \begin{cases}
+  \begin{smallcases}
     \text{Tentative Obstacle} & angle \ge 90\degree - Threshold \\
     \text{Tentative Ground} & angle < 90\degree - Threshold
-  \end{cases}
+  \end{smallcases}
 \end{align}
-
+%
 The ground slope threshold is used to determine the classification of cells based on their angle of uprightness. 
 Cells with a small angle between the largest eigenvector and the positive z-axis are considered for classification
 as obstacles. This is because ground cells typically do not exhibit a highly upright spatial distribution.
@@ -465,14 +475,14 @@ obstacle (such as a car roof or a table), we cannot be certain of its exact natu
 as tentative Obstacle until further analysis can confirm their true classification.
 
 \subsubsection{Plane Cell}
-\begin{figure}
-  \centering
-  \includegraphics[width=\linewidth]{plane_cell.png}
-  \caption{Points (white) assigned to a grid cell and the corresponding eigen vectors (black) are shown. 
-  Two dominant eigen vectors and shown and the third vector is negligible in comparison. 
-  The cell is classified as Plane based on the local eigen analysis.}
-  \label{fig:PlaneCell}
-\end{figure}
+% \begin{figure}
+%   \centering
+%   \includegraphics[width=\linewidth]{plane_cell.png}
+%   \caption{Points (white) assigned to a grid cell and the corresponding eigen vectors (black) are shown. 
+%   Two dominant eigen vectors and shown and the third vector is negligible in comparison. 
+%   The cell is classified as Plane based on the local eigen analysis.}
+%   \label{fig:PlaneCell}
+% \end{figure}
 Cells that contain multiple scan lines are suitable candidates for plane fitting when the spatial distribution of the points 
 exhibits two dominant eigenvalues, with the third eigenvalue being negligibly small or significantly smaller. In such cases, 
 the cell is assessed to determine if it can be classified as a Plane Cell.
@@ -487,13 +497,13 @@ exhibiting a planar distrubtion of points is a car roof top or the top of an obs
 \todo{Suggestion: One could check lowest EV/EV sum $<$ threshold}
 
 \subsubsection{Non-planar Cell}
-\begin{figure}
-  \centering
-  \includegraphics[width=\linewidth]{unknown_cell.png}
-  \caption{Points (white) assigned to a grid cell and the corresponding eigen vectors (black) are shown. 
-  There is no dominance of a single or two eigen vectors. }
-  \label{fig:UnknownCell}
-\end{figure}
+% \begin{figure}
+%   \centering
+%   \includegraphics[width=\linewidth]{unknown_cell.png}
+%   \caption{Points (white) assigned to a grid cell and the corresponding eigen vectors (black) are shown. 
+%   There is no dominance of a single or two eigen vectors. }
+%   \label{fig:UnknownCell}
+% \end{figure}
 
 If the ratio of the largest eigenvalue to the sum of all eigenvalues is smaller than 0.4, the cell is classified as non-planar. 
 In this scenario, the cell does not exhibit two clearly dominant eigenvalues, 
@@ -530,16 +540,15 @@ The plane model fitting is applied specifically to cells categorized as Plane. F
 the fitted plane and apply a slope threshold to assess whether the cell meets the ground criteria. Cells that fulfill these 
 criteria are tentatively marked as potential ground cells. These ground cells are then used as initial seeds for the 
 region-growing algorithm. Cells that do not meet the ground criteria are marked as non-ground.
-
+%
 \begin{align}
 CellType &= 
-  \begin{cases}
-    \text{Ground} & angle \le Threshold \\
-    \text{Non-Ground} & angle < Threshold
-  \end{cases}
+  \begin{smallcases} 
+    \text{Ground}, & angle \le threshold \\
+    \text{Non-Ground}, & angle > threshold
+  \end{smallcases}
 \end{align}
-\todo{One comparison needs to be turned}
-where threshold refers to the ground slope threshold.
+where $threshold$ refers to the ground slope threshold.
 
 \subsection{Seed Selection}
 The seed cells are selected from the tentative Ground cells based on the following conditions:
@@ -653,28 +662,22 @@ We used a varied set of available datasets to test the adaptability of GroundSeg
 urban and natural environments. Each dataset uses a different type of sensors. The platforms used for data collection are Car, Mobile Robot and Handheld.
 The selection of the handheld dataset was to test how well the solutions perform in varying sensor heights.
 
-\begin{table}[H]
+\begin{table}[tbp]
   \centering
   \caption{Datasets from natural and urban environments for experiementation}
-  \resizebox{\columnwidth}{!}{%
-  \begin{tabular}{|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
-  \hline
-  \textbf{Dataset} & \textbf{Environment} & \textbf{Sensor} & \textbf{Year} & \textbf{Platform} & \textbf{Sensor Height (m)}\\
-  \hline
-  \textbf{SemanticKITTI \cite{Geiger2013IJRR}} & Urban & Velodyne HDL-64E & 2013 & Car & 1.723 \\ 
-  \hline
-  \textbf{UrbanNav \cite{Hsunavi.602}} & Urban & Velodyne HDL-32E & 2021 & Car & 2.1 \\ 
-  \hline
-  \textbf{DOALS \cite{9560730}} & Urban & Ouster OS0 128 & 2021 & Handheld & 2 \\ 
-  \hline
-  \textbf{RELLIS-3D \cite{9561251}} & Natural & Ouster OS1 64 & 2022 & Mobile Robot & 1.16 \\
-  \hline
-  \textbf{BotanicGarden \cite{10415477}} & Natural  & Velodyne VLP-16 & 2024 & Mobile Robot & 1.164 \\
-  \hline
-  \end{tabular}%
-  }
   \label{tab:phase_behavior}
-  \end{table}
+  \begin{tabular}{@{}p{1.8cm}p{1.0cm}p{1.2cm}p{0.5cm}p{1.1cm}p{1.cm}@{}}
+  \toprule
+  \textbf{Dataset} & \textbf{Environ-ment} & \textbf{Sensor} & \textbf{Year} & \textbf{Platform} & \textbf{Sensor Height}\\
+  \midrule
+  \textbf{SemanticKITTI \cite{Geiger2013IJRR}} & Urban & Velodyne HDL-64E & 2013 & Car & 1.723\,m \\ 
+  \textbf{UrbanNav \cite{Hsunavi.602}} & Urban & Velodyne HDL-32E & 2021 & Car & 2.1\,m \\ 
+  \textbf{DOALS \cite{9560730}} & Urban & Ouster OS0 128 & 2021 & Handheld & 2\,m \\ 
+  \textbf{RELLIS-3D \cite{9561251}} & Natural & Ouster OS1 64 & 2022 & Mobile Robot & 1.16\,m \\
+  \textbf{BotanicGarden \cite{10415477}} & Natural  & Velodyne VLP-16 & 2024 & Mobile Robot & 1.164\,m \\
+  \bottomrule
+  \end{tabular}%
+\end{table}
 
 \subsubsection{SemanticKITTI}
 The SemanticKITTI dataset \cite{Geiger2013IJRR} is a comprehensive collection of real-world data designed to
@@ -723,52 +726,36 @@ understanding complex 3D structures and diverse landscapes is crucial.
 We use precision, recall and F1 score as a metrics to compare the algorithms. Not all datasets provided labelled point clouds, therefore the performance metrics were 
 collected only on the SemanticKITTI dataset. Visual analysis of ground segmentation results on other datasets was enough to compare the performance of GroundSeg3D and
 state-of-the-art solutions.
+\begin{align}
+\text{Precision} &= \tfrac{\text{NTP}}{\text{NTP} + \text{NFP}} \\
+\text{Recall} &= \tfrac{\text{NTP}}{\text{NTP} + \text{NFN}} \\
+\text{F1 Score} &= 2 \cdot \tfrac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}},
+\end{align}
+where
+NTP, NFP, and NFN are the Number of True Positives (correctly predicted positives), 
+False Positives (incorrectly predicted positives)
+and False Negatives (positives that were incorrectly predicted as negative).
 
-\begin{equation}
-\text{Precision} = \frac{\text{NTP}}{\text{NTP} + \text{NFP}}the proposed
-\end{equation}
-
-\begin{equation}
-\text{Recall} = \frac{\text{NTP}}{\text{NTP} + \text{NFN}}
-\end{equation}
-
-\begin{equation}
-\text{F1 Score} = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}
-\end{equation}
-
-Where:
-\begin{enumerate}
-  \item NTP = Number of True Positives (correctly predicted positives)
-  \item NFP = Number of False Positives (incorrectly predicted positives)
-  \item NFN = Number of False Negatives (positives that were incorrectly predicted as negative) 
-\end{enumerate}
-
-\subsection{GroundSeg3D Parameters}
+\subsection{GroundSeg3D Parameters}\label{sec:parameters}
 One of our main objectives was to develop an algorithm which does not require parameter tuning across various environments and sensor configurations. We achieved our target and
 all the experimental results from various datasets use a single set of parameters. 
 
-\begin{table}[H]
+\begin{table}[tbp]
   \centering
   \caption{Parameters of GroundSeg3D}
-  \resizebox{\columnwidth}{!}{%
-  \begin{tabular}{|p{4cm}|p{2cm}|p{4cm}|}
-  \hline
+  \label{tab:parameters}
+  \begin{tabular}{@{}p{3cm}p{1cm}p{4cm}@{}}
+\toprule
   \textbf{Parameter} & \textbf{Value} & \textbf{Description} \\
-  \hline
-  \textbf{(maxX, minX, maxY, minY, maxZ, minZ)} & (80, -80, 80, -80, 80, -80) & Region of interest (in meters) of the point cloud in Euclidean space. \\ 
-  \hline
+\midrule
+  \textbf{max\{X,Y,Z\}, min\{X,Y,Z\}} & $\pm80$ & Region of interest (in meters) of the point cloud in Euclidean space. \\ 
   \textbf{downsample} & False & Toggle to downsample the point cloud to a user-defined resolution in meters. \\ 
-  \hline
-  \textbf{downsample\_resolution} & 0.1 & Point cloud is downsampled to 10 cm. \\ 
-  \hline
-  \textbf{(cellSizeX, cellSizeY, cellSizeZ)} & (2, 2, 10) & Size (in meters) of the grid cell in three-dimensional space. \\ 
-  \hline
+  \textbf{downsample\_resolution} & 0.1 & Downsample point cloud to 10\,cm. \\ 
+  \textbf{(cellSizeX, cellSizeY, cellSizeZ)} & 2, 2, 10 & Size (in meters) of the grid cell in three-dimensional space. \\ 
   \textbf{startCellDistanceThreshold} & 10 & Maximum distance for selection of seed cells used as start cells for region growing. \\
-  \hline
   \textbf{groundInlierThreshold} & 0.1 & Inlier threshold (in meters) for the plane model fitting to points in a grid cell. \\ 
-  \hline
+\bottomrule
   \end{tabular}%
-  }
   \label{tab:parameters}
 \end{table}
 
