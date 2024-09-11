@@ -64,7 +64,7 @@ The perception system of an autonomous system utilizes multiple sensors to
 capture salient features of the environment. These features are used as inputs by various sub
 systems e.g. navigation, control, learning etc. A core sensor of the perception system
 is the LIDAR and given the advancements in sensor design and reduced costs, it
-has become a standard sensor in autonomous systems \cite{todo}. The LIDAR uses bands of
+has become a standard sensor in autonomous systems \cite{Gomes2023}. The LIDAR uses bands of
 laser beams to scan the surrounding environment and the time-of-flight
 information is used to capture distance information at high resolution. The
 result of the single scan is a point cloud sample which in today’s sensors may
@@ -125,14 +125,14 @@ categorizes the current state-of-the-art solutions accordingly.
 The traditional solutions for ground segmentation use geometric properties of the
 points to segment the ground and non-ground points. Usual approaches discretize
 the point cloud into grid cells and then process the points in each cell
-individually. The grid cells may be purely 2D, 2.5D, or even 3D \cite{todo}. Some
+individually. Such solutions are usually based occupancy grids or elevation maps \cite{5650541,9558794}. Some
 approaches extend the grid cell and analyze the points in neighboring cells for
-a better estimation of surface properties \cite{todo}. The modeling of the points in the
+a better estimation of surface properties \cite{9969541}. The modeling of the points in the
 grid cells using  plane fitting and line extraction is a common approach in many
-solutions \cite{todo}. Region growing and clustering is used to combine individual grid
-cells into a larger region of connected cells \cite{todo}. Higher order inferences based
-on Conditional Random Field (CRF) and Markov Random Field (MRF) have been used
-\cite{todo}.
+solutions \cite{9466396,9981561}. Region growing and clustering is used to combine individual grid
+cells into a larger region of connected cells \cite{5164280}. Higher order inferences based
+on Conditional Random Field (CRF) and Markov Random Field (MRF) have also been used
+\cite{9410344,7995861}.
 
 \subsection{Learning Solutions}
 The advancements in deep learning meant that some researchers used the existing
@@ -140,7 +140,7 @@ CNN networks originally used for object detection for ground segmentation using
 range images generated from the point cloud data. The development of PointNet \cite{qi2017pointnet} and its successor 
 PointNet++ \cite{qi2017pointnet++} give a unified
 solution for various applications e.g. object and 
-scene segmentation. Various other solutions like GndNet \cite{paigwar2020gndnet}, PointPillars \cite{lang2019pointpillars}, JCP \cite{todo}, SectorGSnet \cite{todo}
+scene segmentation. Various other solutions like GndNet \cite{paigwar2020gndnet}, PointPillars \cite{lang2019pointpillars}, JCP \cite{rs13163239}, SectorGSnet \cite{9691325}
 showcase good results.
 
 \section{Proposed Solution}
@@ -642,13 +642,81 @@ we selected some of the state-of-the-art ground segmentation works form literatu
 the sensor height as a parameter. Therefore, sensor height was the only parameter which was updated. Our proposed solution does not require sensor height as a parameter 
 and we did not update any parameters in our tests throughout the experimentation. The results of our GroundSeg3D are with the same set of paramters shown in table.
 
-The experimentation was performed exclusively on datasets with real world point cloud data. No simulation data was used during the tests. We did not limit our 
-experiementation merely to the SemanticKITTI
-dataset. We selected a diverse set of datasets from urban and natural environments. Additonally, the datasets are based on different sensor configurations.
+The experimentation was performed exclusively on datasets with real world point cloud data. No simulation data was used during the tests. We selected a diverse set of datasets from urban and natural environments. Additonally, the datasets are based on different sensor configurations.
 A ground segmentation solution must be able to perform robustly for various sensor types and configurations without parameter tuning. To showcase that our solution is not
 bound to a sensor height, we selected a handheld dataset to test the adaptability of our ground segmentation to a changing height of the sensor. In contrast, most existing 
 solutions require a sensor height as a parameter with the assumption that the height of the sensor is unchanged. This assumption does not hold in case of handheld or UAV 
 based point cloud datasets. Futhermore, the constant sensor height assumption does not hold for mobile robots with the capability to change their height.
+
+\subsection{Datasets}
+We used a varied set of available datasets to test the adaptability of GroundSeg3D to new sensors and environments. The datasets provide data from
+urban and natural environments. Each dataset uses a different type of sensors. The platforms used for data collection are Car, Mobile Robot and Handheld.
+The selection of the handheld dataset was to test how well the solutions perform in varying sensor heights.
+
+\begin{table}[H]
+  \centering
+  \caption{Datasets from natural and urban environments for experiementation}
+  \resizebox{\columnwidth}{!}{%
+  \begin{tabular}{|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
+  \hline
+  \textbf{Dataset} & \textbf{Environment} & \textbf{Sensor} & \textbf{Year} & \textbf{Platform} & \textbf{Sensor Height (m)}\\
+  \hline
+  \textbf{SemanticKITTI \cite{Geiger2013IJRR}} & Urban & Velodyne HDL-64E & 2013 & Car & 1.723 \\ 
+  \hline
+  \textbf{UrbanNav \cite{Hsunavi.602}} & Urban & Velodyne HDL-32E & 2021 & Car & 2.1 \\ 
+  \hline
+  \textbf{DOALS \cite{9560730}} & Urban & Ouster OS0 128 & 2021 & Handheld & 2 \\ 
+  \hline
+  \textbf{RELLIS-3D \cite{9561251}} & Natural & Ouster OS1 64 & 2022 & Mobile Robot & 1.16 \\
+  \hline
+  \textbf{BotanicGarden \cite{10415477}} & Natural  & Velodyne VLP-16 & 2024 & Mobile Robot & 1.164 \\
+  \hline
+  \end{tabular}%
+  }
+  \label{tab:phase_behavior}
+  \end{table}
+
+\subsubsection{SemanticKITTI}
+The SemanticKITTI dataset \cite{Geiger2013IJRR} is a comprehensive collection of real-world data designed to
+facilitate research in autonomous driving and computer vision. Collected by the
+Karlsruhe Institute of Technology and the Toyota Technological Institute at
+Chicago, it includes data captured from a vehicle equipped with various sensors,
+such as high-resolution stereo cameras, 3D laser scanners, and GPS/IMU systems.
+This dataset covers a wide range of urban, suburban, and rural environments,
+providing benchmarks for tasks such as object detection, tracking, segmentation,
+and visual odometry. Its diversity and complexity make it a pivotal resource for
+advancing autonomous driving technologies and robust computer vision algorithms.
+
+\subsubsection{UrbanNav}
+The UrbanNav dataset, available on GitHub, is a comprehensive dataset designed for urban navigation research, 
+particularly in Global Navigation Satellite System (GNSS)-denied environments. Developed by the Intelligent 
+Positioning and Navigation Laboratory at The Hong Kong Polytechnic University, it provides data collected 
+from various sensors, including GNSS receivers, Inertial Measurement Units (IMUs), Light Detection and Ranging (LiDAR) sensors, 
+and cameras, in dense urban settings like Hong Kong. The dataset is intended to facilitate the development and testing of robust 
+navigation algorithms that can handle the challenges of urban environments, such as multipath effects and signal blockages. The 
+repository includes detailed descriptions of the data collection process, file structure, and usage guidelines, making it a valuable 
+resource for researchers working on urban navigation and related fields.
+
+\subsubsection{DOALS}
+Dynamic Object Aware LiDAR SLAM based on Automatic Generation of Training Data (DOALS) contains 12000 scans that were recorded
+in the main hall of ETH Zurich. The recording was performed at various locations and each location provides 2 sequences of data.
+We use the data collection from the touristic pedestrian zone (Nierendorf) for our ground segmentation tests.
+
+\subsubsection{BotanicGarden}
+The BotanicGarden dataset is a used to test the ground segmentation capabilities of the algorithm in unstructured natual environments. The
+dataset provides data from wide varierty of sensors, including high-res and high-rate stereo gray and RGB cameras, 
+spinning and MEMS 3D LiDARs, and low-cost and industrial-grade IMUs, supporting a wide range of applications. 
+
+\subsubsection{RELLIS-3D}
+The Rellis-3D dataset, developed by Texas A\&M University, is an advanced dataset
+aimed at improving semantic segmentation in outdoor environments. Named after
+the RELLIS Campus, it features high-resolution LiDAR and camera data captured in
+diverse weather conditions and various terrain types. Unlike many other datasets
+focused on urban settings, Rellis-3D emphasizes off-road scenarios, including
+complex and cluttered scenes with vegetation, rough terrain, and obstacles. This
+dataset is instrumental for developing and testing algorithms in fields such as
+robotics, autonomous navigation, and environmental perception, where
+understanding complex 3D structures and diverse landscapes is crucial.
 
 \subsection{Performance Metrics}
 
@@ -703,76 +771,6 @@ all the experimental results from various datasets use a single set of parameter
   }
   \label{tab:parameters}
 \end{table}
-
-\subsection{Datasets}
-We used a varied set of available datasets to test the adaptability of GroundSeg3D to new sensors and environments. The datasets provide data from
-urban and natural environments. Each dataset uses a different type of sensors. The platforms used for data collection are Car, Mobile Robot and Handheld.
-The selection of the handheld dataset was to test how well the solutions perform in varying sensor heights.
-
-\begin{table}[H]
-  \centering
-  \caption{Datasets from natural and urban environments for experiementation}
-  \resizebox{\columnwidth}{!}{%
-  \begin{tabular}{|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
-  \hline
-  \textbf{Dataset} & \textbf{Environment} & \textbf{Sensor} & \textbf{Year} & \textbf{Platform} & \textbf{Sensor Height (m)}\\
-  \hline
-  \textbf{SemanticKITTI \cite{todo}} & Urban & Velodyne HDL-64E & 2013 & Car & 1.723 \\ 
-  \hline
-  \textbf{UrbanNav \cite{todo}} & Urban & Velodyne HDL-32E & 2021 & Car & 2.1 \\ 
-  \hline
-  \textbf{DOALS \cite{todo}} & Urban & Ouster OS0 128 & 2021 & Handheld & 2 \\ 
-  \hline
-  \textbf{RELLIS-3D \cite{todo}} & Natural & Ouster OS1 64 & 2022 & Mobile Robot & 1.16 \\
-  \hline
-  \textbf{BotanicGarden \cite{todo}} & Natural  & Velodyne VLP-16 & 2024 & Mobile Robot & 1.164 \\
-  \hline
-  \end{tabular}%
-  }
-  \label{tab:phase_behavior}
-  \end{table}
-
-\subsubsection{SemanticKITTI}
-The SemanticKITTI dataset \cite{Geiger2013IJRR} is a comprehensive collection of real-world data designed to
-facilitate research in autonomous driving and computer vision. Collected by the
-Karlsruhe Institute of Technology and the Toyota Technological Institute at
-Chicago, it includes data captured from a vehicle equipped with various sensors,
-such as high-resolution stereo cameras, 3D laser scanners, and GPS/IMU systems.
-This dataset covers a wide range of urban, suburban, and rural environments,
-providing benchmarks for tasks such as object detection, tracking, segmentation,
-and visual odometry. Its diversity and complexity make it a pivotal resource for
-advancing autonomous driving technologies and robust computer vision algorithms.
-
-\subsubsection{UrbanNav}
-The UrbanNav dataset, available on GitHub, is a comprehensive dataset designed for urban navigation research, 
-particularly in Global Navigation Satellite System (GNSS)-denied environments. Developed by the Intelligent 
-Positioning and Navigation Laboratory at The Hong Kong Polytechnic University, it provides data collected 
-from various sensors, including GNSS receivers, Inertial Measurement Units (IMUs), Light Detection and Ranging (LiDAR) sensors, 
-and cameras, in dense urban settings like Hong Kong. The dataset is intended to facilitate the development and testing of robust 
-navigation algorithms that can handle the challenges of urban environments, such as multipath effects and signal blockages. The 
-repository includes detailed descriptions of the data collection process, file structure, and usage guidelines, making it a valuable 
-resource for researchers working on urban navigation and related fields.
-
-\subsubsection{DOALS}
-Dynamic Object Aware LiDAR SLAM based on Automatic Generation of Training Data (DOALS) contains 12000 scans that were recorded
-in the main hall of ETH Zurich. The recording was performed at various locations and each location provides 2 sequences of data.
-We use the data collection from the touristic pedestrian zone (Nierendorf) for our ground segmentation tests.
-
-\subsubsection{BotanicGarden}
-The BotanicGarden dataset is a used to test the ground segmentation capabilities of the algorithm in unstructured natual environments. The
-dataset provides data from wide varierty of sensors, including high-res and high-rate stereo gray and RGB cameras, 
-spinning and MEMS 3D LiDARs, and low-cost and industrial-grade IMUs, supporting a wide range of applications. 
-
-\subsubsection{RELLIS-3D \cite{todo}}
-The Rellis-3D dataset, developed by Texas A\&M University, is an advanced dataset
-aimed at improving semantic segmentation in outdoor environments. Named after
-the RELLIS Campus, it features high-resolution LiDAR and camera data captured in
-diverse weather conditions and various terrain types. Unlike many other datasets
-focused on urban settings, Rellis-3D emphasizes off-road scenarios, including
-complex and cluttered scenes with vegetation, rough terrain, and obstacles. This
-dataset is instrumental for developing and testing algorithms in fields such as
-robotics, autonomous navigation, and environmental perception, where
-understanding complex 3D structures and diverse landscapes is crucial.
 
 \section{Results and Discussion}
 
@@ -832,15 +830,15 @@ We further analyze the runtime of GroundSeg3D on various datasets. This should g
   \hline
   \textbf{Dataset} & \textbf{Pointclouds} & \textbf{Average Points} & \textbf{Average Time (ms)} \\
   \hline
-  \textbf{SemanticKITTI \cite{todo}} & 500 & 121253 & 86 \\ 
+  \textbf{SemanticKITTI} & 500 & 121253 & 86 \\ 
   \hline
-  \textbf{UrbanNav \cite{todo}} & 500 & 56639 & 42 \\ 
+  \textbf{UrbanNav} & 500 & 56639 & 42 \\ 
   \hline
-  \textbf{DOALS \cite{todo}} & 500 & 130895 & 60 \\ 
+  \textbf{DOALS} & 500 & 130895 & 60 \\ 
   \hline
-  \textbf{BotanicGarden \cite{todo}} & 500 & 25016 & 21 \\
+  \textbf{BotanicGarden} & 500 & 25016 & 21 \\
   \hline
-  \textbf{RELLIS-3D \cite{todo}} & 500 & 131071 & 82 \\
+  \textbf{RELLIS-3D} & 500 & 131071 & 82 \\
   \hline
   \end{tabular}%
   }
