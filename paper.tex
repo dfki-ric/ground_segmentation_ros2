@@ -29,8 +29,8 @@
 \begin{document}
 
 \title{GroundSeg3D: A Robust 3D Grid-Based Hybrid Approach for Ground Segmentation in Point Clouds Across Varied Terrains
-\thanks{Funded via some awesome projects, Maybe we will publish the code}
-}
+\thanks{Funded by the German Federal Ministry of Education and Research, grant number: 13N16537.
+All code will be published after acceptance.}}
 
 \author{\IEEEauthorblockN{Muhammad Haider Khan Lodhi and Christoph Hertzberg}
 \IEEEauthorblockA{\textit{Robotics Innovation Center}, 
@@ -67,7 +67,7 @@ has become a standard sensor in autonomous systems \cite{Gomes2023}. The LiDAR u
 laser beams to scan the surrounding environment and the time-of-flight
 information is used to capture distance information at high resolution. The
 result of the single scan is a point cloud sample which in today’s sensors may
-contain more than 1~million points. Evidently, the point cloud captures the
+contain more than a million points. Evidently, the point cloud captures the
 points from the environment in the scanning region of interest. However, not all 
 points in the region of interest are relevant for the downstream algorithms. 
 %For example, the obstacle detection 
@@ -1023,10 +1023,10 @@ relatively lower recall score is good trade off with the robust applicablity in 
   \centering
   \caption{Comparison of ground segmentation on SemanticKITTI sequences 00, 01, 04, and 09 with vegetation}
   \label{tab:comparison_00_non_downsampled}
-  \begin{tabular}{@{}l l@{\ \ }l@{\ \ }l@{\ \ }l   l@{\ \ }l@{\ \ }l@{\ \ }l   rrrr@{}}
+  \begin{tabular}{@{}l l@{\ \ }l@{\ \ }l@{\ \ }l   l@{\ \ }l@{\ \ }l@{\ \ }l   rrrr}
   \toprule
    Algorithm   & \multicolumn{4}{c}{Precision$\pm$SD (\%)} & \multicolumn{4}{c}{Recall$\pm$SD (\%)} & \multicolumn{4}{c}{Time (ms)}  \\
-   \cline{2-5} %\cline{6-9} %\cline{10-14}
+   \cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
    \qquad Sequence& 00 & 01 & 04 & 09 & 00 & 01 & 04 & 09 & 00  & 01 & 04 & 09\\
 \midrule
   GPF          & $94.9\pm 5.0$ & $92.1\pm 8.5$ & $95.4\pm 5.0$ & $96.0\pm 6.2$ & $79.0\pm27.2$  & $23.5\pm21.2$  & $72.6\pm28.7$ & $63.5\pm29.5$ & 13 & 11& 12 & 12 \\ 
