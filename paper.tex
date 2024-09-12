@@ -32,16 +32,15 @@
 \thanks{Funded via some awesome projects}
 }
 
-\author{\IEEEauthorblockN{Muhammad Haider Khan Lodhi\IEEEauthorrefmark{1} and Christoph Hertzberg\IEEEauthorrefmark{2}}
+\author{\IEEEauthorblockN{Muhammad Haider Khan Lodhi and Christoph Hertzberg}
 \IEEEauthorblockA{\textit{Robotics Innovation Center}\\
 German Research Center for Artificial Intelligence (DFKI),
 Bremen, Germany\\
-Email: \IEEEauthorrefmark{1}mulo01@dfki.de, \IEEEauthorrefmark{2}christoph.hertzberg@dfki.de}%
+Email: Haider\_Khan.Lodhi@dfki.de, Christoph.Hertzberg@dfki.de}%
 }%
 
 \maketitle
 
-\todo{E-Mail format? I don't like my chhe01 address}
 \begin{abstract}
 Ground segmentation in point cloud data is the process of separating the points
 into ground and non-ground points. It is a key component in the perception pipeline of
@@ -60,13 +59,6 @@ Ground Segmentation, Point Clouds, Mobile Robotics, Autonomous Driving, Rough Te
 
 
 \section{Introduction}
-\begin{figure*}[bt]
-  \centering
-  \includegraphics[width=\linewidth]{intro.png}
-  \caption{GroundSeg3D: The original point cloud (represented as white points) is segmented into ground points (magenta) and non-ground points (blue). }
-  \label{fig:results}
-  \todo[inline]{Try forcing this to first page}
-\end{figure*}
 The perception system of an autonomous system utilizes multiple sensors to
 capture salient features of the environment. These features are used as inputs by various sub
 systems e.g. navigation, control, learning etc. A core sensor of the perception system
@@ -90,6 +82,12 @@ Ground points can be used for traversability analysis, navigation, and
 Detecting them is a necessary precursor step for extraction
     of useful information for downstream tasks in mobile
     robot navigation \cite{Jimenez2021,Arora2023}.
+\begin{figure}[b]
+  \centering
+  \includegraphics[width=\linewidth]{intro_combined.png}
+  \caption{GroundSeg3D: The point cloud is segmented into ground points (magenta) and non-ground points (blue). }
+  \label{fig:results}
+\end{figure}
 
 \iffalse
 Feeding the same point cloud sample to both algorithms would require redudant processing of irrelevant points in both 
@@ -142,7 +140,7 @@ categorizes the current state-of-the-art solutions accordingly.
 The traditional solutions for ground segmentation use geometric properties of the
 points to segment the ground and non-ground points. Usual approaches discretize
 the point cloud into grid cells and then process the points in each cell
-individually. Such solutions are usually based occupancy grids or elevation maps \cite{5650541,9558794}. Some
+individually. Such solutions are usually based on occupancy grids or elevation maps \cite{5650541,9558794}. Some
 approaches extend the grid cell and analyze the points in neighboring cells for
 a better estimation of surface properties \cite{9969541}. The modeling of the points in the
 grid cells using  plane fitting and line extraction is a common approach in many
@@ -161,6 +159,7 @@ scene segmentation. Various other solutions like GndNet \cite{paigwar2020gndnet}
 showcase good results.
 
 \section{Proposed Solution}
+\iffalse
 Our goal was to develop a ground segmentation solution based
 on the traditional approaches and after analyzing the state-of-the-art, we decided
 to combine different approaches as a single solution by utilizing the best of
@@ -298,6 +297,7 @@ time period. The exact time requirements may vary based on the industry.
 \paragraph*{Solution} \todo{Time and space complexity analysis needs to be done}
 
 \section{Core Components}
+\fi
 
 GroundSeg3D uses a one-shot processing approach for the point cloud data. The input to the algorithm is a single sample of point cloud and the output is 
 ground and non-ground points. In the section, we explain the key processing steps performed on each input for robust ground segmentation.
@@ -311,11 +311,11 @@ to medium-sized region.
 
 The segmentation process is divided into two distinct phases to address different challenges in point segmentation. 
 Each phase uses grid cells of varying heights to improve the accuracy of ground and non-ground detection, 
-while also managing potential false segmentation.
+while also managing potential false segmentation as shown in Fig.\@~\ref{fig:dual_phase_segmentation}.
 
-\begin{figure}[H]
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/overview/stages.png}
+  \includegraphics[width=\linewidth]{figures/overview/stages.png}
   \caption{A two phase approach is developed for robust segmentation of ground and non-ground points. Phase-I uses grid cells with large height
   to capture tall structures as non-ground points. The coarse ground points from Phase-I are subsequently used as
   input for Phase-II in which the coarse ground points are processed using grid cells with small height. The small height ensures only actual ground
@@ -338,9 +338,9 @@ are actually ground are reclassified and added back to the ground points. This c
 classification is accurate, reflecting the true distribution of ground and non-ground points. Additionally, false positive ground points from Phase-I are
 added back to the pool of non-ground points at the end of Phase-II.
 
-\begin{figure}[tbp]
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/overview/pipeline.png}
+  \includegraphics[width=\linewidth]{figures/overview/pipeline.png}
   \caption{The core stages in the pipeline of GroundSeg3D. The same steps in the pipeline are used in both phases with slight modifications.}
   \label{fig:pipeline}
 \end{figure}
@@ -357,12 +357,12 @@ The steps involved in the segmentation process are:
 
 The behavior of these steps varies between the first and second phases. The table below summarizes the changes in behavior for each step during these phases.
 
-\begin{table}[tbp]
+\begin{table}[tb]
   \centering
   \caption{Behavior of steps in the first and second phase of segmentation}
   \label{tab:phase_behavior}
-  \todo[inline]{Only write this inside text}
-  \begin{tabular}{@{}p{3.1cm}p{2cm}p{3cm}@{}}
+%  \todo[inline]{Only write this inside text}
+  \begin{tabular}{@{}p{3.3cm}p{1.8cm}p{2.9cm}@{}}
 \toprule
   \textbf{Step} & \textbf{First Phase} & \textbf{Second Phase} \\
 \midrule
@@ -370,7 +370,7 @@ The behavior of these steps varies between the first and second phases. The tabl
   \textbf{Local Eigen Analysis} & Unchanged & Unchanged \\
   \textbf{Surface Gradient Analysis} & Unchanged & Unchanged \\
   \textbf{Ground Region Growth} & Unchanged & A detailed neighborhood check is performed for neighboring cells during expansion \\
-  \textbf{Final Ground Segmentation} & Unchanged & Unchanged \\
+  \textbf{Final Ground Segmentation\!\!\!} & Unchanged & Unchanged \\
 \bottomrule
   \end{tabular}%
 \end{table}
@@ -383,7 +383,8 @@ cell_{\{x,y,z\}} &= point_{\{x,y,z\}} / cellsize_{\{x,y,z\}},
 %cell_y &= point_y / cellsize_y \\
 %cell_z &= point_z / cellsize_z
 \end{align}
-where $cellsize$ is a parameter. We explain our choice of parameters in section \ref{sec:parameters}.
+where $cellsize$ is a parameter. 
+%We explain our choice of parameters in section \ref{sec:parameters}.
 
 \subsection{Local Eigen Analysis}
 In point cloud data, the density of points often decreases as the distance from the sensor increases. 
@@ -395,11 +396,10 @@ To address this issue in point cloud processing, especially when fitting geometr
 analysis to estimate the local spatial distribution of points within each grid cell. The eigenvalue analysis 
 helps determine how well a grid cell approximates a planar surface, which is challenging when point density is low.
 
-Given a point cloud within a grid cell, we can calculate the eigenvalues of the covariance matrix of the points 
-to assess their spatial distribution. Let CC be the covariance matrix computed for the points in a grid cell. 
-The eigenvalue decomposition of CC yields eigenvalues $\lambda_1$, $\lambda_2$, and $\lambda_3$ (where $\lambda_1 > \lambda_2 > \lambda_3$).
-
-We use the ratio of the largest eigenvalue to the sum of all eigenvalues to gauge the point distribution:
+Given a point cloud within a grid cell, we calculate the eigenvalues of the covariance matrix of the points 
+to assess their spatial distribution. Let $\lambda_1 > \lambda_2 > \lambda_3$ be their eigenvalues, we then compute the ratio:
+%
+%We use the ratio of the largest eigenvalue to the sum of all eigenvalues to gauge the point distribution:
 %
 \begin{align}
   \text{Ratio} &= \tfrac{\lambda_1}{\lambda_1 + \lambda_2 + \lambda_3}
@@ -410,7 +410,8 @@ a grid cell are more aligned with a planar surface, a line, or a non-planar stru
 
 We devise three possible conclusions based on the ratio and categorize the grid
 cells into three categories.
-
+%TODO make sure it's in remaining text
+\iffalse
 \begin{description}%[style=nextline]
   \item[Line Cell]
   A high ratio in range $[0.9, 1.0]$ indicates that $\lambda_1$ is significantly larger than $\lambda_2$ and $\lambda_3$, which suggests that the points 
@@ -425,7 +426,7 @@ cells into three categories.
   A ratio in this range $[0.0, 0.4)$ indicates that $\lambda_1$ is relatively smaller than $\lambda_2$ and $\lambda_3$, suggesting that the points 
   are more aligned with a non-planar surface.
 \end{description}
-
+\fi
 \iffalse
 \begin{table}
 \begin{tabular}{@{}ll@{}}
@@ -445,25 +446,32 @@ Non-planar Cell   & $< 0.40$ \\
 Each type of cell is processed using a distinct algorithm, and we refer to these cells as Line, Plane, and Non-Planar cells:
 
 \subsubsection{Line Cell}
-\begin{figure*}
+
+\begin{figure}
   \centering
-  \subcaptionbox{Line Cell\label{fig:LineCell}}[0.3\linewidth]{
-  \includegraphics[width=\linewidth]{line_cell.png}
-  }
-  \hfil
-  \subcaptionbox{Plane Cell\label{fig:PlaneCell}}[0.3\linewidth]{
-  \includegraphics[width=\linewidth]{plane_cell.png}
-  }
-  \hfil
-  \subcaptionbox{Non-Planar Cell\label{fig:UnknownCell}}[0.3\linewidth]{
-  \includegraphics[width=\linewidth]{unknown_cell.png}
-  }
-  \caption{Points (white) assigned to a grid cell and the 
-  dominating Eigen vectors (black) are shown. 
+\begin{subcaptiongroup}
+  \includegraphics[width=\linewidth]{celltypes.png}
+  \phantomcaption\label{fig:LineCell}
+  \phantomcaption\label{fig:PlaneCell}
+  \phantomcaption\label{fig:UnknownCell}
+\end{subcaptiongroup}
+%   \subcaptionbox{Line Cell\label{fig:LineCell}}[0.3\linewidth]{
+%   \includegraphics[width=\linewidth]{line_cell.png}
+%   }
+%   \hfil
+%   \subcaptionbox{Plane Cell\label{fig:PlaneCell}}[0.3\linewidth]{
+%   \includegraphics[width=\linewidth]{plane_cell.png}
+%   }
+%   \hfil
+%   \subcaptionbox{Non-Planar Cell\label{fig:UnknownCell}}[0.3\linewidth]{
+%   \includegraphics[width=\linewidth]{unknown_cell.png}
+%   }
+  \caption{Points (black) assigned to a grid cell and the 
+  dominating Eigen vectors (green) are shown. 
   The cell is classified as Line~(\subref{fig:LineCell}), Plane~(\subref{fig:PlaneCell}),
   or Non-Planar~(\subref{fig:UnknownCell})
   based of the local Eigen analysis.}
-\end{figure*}
+\end{figure}
 
 If the largest eigenvalue is significantly larger than the other eigenvalues, the cell is categorized as a Line Cell.
 In such cases, the cell exhibits a dominant linear structure. For these cells, we compute the angle between the largest eigenvector 
@@ -507,7 +515,7 @@ variation within the plane.
 
 The Plane cells at this stage can not be considered as definitive ground because of the manner of points assigned to grid cells. It might be that the cell
 exhibiting a planar distrubtion of points is a car roof top or the top of an obstacle. 
-\todo{Suggestion: One could check lowest EV/EV sum $<$ threshold}
+%\todo{Suggestion: One could check lowest EV/EV sum $<$ threshold}
 
 \subsubsection{Non-planar Cell}
 % \begin{figure}
@@ -675,23 +683,23 @@ We used a varied set of available datasets to test the adaptability of GroundSeg
 urban and natural environments. Each dataset uses a different type of sensors. The platforms used for data collection are Car, Mobile Robot and Handheld.
 The selection of the handheld dataset was to test how well the solutions perform in varying sensor heights.
 
-\begin{table}[tbp]
+\begin{table}[tb]
   \centering
   \caption{Datasets from natural and urban environments for experiementation}
   \label{tab:phase_behavior}
-  \begin{tabular}{@{}p{1.8cm}p{1.0cm}p{1.2cm}p{0.5cm}p{1.1cm}p{1.cm}@{}}
+  \begin{tabular}{@{}p{2.2cm}p{0.9cm}p{1.15cm}p{0.4cm}p{1.1cm}p{0.9cm}@{}}
   \toprule
   \textbf{Dataset} & \textbf{Environ-ment} & \textbf{Sensor} & \textbf{Year} & \textbf{Platform} & \textbf{Sensor Height}\\
   \midrule
-  \textbf{SemanticKITTI \cite{Geiger2013IJRR}} & Urban & Velodyne HDL-64E & 2013 & Car & 1.723\,m \\ 
-  \textbf{UrbanNav \cite{Hsunavi.602}} & Urban & Velodyne HDL-32E & 2021 & Car & 2.1\,m \\ 
-  \textbf{DOALS \cite{9560730}} & Urban & Ouster OS0 128 & 2021 & Handheld & 2\,m \\ 
-  \textbf{RELLIS-3D \cite{9561251}} & Natural & Ouster OS1 64 & 2022 & Mobile Robot & 1.16\,m \\
-  \textbf{BotanicGarden \cite{10415477}} & Natural  & Velodyne VLP-16 & 2024 & Mobile Robot & 1.164\,m \\
+  {SemanticKITTI\,\cite{Geiger2013IJRR}\!\!\!\!\!} & Urban & HDL-64E & 2013 & Car & 1.72\,m \\ 
+  {UrbanNav\,\cite{Hsunavi.602}} & Urban & HDL-32E & 2021 & Car & 2.1\,m \\ 
+  {DOALS\,\cite{9560730}} & Urban & OS0 128 & 2021 & Handheld & 2.0\,m \\ 
+  {RELLIS-3D\,\cite{9561251}} & Natural & OS1 64 & 2022 & Mob.\,Robot & 1.16\,m \\
+  {BotanicGarden\,\cite{10415477}\!\!} & Natural  & VLP-16 & 2024 & Mob.\,Robot & 1.16\,m \\
   \bottomrule
   \end{tabular}%
 \end{table}
-
+\iffalse
 \subsubsection{SemanticKITTI}
 The SemanticKITTI dataset \cite{Geiger2013IJRR} is a comprehensive collection of real-world data designed to
 facilitate research in autonomous driving and computer vision. Collected by the
@@ -733,27 +741,28 @@ complex and cluttered scenes with vegetation, rough terrain, and obstacles. This
 dataset is instrumental for developing and testing algorithms in fields such as
 robotics, autonomous navigation, and environmental perception, where
 understanding complex 3D structures and diverse landscapes is crucial.
-
+\fi
 \subsection{Performance Metrics}
 
 We use precision, recall and F1 score as a metrics to compare the algorithms. Not all datasets provided labelled point clouds, therefore the performance metrics were 
 collected only on the SemanticKITTI dataset. Visual analysis of ground segmentation results on other datasets was enough to compare the performance of GroundSeg3D and
 state-of-the-art solutions.
 \begin{align}
-\text{Precision} &= \tfrac{\text{NTP}}{\text{NTP} + \text{NFP}} \\
-\text{Recall} &= \tfrac{\text{NTP}}{\text{NTP} + \text{NFN}} \\
-\text{F1 Score} &= 2 \cdot \tfrac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}},
+\text{Precision} &= \tfrac{\text{NTP}}{\text{NTP} + \text{NFP}}, &
+\text{Recall} &= \tfrac{\text{NTP}}{\text{NTP} + \text{NFN}}, \\
+\text{F1} &= 2 \cdot \tfrac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}},
 \end{align}
 where
 NTP, NFP, and NFN are the Number of True Positives (correctly predicted positives), 
 False Positives (incorrectly predicted positives)
 and False Negatives (positives that were incorrectly predicted as negative).
 
+\iffalse
 \subsection{GroundSeg3D Parameters}\label{sec:parameters}
 One of our main objectives was to develop an algorithm which does not require parameter tuning across various environments and sensor configurations. We achieved our target and
 all the experimental results from various datasets use a single set of parameters. 
 
-\begin{table}[tbp]
+\begin{table}[tb]
   \centering
   \caption{Parameters of GroundSeg3D}
   \label{tab:parameters}
@@ -771,58 +780,61 @@ all the experimental results from various datasets use a single set of parameter
   \end{tabular}%
   \label{tab:parameters}
 \end{table}
-
+\fi
 \section{Results and Discussion}
 
-\subsection{Experiements on Datasets}
+\subsection{Performance on varied terrains}
 
-The ground segmentation on various datasets was performed without any paramter tuning. The ground points [pink] and non-ground points [blue] are shown. 
+The ground segmentation on various datasets was performed without any paramter tuning. 
+The ground points [pink] and non-ground points [blue] are shown in figures \ref{fig:single_fig} to~\ref{fig:botanic_garden}. 
 
-\begin{figure}[H]
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/grouped_figures/botanic_garden_all.png}
-  \caption{Ground segmentation results from the BotanicGarden dataset}
-  \label{fig:botanic_garden}
-\end{figure}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.5\textwidth]{figures/grouped_figures/doals_all.png}
-  \caption{Ground segmentation results from the DOALS dataset}
-  \label{fig:doals}
-\end{figure}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.5\textwidth]{figures/grouped_figures/kitti_all.png}
-  \caption{Ground segmentation results from the SemanticKITTI dataset}
+  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/kitti_all.png}
+  \caption{GroundSeg3D results on the SemanticKITTI dataset}
   \label{fig:single_fig}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/grouped_figures/rellies3d_all.png}
-  \caption{Ground segmentation results from the Rellis-3D dataset}
-  \label{fig:rellies_3d}
-\end{figure}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.5\textwidth]{figures/grouped_figures/urban_nav_all.png}
-  \caption{Ground segmentation results from the UrbanNav Tokyo dataset}
+  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/urban_nav_all.png}
+  \caption{GroundSeg3D results on the UrbanNav Tokyo dataset}
   \label{fig:urban_nav}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/grouped_figures/ric.png}
+  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/doals_all.png}
+  \caption{GroundSeg3D results on the DOALS dataset}
+  \label{fig:doals}
+\end{figure}
+
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/rellies3d_all.png}
+  \caption{GroundSeg3D results on the Rellis-3D dataset}
+  \label{fig:rellies_3d}
+\end{figure}
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/botanic_garden_all.png}
+  \caption{GroundSeg3D results on the BotanicGarden dataset}
+  \label{fig:botanic_garden}
+\end{figure}
+
+\iffalse
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/ric.png}
   \caption{Ground segmentation results from data collected at DFKI RIC - MFH}
   \label{fig:ric}
 \end{figure}
+\fi
+We further analyze the runtime of GroundSeg3D on various datasets (Table~\ref{tab:runtime}). This should give the end user a good idea of the expected runtime.
 
-We further analyze the runtime of GroundSeg3D on various datasets. This should give the end user a good idea of the expected runtime.
-
-\begin{table}[H]
+\begin{table}[tb]
   \centering
   \caption{Runtime of GroundSeg3D on varied datasets}
   \resizebox{\columnwidth}{!}{%
@@ -842,53 +854,57 @@ We further analyze the runtime of GroundSeg3D on various datasets. This should g
   \hline
   \end{tabular}%
   }
-  \label{tab:phase_behavior}
+  \label{tab:runtime}
   \end{table}
 
-\subsection{Dual-Phase Ground Segmentation}
+%\subsection{Dual-Phase Ground Segmentation}
 
-\begin{figure}[H]
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/corrections/dual_phase_segmentation.png}
+  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/corrections/dual_phase_segmentation.png}
   \caption{Correction of over-segmentation of ground points based on dual-phase segmentation}
   \label{fig:dual_phase_segmentation}
 \end{figure}
 
-\subsection{Performance on Rough Terrain}
+%\subsection{Performance on Rough Terrain}
 
-\begin{figure}[H]
+\iffalse
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/dfki_track/actual_backyard.png}
+  \includegraphics[width=\linewidth]{figures/dfki_track/actual_backyard.png}
   \caption{Rough outdoor terrain at the Robotics Test Track on DFKI RIC}
   \label{fig:arter_all}
 \end{figure}
-
-\begin{figure}[H]
+\fi
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/sloped terrain/arter_all.png}
-  \caption{Ground segmentation results on rough outdoor terrain at the Robotics Test Track on DFKI RIC}
+  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/sloped terrain/arter_all.png}
+  \caption{GroundSeg3D results on rough outdoor terrain at the Robotics Test Track on DFKI RIC}
   \label{fig:arter_all}
 \end{figure}
 
-\subsection{Performance on Sloped Terrain}
+%\subsection{Performance on Sloped Terrain}
 
-\begin{figure}[H]
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/sloped terrain/kitti_all.png}
-  \caption{Ground segmentation results on sloped outdoor terrain in SemanticKITTI}
-  \label{fig:kitti_all}
+  \includegraphics[width=\linewidth]{figures/sloped terrain/kitti_all.png}
+  \caption{GroundSeg3D results on sloped outdoor terrain in SemanticKITTI}
+  \label{fig:kitti_sloped_terrain}
 \end{figure}
 
-\subsection{Performance on Rocky and Flat Terrains}
+\iffalse
+%\subsection{Performance on Rocky and Flat Terrains}
 
-\begin{figure}[H]
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/dfki_track/mfh.png}
-  \caption{Ground segmentation results on various types of ground surfaces}
-  \label{fig:kitti_all}
+  \includegraphics[width=\linewidth]{figures/dfki_track/mfh.png}
+  \caption{GroundSeg3D results on various types of ground surfaces}
+  \label{fig:mfh_all}
 \end{figure}
+\fi
 
-\subsection{GroundSeg3D Performance vs. Distance}
+\iffalse
+%\subsection{GroundSeg3D Performance vs. Distance}
 
 In this section, we discuss the experimentation results. We take the SemanticKITTI sequence 0 to analyze the performance metrics with the state-of-the-art solutions. We wanted 
 to see how the performance metrics are affected as the distance of points increases. We can see from the plots that the precision is least affected by increasing
@@ -897,7 +913,7 @@ inceases, the far off points beloging to scan lines with gaps greator than the c
 in the Sequence 1 because of gaps in point cloud samples due to occlusions and separatation between the two streets. We believe that although the reduced recall is compensated
 by the capability of GroundSeg3D to exhibit robust performance on varied terrains without parameter tuning and dependence to a particular sensor configuration.
 
-\begin{figure}[H]
+\begin{figure}[tb]
   \centering
   \begin{subfigure}[b]{0.5\textwidth}
       \centering
@@ -925,36 +941,42 @@ by the capability of GroundSeg3D to exhibit robust performance on varied terrain
   \caption{Performance metrics of GroundSeg3D vs. Distance}
   \label{fig:main_fig}
 \end{figure}
+\fi
+%\subsection{Neighborhood Correction}
 
-\subsection{Neighborhood Correction}
-
-\begin{figure}[H]
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/corrections/neighborhood_correction.png}
+  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/corrections/neighborhood_correction.png}
   \caption{Correction of under-segmentation of ground points based on neighboring cells}
   \label{fig:neighborhood_correction}
 \end{figure}
 
-\subsection {Correction of False Outliers}
+%\subsection {Correction of False Outliers}
 
-\begin{figure}[H]
+As shown in Fig.\@~\ref{fig:false_outliers1}, plane fitting to planar cells leads to false 
+outliers because the fitted plane does not accurately model the spatial distribution of the 
+points in the cell. Therefore we use the Eigen normal to correct these points (Fig.\@~\ref{fig:false_outliers3}).
+
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/corrections/false_outliers/overview_1.png}
-  \caption{Overview1}
+  \includegraphics[width=\linewidth]{figures/corrections/false_outliers/overview_1.png}
+  \caption{False outliers (non-ground points) from RANSAC plane fitting on uneven terrain}
   \label{fig:false_outliers1}
 \end{figure}
 
-\begin{figure}[H]
+\iffalse
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/corrections/false_outliers/overview_2.png}
+  \includegraphics[width=\linewidth]{figures/corrections/false_outliers/overview_2.png}
   \caption{Overview2}
   \label{fig:false_outliers2}
 \end{figure}
+\fi
 
-\begin{figure}[H]
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/corrections/false_outliers/overview_3.png}
-  \caption{Overview3}
+  \includegraphics[width=\linewidth]{figures/corrections/false_outliers/overview_3.png}
+  \caption{Correction of false outliers using Eigen normal (Eigen vector of the smallest Eigen value) instead of plane normal}
   \label{fig:false_outliers3}
 \end{figure}
 
@@ -964,35 +986,36 @@ In the section, we compare the results of GroundSeg3D with other ground segmenta
 and False Negative [Purple] points are shown. For the sake of conciseness, we selected only a single frame for each solution where the solution under performs. We compare the
 segmentation results of our GroundSeg3D at those frames.
 
-\begin{figure}[H]
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/metrics/group_frame_20.png}
+  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/metrics/group_frame_20.png}
   \caption{Frame 20 of the 0th sequence in the SemanticKITTI}
   \label{fig:group_frame_20}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/metrics/group_frame_100.png}
+  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/metrics/group_frame_100.png}
   \caption{Frame 100 of the 0th sequence in the SemanticKITTI. Notice the significantly greater number of false positives [blue] points in the
   Patchwork and Patchwork++ solutions}
   \label{fig:group_frame_100}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/metrics/group_frame_140.png}
+  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/metrics/group_frame_140.png}
   \caption{Frame 140 of the 0th sequence in the SemanticKITTI}
   \label{fig:group_frame_140}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/metrics/group_frame_150.png}
+  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/metrics/group_frame_150.png}
   \caption{Frame 150 of the 0th sequence in the SemanticKITTI}
   \label{fig:group_frame_150}
 \end{figure}
 
+\iffalse
 \begin{figure*}
   \centering
   \includegraphics[width=16cm, height=8cm]{figures/datasets/UrbanNav/combined.png}
@@ -1006,13 +1029,40 @@ segmentation results of our GroundSeg3D at those frames.
   \caption{Comparison with state-of-the-art solutions on BotanicGarden Dataset}
   \label{fig:botanicgarden_combined}
 \end{figure*}
+\fi
 
 We get the third highest precison only second to the LineFit and GPF algorithms and fourth highest F1 score. The recall has a high standard deviation because of the inherent nature
 of the region growth algorithm. The state-of-the-art solutions have a clear advantage in terms of runtime over GroundSeg3D. The precision are recall of GroundSeg3D are 
 on par with the other solutions. Furthermore, since GroundSeg3D is not only developed for SemanticKITTI and does not require any parameter tuning, we feel that the 
 relatively lower recall score is good trade off with the robust applicablity in urban and natural environments.
 
-\begin{table}[H]
+\iftrue
+%combined table
+\begin{table*}[tb]
+  \centering
+  \caption{Comparison of ground segmentation on SemanticKITTI sequences 00, 01, 04, and 09 with vegetation}
+  \label{tab:comparison_00_non_downsampled}
+  \begin{tabular}{@{}l l@{\ \ }l@{\ \ }l@{\ \ }l   l@{\ \ }l@{\ \ }l@{\ \ }l   rrrr@{}}
+  \toprule
+   Algorithm   & \multicolumn{4}{c}{Precision$\pm$SD (\%)} & \multicolumn{4}{c}{Recall$\pm$SD (\%)} & \multicolumn{4}{c}{Time (ms)}  \\
+   \cline{2-5} %\cline{6-9} %\cline{10-14}
+   \qquad Sequence& 00 & 01 & 04 & 09 & 00 & 01 & 04 & 09 & 00  & 01 & 04 & 09\\
+\midrule
+  GPF          & $94.9\pm 5.0$ & $92.1\pm 8.5$ & $95.4\pm 5.0$ & $96.0\pm 6.2$ & $79.0\pm27.2$  & $23.5\pm21.2$  & $72.6\pm28.7$ & $63.5\pm29.5$ & 13 & 11& 12 & 12 \\ 
+  R-GPF        & $59.2\pm 11.6$& $89.7\pm 6.0$ & $84.6\pm 9.0$ & $71.4\pm 12.1$& $96.6\pm 1.8$  & $89.7\pm 4.6$  & $93.4\pm 1.7$ & $95.4\pm 3.4$ & 18 & 18& 18 & 19 \\ 
+  GPR          & $81.0\pm 7.5$ & $92.5\pm 4.5$ & $95.0\pm 2.0$ & $00.0\pm 0.0$ & $95.9\pm2.5$   & $89.6\pm4.9$   & $94.4\pm1.5$  & $00.0\pm0.0$  & 11 & 12& 13 & ?\\ 
+  CascadedSeg  & $91.7\pm 9.0$ & $97.1\pm 2.9$ & $98.2\pm 2.4$ & $94.8\pm 5.8$ & $71.0\pm10.4$  & $73.4\pm10.3$  & $72.5\pm3.7$  & $70.1\pm8.0$  & 65 & 64& 70 & 84 \\ 
+  RANSAC       & $87.5\pm 14.6$& $96.5\pm 2.5$ & $96.0\pm 2.0$ & $93.3\pm 7.8$ & $93.3\pm11.4$  & $96.0\pm3.8$   & $97.0\pm1.3$  & $89.3\pm6.2$  & 64 & 64& 42 & 64  \\ 
+  LineFit      & $98.1\pm 1.0$ & $99.0\pm 1.5$ & $99.5\pm 0.5$ & $98.0\pm 1.3$ & $83.1\pm 9.9$  & $74.2\pm 9.5$  & $80.1\pm 4.6$ & $80.3\pm 9.0$ & 7  & 6 & 6. & 6  \\ 
+  Patchwork    & $92.3\pm 3.3$ & $96.0\pm 3.5$ & $97.4\pm 1.4$ & $92.7\pm 3.3$ & $94.6\pm 3.4$  & $89.1\pm 5.2$  & $91.2\pm 2.8$ & $92.2\pm 4.6$ & 17 & 16& 17 & 17 \\ 
+  Patchwork++  & $94.6\pm 2.8$ & $98.4\pm 0.7$ & $98.2\pm 0.8$ & $95.4\pm 3.4$ & $98.7\pm 1.1$  & $96.4\pm 2.9$  & $97.2\pm 2.2$ & $97.0\pm 3.3$ & 11 & 12& 13 & 13  \\ 
+  \midrule                                                                                                                                                          
+  GroundSeg3D  & $94.8\pm 5.1$ & $94.8\pm 4.4$ & $97.5\pm 2.1$ & $92.8\pm 4.8$ & $86.9\pm 11.5$ & $78.4\pm 14.8$ & $86.7\pm 14.2$ & $88.8\pm 5.7$ & 85& 81& 98 & 102\\ 
+  \bottomrule
+\end{tabular}%
+\end{table*}
+\else
+\begin{table}[tb]
   \centering
   \caption{Comparison of ground segmentation on SemanticKITTI sequence 00 with vegetation}
   \label{tab:comparison_00_non_downsampled}
@@ -1021,20 +1071,20 @@ relatively lower recall score is good trade off with the robust applicablity in 
    Algorithm   & Precision$\pm$SD (\%) & Recall$\pm$SD (\%) & F1 (\%) & Time (ms)  \\
 \midrule
   GPF          & $94.95\pm 4.99$ & $79.02\pm27.20$ & 86.26 & 13 \\ 
-  R-GPF        & $59.20\pm 11.56$ & $96.57\pm 1.83$ & 73.40 & 18 \\ 
-  GPR          & $81.03\pm7.50$ & $95.94\pm2.54$ & 87.86 & 11 \\ 
-  CascadedSeg  & $91.65\pm 9$ & $71\pm10.4$ & 80 & 65.3 \\ 
-  RANSAC       & $87.52\pm 14.63$ & $93.35\pm11.38$ & 90.84 & 64  \\ 
+  R-GPF        & $59.20\pm 11.56$& $96.57\pm 1.83$ & 73.40 & 18 \\ 
+  GPR          & $81.03\pm7.50$  & $95.94\pm2.54$  & 87.86 & 11 \\ 
+  CascadedSeg  & $91.65\pm 9$    & $71.00\pm10.4$  & 80.00 & 65 \\ 
+  RANSAC       & $87.52\pm 14.63$& $93.35\pm11.38$ & 90.84 & 64  \\ 
   LineFit      & $98.15\pm 0.97$ & $83.05\pm 9.94$ & 89.97 & 7 \\ 
   Patchwork    & $92.34\pm 3.31$ & $94.61\pm 3.44$ & 93.46 & 17 \\ 
   Patchwork++  & $94.62\pm 2.76$ & $98.73\pm 1.10$ & 96.62 & 11  \\ 
   \bottomrule
-  GroundSeg3D & $94.79\pm 5.05$ & $86.92\pm 11.47$ & 90.69 & 85\\ 
+  GroundSeg3D  & $94.79\pm 5.05$ & $86.92\pm 11.47$ & 90.69 & 85\\ 
   \bottomrule
 \end{tabular}%
 \end{table}
 
-\begin{table}[H]
+\begin{table}[tb]
   \centering
   \caption{Comparison of ground segmentation on SemanticKITTI sequence 01 with vegetation}
   \label{tab:comparison_01_non_downsampled}
@@ -1044,19 +1094,19 @@ relatively lower recall score is good trade off with the robust applicablity in 
 \midrule
   GPF          & $92.06\pm 8.53$ & $23.52\pm21.15$ & 37.47 & 11 \\ 
   R-GPF        & $89.71\pm 6.05$ & $89.70\pm 4.65$ & 89.70 & 18 \\ 
-  GPR          & $92.46\pm4.37$ & $89.58\pm4.93$ & 91 & 12 \\ 
+  GPR          & $92.46\pm4.37$  & $89.58\pm4.93$  & 91    & 12 \\ 
   CascadedSeg  & $97.10\pm 2.91$ & $73.44\pm10.30$ & 83.63 & 64 \\ 
-  RANSAC       & $96.46\pm 2.36$ & $96.00\pm3.77$ & 96.20 & 64  \\ 
-  LineFit      & $99\pm 1.52$ & $74.22\pm 9.46$ & 74.30 & 6 \\ 
+  RANSAC       & $96.46\pm 2.36$ & $96.00\pm3.77$  & 96.20 & 64  \\ 
+  LineFit      & $99.00\pm 1.52$ & $74.22\pm 9.46$ & 74.30 & 6 \\ 
   Patchwork    & $96.00\pm 3.53$ & $89.10\pm 5.23$ & 92.36 & 16 \\ 
   Patchwork++  & $98.40\pm 0.72$ & $96.40\pm 2.92$ & 97.40 & 12  \\ 
   \bottomrule
-  GroundSeg3D & $94.81\pm 4.35$ & $78.35\pm 14.79$ & 85.80 & 81\\ 
+  GroundSeg3D  & $94.81\pm 4.35$ & $78.35\pm 14.79$ & 85.80& 81\\ 
   \bottomrule
 \end{tabular}%
 \end{table}
 
-\begin{table}[H]
+\begin{table}[tb]
   \centering
   \caption{Comparison of ground segmentation on SemanticKITTI sequence 04 with vegetation}
   \label{tab:comparison_04_non_downsampled}
@@ -1065,20 +1115,20 @@ relatively lower recall score is good trade off with the robust applicablity in 
    Algorithm   & Precision$\pm$SD (\%) & Recall$\pm$SD (\%) & F1 (\%) & Time (ms)  \\
 \midrule
   GPF          & $95.42\pm 5.02$ & $72.55\pm28.70$ & 82.43 & 12 \\ 
-  R-GPF        & $84.56\pm 9$ & $93.43\pm 1.72$ & 88.77 & 18 \\ 
-  GPR          & $94.98\pm2.00$ & $94.41\pm1.54$ & 94.19 & 13 \\ 
-  CascadedSeg  & $98.20\pm 2.42$ & $72.50\pm3.72$ & 83.41 & 70 \\ 
-  RANSAC       & $96\pm 2.04$ & $97\pm1.34$ & 96.15 & 42  \\ 
-  LineFit      & $99.51\pm 0.51$ & $80.1\pm 4.64$ & 88.74 & 6.5 \\ 
+  R-GPF        & $84.56\pm 9.00$ & $93.43\pm 1.72$ & 88.77 & 18 \\ 
+  GPR          & $94.98\pm 2.00$ & $94.41\pm1.54$  & 94.19 & 13 \\ 
+  CascadedSeg  & $98.20\pm 2.42$ & $72.50\pm3.72$  & 83.41 & 70 \\ 
+  RANSAC       & $96.00\pm 2.04$ & $97.00\pm1.34$  & 96.15 & 42  \\ 
+  LineFit      & $99.51\pm 0.51$ & $80.10\pm 4.64$ & 88.74 & 6.5 \\ 
   Patchwork    & $97.43\pm 1.40$ & $91.25\pm 2.83$ & 94.24 & 17 \\ 
   Patchwork++  & $98.15\pm 0.80$ & $97.18\pm 2.21$ & 97.66 & 13  \\ 
   \bottomrule
-  GroundSeg3D & $97.46\pm 2.14$ & $86.65\pm 14.18$ & 91.74 & 98\\ 
+  GroundSeg3D  & $97.46\pm 2.14$ & $86.65\pm 14.18$ & 91.74& 98\\ 
   \bottomrule
 \end{tabular}%
 \end{table}
 
-\begin{table}[H]
+\begin{table}[tb]
   \centering
   \caption{Comparison of ground segmentation on SemanticKITTI sequence 09 with vegetation}
   \label{tab:comparison_09_non_downsampled}
@@ -1087,43 +1137,48 @@ relatively lower recall score is good trade off with the robust applicablity in 
    Algorithm   & Precision$\pm$SD (\%) & Recall$\pm$SD (\%) & F1 (\%) & Time (ms)  \\
 \midrule
   GPF          & $96.00\pm 6.20$ & $63.50\pm29.53$ & 76.36 & 12 \\ 
-  R-GPF        & $71.36\pm 12.12$ & $95.35\pm 3.36$ & 81.63 & 19 \\ 
-  GPR          & $0.0\pm0.0$ & $0.0\pm0.0$ & 0.0 & 0.0 \\ 
-  CascadedSeg  & $94.80\pm 5.80$ & $70.14\pm8.00$ & 81 & 84 \\ 
-  RANSAC       & $93.26\pm 7.82$ & $89.27\pm6.20$ & 91.22 & 64  \\ 
-  LineFit      & $98\pm 1.27$ & $80.33\pm 9.00$ & 88.25 & 6 \\ 
+  R-GPF        & $71.36\pm 12.12$& $95.35\pm 3.36$ & 81.63 & 19 \\ 
+  GPR          & $00.00\pm 0.0$  & $00.00\pm0.0$  & 0.0    & 0.0 \\ 
+  CascadedSeg  & $94.80\pm 5.80$ & $70.14\pm8.00$ & 81     & 84 \\ 
+  RANSAC       & $93.26\pm 7.82$ & $89.27\pm6.20$ & 91.22  & 64  \\ 
+  LineFit      & $98.00\pm 1.27$ & $80.33\pm 9.00$ & 88.25 & 6  \\ 
   Patchwork    & $92.74\pm 3.26$ & $92.15\pm 4.57$ & 92.44 & 17 \\ 
   Patchwork++  & $95.40\pm 3.40$ & $97.00\pm 3.32$ & 96.14 & 13  \\ 
   \bottomrule
-  GroundSeg3D & $92.84\pm 4.79$ & $88.76\pm 5.71$ & 90.75 & 102\\ 
+  GroundSeg3D  & $92.84\pm 4.79$ & $88.76\pm 5.71$ & 90.75 & 102\\ 
   \bottomrule
 \end{tabular}%
 \end{table}
-
+\fi
 \subsection{Limitations}
-\begin{figure}[H]
+
+Figures \ref{fig:gaps} to~\ref{fig:combined} show under- and over-segmentation due to gaps and some vegetation points.
+These can cause the precision to drop below 94\% (Table~\ref{tab:comparison_09_non_downsampled}).
+
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/limitations/gaps.png}
+  \includegraphics[width=\linewidth]{figures/limitations/gaps.png}
   \caption{Under-segmentation of ground points due to point cloud with gaps exceeding grid cell size}
   \label{fig:gaps}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/limitations/vegetation.png}
+  \includegraphics[width=\linewidth]{figures/limitations/vegetation.png}
   \caption{Over-segmentation of some vegetation points}
-  \label{fig:gaps}
+  \label{fig:vegetation}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/limitations/combined.png}
+  \includegraphics[width=\linewidth]{figures/limitations/combined.png}
   \caption{Over-segmentation of some vegetation points and exclusion of ground points after a large gap}
-  \label{fig:gaps}
+  \label{fig:combined}
 \end{figure}
 
 \section{Acknowledgment}
-\todo{Proudly presented by \ldots{} But funding should be mentioned in footnote on first page}
+Parts of the algorithm were written with support of ChatGPT.
+%\todo{Proudly presented by \ldots{} But funding should be mentioned in footnote on first page}
 \iffalse
 
 The preferred spelling of the word ``acknowledgment'' in America is without 
