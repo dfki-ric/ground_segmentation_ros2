@@ -32,21 +32,16 @@
 \thanks{Funded via some awesome projects}
 }
 
-\author{\IEEEauthorblockN{Muhammad Haider Khan Lodhi}
+\author{\IEEEauthorblockN{Muhammad Haider Khan Lodhi\IEEEauthorrefmark{1} and Christoph Hertzberg\IEEEauthorrefmark{2}}
 \IEEEauthorblockA{\textit{Robotics Innovation Center}\\
-German Research Center for Artificial Intelligence (DFKI)\\
+German Research Center for Artificial Intelligence (DFKI),
 Bremen, Germany\\
-mulo01@dfki.de}%
-\and
-\IEEEauthorblockN{Christoph Hertzberg}
-\IEEEauthorblockA{\textit{Robotics Innovation Center}\\
-German Research Center for Artificial Intelligence (DFKI)\\
-Bremen, Germany\\
-christoph.hertzberg@dfki.de}%
+Email: \IEEEauthorrefmark{1}mulo01@dfki.de, \IEEEauthorrefmark{2}christoph.hertzberg@dfki.de}%
 }%
 
 \maketitle
 
+\todo{E-Mail format? I don't like my chhe01 address}
 \begin{abstract}
 Ground segmentation in point cloud data is the process of separating the points
 into ground and non-ground points. It is a key component in the perception pipeline of
@@ -60,22 +55,43 @@ good ground segmentation of point cloud data on varied terrains.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Ground Segmentation, Mobile Robotics, Autonomous Driving, Rough Terrain, LIDAR, Point Clouds, 3D Grid-Based Approach
+Ground Segmentation, Point Clouds, Mobile Robotics, Autonomous Driving, Rough Terrain, LiDAR, 3D~Grid-Based Approach
 \end{IEEEkeywords}
 
+
 \section{Introduction}
+\begin{figure*}[bt]
+  \centering
+  \includegraphics[width=\linewidth]{intro.png}
+  \caption{GroundSeg3D: The original point cloud (represented as white points) is segmented into ground points (magenta) and non-ground points (blue). }
+  \label{fig:results}
+  \todo[inline]{Try forcing this to first page}
+\end{figure*}
 The perception system of an autonomous system utilizes multiple sensors to
 capture salient features of the environment. These features are used as inputs by various sub
 systems e.g. navigation, control, learning etc. A core sensor of the perception system
-is the LIDAR and given the advancements in sensor design and reduced costs, it
-has become a standard sensor in autonomous systems \cite{Gomes2023}. The LIDAR uses bands of
+is the LiDAR and given the advancements in sensor design and reduced costs, it
+has become a standard sensor in autonomous systems \cite{Gomes2023}. The LiDAR uses bands of
 laser beams to scan the surrounding environment and the time-of-flight
 information is used to capture distance information at high resolution. The
 result of the single scan is a point cloud sample which in today’s sensors may
 contain more than 1~million points. Evidently, the point cloud captures the
 points from the environment in the scanning region of interest. However, not all 
-points in the region of interest are relevant for the downstream algorithms. For example, the obstacle detection 
-algorithm is only interested in the obstacle points and the road detection algorithm only requires the ground points. 
+points in the region of interest are relevant for the downstream algorithms. 
+%For example, the obstacle detection 
+%algorithm is only interested in the obstacle points and the road detection algorithm only requires the ground points. 
+For example, object and obstacle detection algorithms detect ground points as false
+    positives. The detection can be improved when ground points are detected and
+    removed. Additionally, the computational burden is reduced by processing only
+    non-ground points \cite{Firkat2023}.
+%
+Ground points can be used for traversability analysis, navigation, and
+    static map generation.
+Detecting them is a necessary precursor step for extraction
+    of useful information for downstream tasks in mobile
+    robot navigation \cite{Jimenez2021,Arora2023}.
+
+\iffalse
 Feeding the same point cloud sample to both algorithms would require redudant processing of irrelevant points in both 
 algorithms. To mitigate the redudancy, it is a usual practice to segment the points into ground and non-ground points. 
 The segmentation task is performed by a ground segmentation algorithm and it has many applications:
@@ -89,23 +105,20 @@ The segmentation task is performed by a ground segmentation algorithm and it has
   \item SLAM
 \end{itemize}
 
-\begin{figure*}
-  \centering
-  \includegraphics[width=\linewidth]{intro.png}
-  \caption{GroundSeg3D: The original point cloud (represented as white points) is segmented into ground points (magenta) and non-ground points (blue).}
-  \label{fig:results}
-\end{figure*}
-
 Ground point extraction from a point cloud sample is a crucial step in the perception pipeline of autonomous systems. 
-Numerous solutions have been proposed over the past few years. In this work, our primary focus was on extracting ground 
-points with minimal parameter dependency. We aimed to eliminate the need for parameter fine-tuning, ensuring 
-adaptability across various vehicles, robots, sensor configurations, and both indoor and outdoor environments. 
-Our segmentation algorithm was tested using a consistent set of parameters on real-world datasets, featuring different 
+Numerous solutions have been proposed over the past few years. 
+\fi
+
+In this work, our primary focus was on extracting ground 
+points with minimal parameter dependency, eliminating the need for parameter fine-tuning to ensure 
+adaptability across various vehicles, robots, sensor configurations, for both indoor and outdoor environments. 
+Our algorithm was tested using a consistent set of parameters on real-world datasets, featuring different 
 types of point cloud sensors in various configurations and environments. The parameters in our solution are intuitive, 
 easy to understand, and do not require advanced domain knowledge. The segmentation process combines local eigen analysis, 
 model fitting, and region-growing algorithms. We explore the strengths and weaknesses of these approaches and integrate 
 them into a processing pipeline to achieve effective ground segmentation in diverse indoor and outdoor scenarios.
 
+\iffalse
 \subsection{Benefits of Ground Segmentation}
 \begin{itemize}
   \item Detection of ground points is a necessary precursor step for extraction
@@ -118,7 +131,7 @@ them into a processing pipeline to achieve effective ground segmentation in dive
   \item Ground points can be used for traversability analysis, navigation, and
     static map generation.
 \end{itemize}
-
+\fi
 
 \section{Related Work}
 Existing ground segmentation methods typically rely on either traditional techniques or learning-based approaches. 
