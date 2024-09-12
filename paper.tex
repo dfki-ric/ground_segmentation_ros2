@@ -311,7 +311,7 @@ to medium-sized region.
 \fi
 %\subsection{Two-Phase Segmentation of Points Based on Local Surface Properties and Neighborhood Analysis}
 %
-The segmentation process is divided into two distinct phases.
+The segmentation process is divided into two distinct phases (Fig.\@~\ref{fig:phases}).
 %each phase uses grid cells of varying heights to improve the accuracy of ground and non-ground detection, 
 %while also managing potential false segmentation as shown in Fig.\@~\ref{fig:dual_phase_segmentation}.
 \begin{figure}[tb]
@@ -321,7 +321,7 @@ The segmentation process is divided into two distinct phases.
   to capture tall structures as non-ground points. The coarse ground points from Phase-I are subsequently used as
   input for Phase-II in which the coarse ground points are processed using grid cells with small height. The small height ensures only actual ground
   cells are expanded.}
-  \label{fig:pipeline}
+  \label{fig:phases}
 \end{figure}
 %
 In the first phase of segmentation, a large height for the grid cells is 
@@ -335,14 +335,14 @@ refine the segmentation results from the first phase.
 In this phase, false positive ground points from Phase~I are identified as obstacle points and false positive 
 non-ground points are identified as ground points based on neighborhood correction.
 
-
+\iffalse
 \begin{figure}[tb]
   \centering
   \includegraphics[width=\linewidth]{figures/overview/pipeline.png}
   \caption{The core stages in the pipeline of GroundSeg3D. The same steps in the pipeline are used in both phases with slight modifications.}
   \label{fig:pipeline}
 \end{figure}
-
+\fi
 Table~\ref{tab:phase_behavior} shows the variation in the processing pipelines of in the two phases.
 The steps are described in the following sections.
 
@@ -666,7 +666,7 @@ The selection of the handheld dataset was to test how well the solutions perform
 
 \begin{table}[tb]
   \centering
-  \caption{Datasets from natural and urban environments for experiementation}
+  \caption{Datasets from natural and urban environments}
   \label{tab:datasets}
   \begin{tabular}{@{}p{2.2cm}p{0.9cm}p{1.15cm}p{0.4cm}p{1.1cm}p{0.9cm}@{}}
   \toprule
@@ -725,18 +725,20 @@ understanding complex 3D structures and diverse landscapes is crucial.
 \fi
 \subsection{Performance Metrics}
 
-We use precision, recall and F1 score as a metrics to compare the algorithms. Not all datasets provided labelled point clouds, therefore the performance metrics were 
-collected only on the SemanticKITTI dataset. Visual analysis of ground segmentation results on other datasets was enough to compare the performance of GroundSeg3D and
-state-of-the-art solutions.
+We use precision and recall to compare the algorithms.
 \begin{align}
 \text{Precision} &= \tfrac{\text{NTP}}{\text{NTP} + \text{NFP}}, &
-\text{Recall} &= \tfrac{\text{NTP}}{\text{NTP} + \text{NFN}}, \\
-\text{F1} &= 2 \cdot \tfrac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}},
+\text{Recall} &= \tfrac{\text{NTP}}{\text{NTP} + \text{NFN}},
+%\text{F1} &= 2 \cdot \tfrac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}},
 \end{align}
 where
 NTP, NFP, and NFN are the Number of True Positives (correctly predicted positives), 
 False Positives (incorrectly predicted positives)
 and False Negatives (positives that were incorrectly predicted as negative).
+
+Not all datasets provided labelled point clouds, therefore the performance metrics were 
+collected only on the SemanticKITTI dataset. Visual analysis of ground segmentation results on other datasets was enough to compare the performance of GroundSeg3D and
+state-of-the-art solutions.
 
 \iffalse
 \subsection{GroundSeg3D Parameters}\label{sec:parameters}
@@ -859,7 +861,7 @@ We further analyze the runtime of GroundSeg3D on various datasets (Table~\ref{ta
 \fi
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/sloped terrain/arter_all.png}
+  \includegraphics[width=\linewidth,trim={0 0 0 0cm},clip]{figures/sloped terrain/arter_all.png}
   \caption{GroundSeg3D results on rough outdoor terrain at the Robotics Test Track on DFKI RIC}
   \label{fig:arter_all}
 \end{figure}
@@ -1022,23 +1024,23 @@ relatively lower recall score is good trade off with the robust applicablity in 
 \begin{table*}[tb]
   \centering
   \caption{Comparison of ground segmentation on SemanticKITTI sequences 00, 01, 04, and 09 with vegetation}
-  \label{tab:comparison_00_non_downsampled}
-  \begin{tabular}{@{}l l@{\ \ }l@{\ \ }l@{\ \ }l   l@{\ \ }l@{\ \ }l@{\ \ }l   rrrr}
+  \label{tab:comparison_non_downsampled}
+  \begin{tabular}{@{}l@{} l@{\ \ }l@{\ \ }l@{\ \ }l   l@{\ \ }l@{\ \ }l@{\ \ }l   rrrr}
   \toprule
    Algorithm   & \multicolumn{4}{c}{Precision$\pm$SD (\%)} & \multicolumn{4}{c}{Recall$\pm$SD (\%)} & \multicolumn{4}{c}{Time (ms)}  \\
    \cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
-   \qquad Sequence& 00 & 01 & 04 & 09 & 00 & 01 & 04 & 09 & 00  & 01 & 04 & 09\\
+   \multicolumn{1}{r}{Sequence:}& 00 & 01 & 04 & 09 & 00 & 01 & 04 & 09 & 00  & 01 & 04 & 09\\
 \midrule
   GPF          & $94.9\pm 5.0$ & $92.1\pm 8.5$ & $95.4\pm 5.0$ & $96.0\pm 6.2$ & $79.0\pm27.2$  & $23.5\pm21.2$  & $72.6\pm28.7$ & $63.5\pm29.5$ & 13 & 11& 12 & 12 \\ 
   R-GPF        & $59.2\pm 11.6$& $89.7\pm 6.0$ & $84.6\pm 9.0$ & $71.4\pm 12.1$& $96.6\pm 1.8$  & $89.7\pm 4.6$  & $93.4\pm 1.7$ & $95.4\pm 3.4$ & 18 & 18& 18 & 19 \\ 
   GPR          & $81.0\pm 7.5$ & $92.5\pm 4.5$ & $95.0\pm 2.0$ & $00.0\pm 0.0$ & $95.9\pm2.5$   & $89.6\pm4.9$   & $94.4\pm1.5$  & $00.0\pm0.0$  & 11 & 12& 13 & ?\\ 
   CascadedSeg  & $91.7\pm 9.0$ & $97.1\pm 2.9$ & $98.2\pm 2.4$ & $94.8\pm 5.8$ & $71.0\pm10.4$  & $73.4\pm10.3$  & $72.5\pm3.7$  & $70.1\pm8.0$  & 65 & 64& 70 & 84 \\ 
   RANSAC       & $87.5\pm 14.6$& $96.5\pm 2.5$ & $96.0\pm 2.0$ & $93.3\pm 7.8$ & $93.3\pm11.4$  & $96.0\pm3.8$   & $97.0\pm1.3$  & $89.3\pm6.2$  & 64 & 64& 42 & 64  \\ 
-  LineFit      & $98.1\pm 1.0$ & $99.0\pm 1.5$ & $99.5\pm 0.5$ & $98.0\pm 1.3$ & $83.1\pm 9.9$  & $74.2\pm 9.5$  & $80.1\pm 4.6$ & $80.3\pm 9.0$ & 7  & 6 & 6. & 6  \\ 
+  LineFit      & $98.1\pm 1.0$ & $99.0\pm 1.5$ & $99.5\pm 0.5$ & $98.0\pm 1.3$ & $83.1\pm 9.9$  & $74.2\pm 9.5$  & $80.1\pm 4.6$ & $80.3\pm 9.0$ & 7  & 6 & 6 & 6  \\ 
   Patchwork    & $92.3\pm 3.3$ & $96.0\pm 3.5$ & $97.4\pm 1.4$ & $92.7\pm 3.3$ & $94.6\pm 3.4$  & $89.1\pm 5.2$  & $91.2\pm 2.8$ & $92.2\pm 4.6$ & 17 & 16& 17 & 17 \\ 
   Patchwork++  & $94.6\pm 2.8$ & $98.4\pm 0.7$ & $98.2\pm 0.8$ & $95.4\pm 3.4$ & $98.7\pm 1.1$  & $96.4\pm 2.9$  & $97.2\pm 2.2$ & $97.0\pm 3.3$ & 11 & 12& 13 & 13  \\ 
   \midrule                                                                                                                                                          
-  GroundSeg3D  & $94.8\pm 5.1$ & $94.8\pm 4.4$ & $97.5\pm 2.1$ & $92.8\pm 4.8$ & $86.9\pm 11.5$ & $78.4\pm 14.8$ & $86.7\pm 14.2$ & $88.8\pm 5.7$ & 85& 81& 98 & 102\\ 
+  GroundSeg3D\quad{}  & $94.8\pm 5.1$ & $94.8\pm 4.4$ & $97.5\pm 2.1$ & $92.8\pm 4.8$ & $86.9\pm 11.5$ & $78.4\pm 14.8$ & $86.7\pm 14.2$ & $88.8\pm 5.7$ & 85& 81& 98 & \!\!102\\ 
   \bottomrule
 \end{tabular}%
 \end{table*}
@@ -1134,7 +1136,7 @@ relatively lower recall score is good trade off with the robust applicablity in 
 \subsection{Limitations}
 
 Figures \ref{fig:gaps} to~\ref{fig:combined} show under- and over-segmentation due to gaps and some vegetation points.
-These can cause the precision to drop below 94\% (Table~\ref{tab:comparison_09_non_downsampled}).
+These can cause the precision to drop below 94\% (Table~\ref{tab:comparison_non_downsampled}, Seq.\@~09).
 
 \begin{figure}[tb]
   \centering
