@@ -29,11 +29,11 @@
 \begin{document}
 
 \title{GroundSeg3D: A Robust 3D Grid-Based Hybrid Approach for Ground Segmentation in Point Clouds Across Varied Terrains
-\thanks{Funded via some awesome projects}
+\thanks{Funded via some awesome projects, Maybe we will publish the code}
 }
 
 \author{\IEEEauthorblockN{Muhammad Haider Khan Lodhi and Christoph Hertzberg}
-\IEEEauthorblockA{\textit{Robotics Innovation Center}\\
+\IEEEauthorblockA{\textit{Robotics Innovation Center}, 
 German Research Center for Artificial Intelligence (DFKI),
 Bremen, Germany\\
 Email: Haider\_Khan.Lodhi@dfki.de, Christoph.Hertzberg@dfki.de}%
@@ -299,20 +299,21 @@ time period. The exact time requirements may vary based on the industry.
 \section{Core Components}
 \fi
 
-GroundSeg3D uses a one-shot processing approach for the point cloud data. The input to the algorithm is a single sample of point cloud and the output is 
-ground and non-ground points. In the section, we explain the key processing steps performed on each input for robust ground segmentation.
-
+GroundSeg3D takes a single point cloud and outputs the 
+ground and non-ground points. 
+%In this section, we explain the key processing steps performed on each input for robust ground segmentation.
+%
+\iffalse
 \subsection{Data Preparation and Filtering}
 The input point cloud is cropped to a user-defined region of interest, which varies depending on the application. 
 For autonomous driving, a larger region of interest is preferred, while mobile robotics typically require a smaller
 to medium-sized region.
-
-\section{Two-Phase Segmentation of Points Based on Local Surface Properties and Neighborhood Analysis}
-
-The segmentation process is divided into two distinct phases to address different challenges in point segmentation. 
-Each phase uses grid cells of varying heights to improve the accuracy of ground and non-ground detection, 
-while also managing potential false segmentation as shown in Fig.\@~\ref{fig:dual_phase_segmentation}.
-
+\fi
+%\subsection{Two-Phase Segmentation of Points Based on Local Surface Properties and Neighborhood Analysis}
+%
+The segmentation process is divided into two distinct phases.
+%each phase uses grid cells of varying heights to improve the accuracy of ground and non-ground detection, 
+%while also managing potential false segmentation as shown in Fig.\@~\ref{fig:dual_phase_segmentation}.
 \begin{figure}[tb]
   \centering
   \includegraphics[width=\linewidth]{figures/overview/stages.png}
@@ -322,21 +323,18 @@ while also managing potential false segmentation as shown in Fig.\@~\ref{fig:dua
   cells are expanded.}
   \label{fig:pipeline}
 \end{figure}
+%
+In the first phase of segmentation, a large height for the grid cells is 
+used to capture as many non-ground structures as possible within each grid cell. However, 
+the increased cell height can lead to false segmentation of ground points, 
+especially where the ground is obscured by overhead objects. 
+These false detections are addressed in subsequent stages of the algorithm.
 
-\textbf{First Phase: Large Grid Cell Height}: In the first phase of segmentation, a large height for the grid cells in the \( z \)-direction is employed. 
-This approach is designed to capture as many non-grounds structures as possible within each grid cell. However, this method comes with a trade-off. 
-The increased cell height can lead to the false segmentation of ground points, 
-especially in scenarios where the ground is obscured by overhead objects, such as tree canopies. As a result, some ground 
-points may be incorrectly labeled as non-ground. These false detections are addressed in subsequent stages of the segmentation process.
+The second phase uses a smaller grid cell height to 
+refine the segmentation results from the first phase. 
+In this phase, false positive ground points from Phase~I are identified as obstacle points and false positive 
+non-ground points are identified as ground points based on neighborhood correction.
 
-\textbf{Second Phase: Small Grid Cell Height}: The second phase of segmentation uses a smaller height for the grid cells. This smaller cell size is crucial for 
-refining the segmentation results by minimizing false positives identified as ground points in the first phase. 
-The reduced cell height allows for more precise detection of ground and non-ground points.
-
-During the post-processing phase, any points that were incorrectly classified as non-ground in the first phase but 
-are actually ground are reclassified and added back to the ground points. This correction ensures that the final 
-classification is accurate, reflecting the true distribution of ground and non-ground points. Additionally, false positive ground points from Phase-I are
-added back to the pool of non-ground points at the end of Phase-II.
 
 \begin{figure}[tb]
   \centering
@@ -345,17 +343,8 @@ added back to the pool of non-ground points at the end of Phase-II.
   \label{fig:pipeline}
 \end{figure}
 
-The steps involved in the segmentation process are:
-
-\begin{itemize}
-  \item Grid Representation
-  \item Local Eigen Analysis (LEA)
-  \item Surface Gradient Analysis (SGA)
-  \item Ground Region Growth (GRG)
-  \item Final Ground Segmentation (FGS)
-\end{itemize}
-
-The behavior of these steps varies between the first and second phases. The table below summarizes the changes in behavior for each step during these phases.
+Table~\ref{tab:phase_behavior} shows the variation in the processing pipelines of in the two phases.
+The steps are described in the following sections.
 
 \begin{table}[tb]
   \centering
@@ -376,10 +365,10 @@ The behavior of these steps varies between the first and second phases. The tabl
 \end{table}
 
 \subsection{Grid Representation}
-The points are assigned to cells within a 3D grid in Euclidean space based on their positions. This 3D grid is crucial 
-for modeling and detecting empty spaces, as the height of each grid cell helps identify voids or gaps in the environment. 
+The points are assigned to cells within a 3D grid 
+to model and detect empty spaces. 
 \begin{align}
-cell_{\{x,y,z\}} &= point_{\{x,y,z\}} / cellsize_{\{x,y,z\}},
+cell_{\{x,y,z\}} &= \lfloor point_{\{x,y,z\}} / cellsize_{\{x,y,z\}}\rfloor,
 %cell_y &= point_y / cellsize_y \\
 %cell_z &= point_z / cellsize_z
 \end{align}
@@ -387,17 +376,10 @@ where $cellsize$ is a parameter.
 %We explain our choice of parameters in section \ref{sec:parameters}.
 
 \subsection{Local Eigen Analysis}
-In point cloud data, the density of points often decreases as the distance from the sensor increases. 
-This relationship arises because most sensors, such as LiDAR or depth cameras, have a limited resolution 
-and a wider field of view at greater distances. Consequently, the farther the points are from the sensor, 
-the fewer points are collected per unit area, leading to increased sparsity.
-
-To address this issue in point cloud processing, especially when fitting geometric models, we use eigenvalue 
-analysis to estimate the local spatial distribution of points within each grid cell. The eigenvalue analysis 
-helps determine how well a grid cell approximates a planar surface, which is challenging when point density is low.
-
-Given a point cloud within a grid cell, we calculate the eigenvalues of the covariance matrix of the points 
-to assess their spatial distribution. Let $\lambda_1 > \lambda_2 > \lambda_3$ be their eigenvalues, we then compute the ratio:
+We use local eigen 
+analysis to estimate the local spatial distribution of points within each grid cell.
+For each grid cell, we calculate the eigenvalues of the covariance matrix of the points.
+Let $\lambda_1 > \lambda_2 > \lambda_3$ be the eigenvalues, we then compute the ratio:
 %
 %We use the ratio of the largest eigenvalue to the sum of all eigenvalues to gauge the point distribution:
 %
@@ -406,10 +388,8 @@ to assess their spatial distribution. Let $\lambda_1 > \lambda_2 > \lambda_3$ be
 \end{align}  
 %
 The ratio of the largest eigenvalue to the sum of all eigenvalues provides an indication of whether the points in 
-a grid cell are more aligned with a planar surface, a line, or a non-planar structure. The ratio is calculated as follows:
+a grid cell are more aligned with a line, a planar surface, or a non-planar structure.
 
-We devise three possible conclusions based on the ratio and categorize the grid
-cells into three categories.
 %TODO make sure it's in remaining text
 \iffalse
 \begin{description}%[style=nextline]
@@ -443,7 +423,7 @@ Non-planar Cell   & $< 0.40$ \\
 \end{table}
 \fi
 
-Each type of cell is processed using a distinct algorithm, and we refer to these cells as Line, Plane, and Non-Planar cells:
+%Each type of cell is processed using a distinct algorithm, and we refer to these cells as Line, Plane, and Non-Planar cells:
 
 \subsubsection{Line Cell}
 
@@ -474,26 +454,27 @@ Each type of cell is processed using a distinct algorithm, and we refer to these
 \end{figure}
 
 If the largest eigenvalue is significantly larger than the other eigenvalues, the cell is categorized as a Line Cell.
-In such cases, the cell exhibits a dominant linear structure. For these cells, we compute the angle between the largest eigenvector 
-(depicted in green in Fig.~\ref{fig:LineCell}) and the positive z-axis (pointing upwards). This angle helps to characterize 
-the orientation of the linear distribution relative to the vertical axis.
+For these cells, we compute the angle between the largest eigenvector 
+(depicted in green in Fig.~\ref{fig:LineCell}) and the $z$-axis.
 %
 \begin{align}
 CellType &= 
   \begin{smallcases}
-    \text{Tentative Obstacle} & angle \ge 90\degree - Threshold \\
+    \text{Obstacle}         & angle \ge 90\degree - Threshold \\
     \text{Tentative Ground} & angle < 90\degree - Threshold
   \end{smallcases}
 \end{align}
 %
 The ground slope threshold is used to determine the classification of cells based on their angle of uprightness. 
-Cells with a small angle between the largest eigenvector and the positive z-axis are considered for classification
-as obstacles. This is because ground cells typically do not exhibit a highly upright spatial distribution.
+% Cells with a small angle between the largest eigenvector and the positive z-axis are considered for classification
+% as obstacles. This is because ground cells typically do not exhibit a highly upright spatial distribution.
+For tentative ground cells we cannot be certain of their exact nature.  
+As a result, such cells are marked
+as tentative ground until it is clarified the region growth step (Section~\ref{sec:region_growth})
 
-When the angle of the largest eigenvector is small, indicating that the points are not upright, the cell might be 
-categorized as either an Obstacle or Ground. However, because this configuration could also represent the top of an
-obstacle (such as a car roof or a table), we cannot be certain of its exact nature. As a result, such cells are marked
-as tentative Obstacle until further analysis can confirm their true classification.
+
+However, because this configuration could also represent the top of an
+obstacle (such as a car roof or a table), we cannot be certain of its exact nature. 
 
 \subsubsection{Plane Cell}
 % \begin{figure}
@@ -602,7 +583,7 @@ The seed cells are selected from the tentative Ground cells based on the followi
   and the back (3rd and 4th quadrants). These two seed cells are then used for region growing.
   \end{enumerate}
 
-\subsection{Ground Region Growth}
+\subsection{Ground Region Growth}\label{sec:region_growth}
 We recursively expand all ground neighbors of the seed cells. This region-wise growth process ensures that cells falsely 
 classified as ground cells (i.e., cells that meet the slope criteria but are not truly ground) are not included in the final result.
 
@@ -686,7 +667,7 @@ The selection of the handheld dataset was to test how well the solutions perform
 \begin{table}[tb]
   \centering
   \caption{Datasets from natural and urban environments for experiementation}
-  \label{tab:phase_behavior}
+  \label{tab:datasets}
   \begin{tabular}{@{}p{2.2cm}p{0.9cm}p{1.15cm}p{0.4cm}p{1.1cm}p{0.9cm}@{}}
   \toprule
   \textbf{Dataset} & \textbf{Environ-ment} & \textbf{Sensor} & \textbf{Year} & \textbf{Platform} & \textbf{Sensor Height}\\
