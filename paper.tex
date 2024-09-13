@@ -61,8 +61,7 @@ Ground Segmentation, Point Clouds, Mobile Robotics, Autonomous Driving, Rough Te
 
 \section{Introduction}
 The perception system of an autonomous system utilizes multiple sensors to
-capture salient features of the environment. These features are used as inputs by various sub
-systems e.g. navigation, control, learning etc. A core sensor of the perception system
+capture salient features of the environment. These features are used as inputs by various subsystems e.g. navigation, control, learning etc. A core sensor of the perception system
 is the LiDAR and given the advancements in sensor design and reduced costs, it
 has become a standard sensor in autonomous systems \cite{Gomes2023}. The LiDAR uses bands of
 laser beams to scan the surrounding environment and the time-of-flight
@@ -73,19 +72,17 @@ points from the environment in the scanning region of interest. However, not all
 points in the region of interest are relevant for the downstream algorithms. 
 %For example, the obstacle detection 
 %algorithm is only interested in the obstacle points and the road detection algorithm only requires the ground points. 
-For example, object and obstacle detection algorithms detect ground points as false
-    positives. The detection can be improved when ground points are detected and
-    removed. Additionally, the computational burden is reduced by processing only
-    non-ground points \cite{Firkat2023}.
+For example, object and obstacle detection algorithms often detect ground points as false
+    positives. Removal of ground points improves their performance and reduces computational burden \cite{Firkat2023}.
 %
-Ground points can be used for traversability analysis, navigation, and
+Additionally, ground points can be used for traversability analysis, navigation, and
     static map generation.
-Detecting them is a necessary precursor step for extraction
+Detection of ground points is a necessary precursor step for extraction
     of useful information for downstream tasks in mobile
     robot navigation \cite{Jimenez2021,Arora2023}.
 \begin{figure}[b]
   \centering
-  \includegraphics[width=0.9\linewidth]{intro_combined.png}
+  \includegraphics[width=0.7\linewidth]{intro_combined.png}
   \caption{GroundSeg3D: The point cloud is segmented into ground points (magenta) and non-ground points (blue). }
   \label{fig:results}
 \end{figure}
@@ -129,12 +126,10 @@ types of point cloud sensors in various configurations and environments.
 \fi
 
 \section{Related Work}
-Existing ground segmentation methods typically rely on either traditional techniques or learning-based approaches. 
-This classification is supported by a recent survey on ground segmentation methods \cite{Gomes2023}, which 
-categorizes the current state-of-the-art solutions accordingly.
+Existing ground segmentation methods typically rely on either traditional techniques or learning-based approaches \cite{Gomes2023}. 
 
 \subsection{Traditional Solutions}
-The traditional solutions for ground segmentation use geometric properties for segmentation. Such solutions are usually based 
+The traditional solutions are usually based 
 on occupancy grids or elevation maps \cite{5650541,9558794}. Some
 approaches extend the grid cell and analyze the points in neighboring cells for
 a better estimation of surface properties \cite{9969541}. The modeling of the points in the
@@ -224,7 +219,7 @@ to selection of a suitable grid cell size for a ground segmentation algorithm.
 
 \paragraph*{Solution} We make use a phase-wise approach and vary the size of grid
 cell. In the first phase, we use a large height for the grid cells to capture as 
-many tall structures as possible. The second phase is applied on the resultant 
+many tall structures as possible. The second Phase-Is applied on the resultant 
 ground points of the first phase and we use a small height for the grid cells to 
 remove any false positive ground points.
 
@@ -312,10 +307,9 @@ The segmentation process is divided into two distinct phases (Fig.\@~\ref{fig:ph
 %while also managing potential false segmentation as shown in Fig.\@~\ref{fig:dual_phase_segmentation}.
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=0.9\linewidth]{figures/overview/stages.png}
-  \caption{A two phase approach is developed for robust segmentation of ground and non-ground points. Phase-I uses grid cells with large height
-  to capture tall structures as non-ground points. The coarse ground points from Phase-I are subsequently used as
-  input for Phase-II and processed using grid cells with small height.}
+  \includegraphics[width=0.8\linewidth]{figures/overview/stages.png}
+  \caption{Phase-I uses grid cells with large height
+  to capture tall structures as non-ground points. The coarse ground points from Phase-I are subsequently processed in Phase-II using grid cells with small height.}
   \label{fig:phases}
 \end{figure}
 %
@@ -327,14 +321,14 @@ These false detections are addressed in subsequent stages of the algorithm.
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/corrections/dual_phase_segmentation.png}
+  \includegraphics[width=0.8\linewidth,trim={0 0 0 1.5cm},clip]{figures/corrections/dual_phase_segmentation.png}
   \caption{Correction of over-segmentation of ground points based on dual-phase segmentation}
   \label{fig:dual_phase_segmentation}
 \end{figure}
 
 The second phase uses a smaller grid cell height to 
 refine the segmentation results from the first phase. 
-In this phase, false positive ground points from Phase~I are identified as obstacle points and false positive 
+In this phase, false positive ground points from Phase-I are identified as obstacle points and false positive 
 non-ground points are identified as ground points based on neighborhood correction (Fig.\@~\ref{fig:dual_phase_segmentation}).
 
 \iffalse
@@ -478,10 +472,6 @@ For tentative ground cells we cannot be certain of their exact nature.
 As a result, such cells are marked
 as tentative ground until it is clarified in the region growth step (Section~\ref{sec:region_growth}).
 
-
-However, because this configuration could also represent the top of an
-obstacle (such as a car roof or a table), we cannot be certain of its exact nature. 
-
 \subsubsection{Planar Cell}
 % \begin{figure}
 %   \centering
@@ -492,7 +482,7 @@ obstacle (such as a car roof or a table), we cannot be certain of its exact natu
 %   \label{fig:PlaneCell}
 % \end{figure}
 Cells that contain multiple scan lines are suitable candidates for plane fitting when the spatial distribution of the points 
-exhibits two dominant eigenvalues, with the third eigenvalue being negligibly small or significantly smaller. The Plane cells at 
+exhibits two dominant eigenvalues, with the third eigenvalue being negligibly small or significantly smaller. The planar cells at 
 this stage can not be considered as definitive ground. It might be the case that the cell
 exhibiting a planar distrubtion of points is a car roof top or the top of an obstacle. 
 %\todo{Suggestion: One could check lowest EV/EV sum $<$ threshold}
@@ -544,9 +534,9 @@ The seed cells are selected from the tentative ground cells based on the followi
   \item \textbf{High Confidence of Ground Classification:} The cell is high confidence when a large percentage of total points 
   are inliers of the planar model fit.
   
-  \item \textbf{Proximity to Sensor:} The centroid of the cell must be within a user-defined distance threshold. Cells that are far 
+  \item \textbf{Proximity to Sensor:} Cells that are far 
   from the sensor typically have sparse points with large gaps, making them unsuitable for initial seed selection due to limited 
-  connectivity with neighboring cells.
+  connectivity with neighboring cells. Therefore, cells in close proximity to the sensor are selected.
   
   \item \textbf{Quadrant-Based Seed Selection:} Seed cells are selected from each of the four quadrants in the Euclidean space. 
   This approach helps mitigate issues related to large occlusions or gaps in the point cloud, which could inhibit region growth. 
@@ -560,18 +550,18 @@ The seed cells are selected from the tentative ground cells based on the followi
   \end{itemize}
   
   \item \textbf{Final Seed Cells:} After shortlisting seed cells in all quadrants, we select the lowest cell from the front (1st and 2nd quadrants) 
-  and the back (3rd and 4th quadrants). These two seed cells are then used for region growing.
+  and the back (3rd and 4th quadrants) in GroundSeg3D and use all four seed cells in all quadrants for GroundSeg3D$^{\star}$ as shown in Table~\ref{tab:comparison_non_downsampled}. The seed cells are then used for region growing.
   \end{enumerate}
 
-In Phase~I we recursively expand all ground neighbors of the seed cells in the grid. 
+In Phase-I we recursively expand all ground neighbors of the seed cells in the grid. 
 This region-wise growth process ensures that only actual ground cells are identified from the set of tentative ground cells.
 
-In Phase~II we only expand cells if they are close to each other along the cell normal.
+In Phase-II we only expand cells if they are close to each other along the cell normal.
 This ensures continuity of the resulting ground cells.
 %The second cell is expanded if most of its points are within the ground-inliner threshold along the cell normal of the first.
 
 
-% Phase II includes an additional step in which points from neighboring cells above or below the expanded cell are checked. If most points in a neighboring cell 
+% Phase-II includes an additional step in which points from neighboring cells above or below the expanded cell are checked. If most points in a neighboring cell 
 % are within the ground inlier threshold, that cell is selected for further expansion. Conversely, if the majority of a neighboring cell's points are not 
 % within the ground inlier threshold, the cell is not expanded. This step prevents expanding cells that meet the slope threshold criteria but are actually obstacles.
 
@@ -605,7 +595,7 @@ The final ground segmentation refines the ground and obstacle cells by correctin
   \label{fig:false_outliers3}
 \end{figure}
 
-As plane fitting on rough terrain produces false outliers. We iterate through the outliers of each ground cell,
+As plane fitting on rough terrain produces false outliers, we iterate through the outliers of each ground cell, use KDTree to
 find the closest inlier point and compute the distance along the eigen normal direction (Fig.\@~\ref{fig:false_outliers3}).
 If the distance is below the ground threshold, the point is considered a ground point.
 
@@ -615,8 +605,8 @@ If the distance is below the ground threshold, the point is considered a ground 
 % 
 % 
 % 
-% Each ground cell obtained from the region-growing phase is processed individually. 
-% This helps us determine whether any outliers from the plane fitting were incorrectly marked. Specifically, we use the smallest 
+% Each ground cell obtained from the region-growing Phase-Is processed individually. 
+% This helps us determine whether any outliers from the plane fitting were incorrectl y marked. Specifically, we use the smallest 
 % eigenvalue of the points in the cell, rather than the normal to the plane fit, to check for false negatives. This pointwise check uses KDTree's and
 % helps in identifying and correcting false outliers.
 % 
@@ -641,14 +631,13 @@ If the distance is below the ground threshold, the point is considered a ground 
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.8\linewidth,trim={0 0 0 1.5cm},clip]{figures/corrections/neighborhood_correction.png}
-  \caption{Correction of under-segmentation of ground points based on neighboring cells}
+  \caption{Correction of under-segmentation of ground points based on neighboring cells. False detections are marked in white circles.}
   \label{fig:neighborhood_correction}
 \end{figure}
 
 
 Non-Ground cells often contain some ground cells, especially at boundaries of obstacles and ground surfaces.
 Similar to outliner check for ground points, we check every obstacle point, against the closest ground points in neighboring cells.
-\todo{mention KD-Tree?}
 
 \iffalse
 To address these challenges, we perform the following checks:
@@ -673,24 +662,23 @@ true nature of the environment.
 A ground segmentation algorithm must give robust and reliable performance without parameter tuning on varied terrains. The performance must be consistent across 
 various types of
 point cloud sensors. 
-Therefore, we tested GroundSeg3D on datasets in urban and natural environments with varied sensor configurations. 
 For comparison, we selected state-of-the-art
 ground segmentation algorithms mentioned in Table~\ref{tab:comparison_non_downsampled} using their default parameters. 
 
 Some of the ground segmentation algorithms require 
 the sensor height as a parameter. We believe that a constant sensor height can not be guaranteed for point cloud data in real world applications e.g. handheld sensor,
- AUV, legged robots 
+ drones, legged robots 
 which can change their height etc. On the contrary, GroundSeg3D does not depend on the sensor height. Furthermore, the state-of-the-art algorithms require extensive 
 hand-tuning of many parameters while
 GroundSeg3D does not require any parameter tuning.
 
-For all experiements with GroundSeg3D, we use grids of sizes (2,2,10) and (2,2,0.5) in Phase-I and Phase-II respectively. The ground inlier threshold is 0.1 meters 
+For all experiments with GroundSeg3D, we use grids of sizes (2,2,10) and (2,2,0.5) in Phase-I and Phase-II respectively. The ground inlier threshold is 0.1 meters 
 and the ground slope threshold is 30 degrees.
 
 %combined table
 \begin{table*}[tb]
   \centering
-  \caption{Comparison of ground segmentation on SemanticKITTI sequences 00, 01, 04, and 09 with vegetation}
+  \caption{Comparison of ground segmentation on SemanticKITTI sequences 00, 01, 04, and 09 with vegetation. As explained in section \ref{sec:region_growth}, two and four seed cells are used for expansion in GroundSeg3D and GroundSeg3D$^{\star}$ respectively.}.
   \label{tab:comparison_non_downsampled}
   \begin{tabular}{@{}l@{} l@{\ \ }l@{\ \ }l@{\ \ }l   l@{\ \ }l@{\ \ }l@{\ \ }l   rrrr}
   \toprule
@@ -708,6 +696,7 @@ and the ground slope threshold is 30 degrees.
   Patchwork++ \cite{9981561}\quad{} & $94.6\pm 2.8$ & $98.4\pm 0.7$ & $98.2\pm 0.8$ & $95.4\pm 3.4$ & $98.7\pm 1.1$  & $96.4\pm 2.9$  & $97.2\pm 2.2$ & $97.0\pm 3.3$ & 11 & 12& 13 & 13  \\ 
   \midrule                                                                                                                                                          
   GroundSeg3D\quad{}  & $94.8\pm 5.1$ & $94.8\pm 4.4$ & $97.5\pm 2.1$ & $92.8\pm 4.8$ & $86.9\pm 11.5$ & $78.4\pm 14.8$ & $86.7\pm 14.2$ & $88.8\pm 5.7$ & 85& 81& 98 & \!\!102\\ 
+  GroundSeg3D^{\star}\quad{}  & $94.4\pm 5.0$ & $94.4\pm 4.5$ & $97.8\pm 1.6$ & $92.2\pm 5.2$ & $89.1\pm 6.3$ & $80.4\pm 6.8$ & $89.0\pm 2.6$ & $89.3\pm 4.3$ & 84& 80& 98 & \!\!102\\ 
   \bottomrule
 \end{tabular}%
 \end{table*}
@@ -824,14 +813,14 @@ We also successfully tested the algorithm on our own Robotics Test Track with ve
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/kitti_all.png}
+  \includegraphics[width=0.8\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/kitti_all.png}
   \caption{GroundSeg3D results on the SemanticKITTI dataset}
   \label{fig:single_fig}
 \end{figure}
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=\linewidth]{figures/sloped terrain/kitti_all.png}
+  \includegraphics[width=0.8\linewidth]{figures/sloped terrain/kitti_all.png}
   \caption{GroundSeg3D results on sloped outdoor terrain in SemanticKITTI with color-coded height}
   \label{fig:kitti_sloped_terrain}
 \end{figure}
@@ -839,14 +828,14 @@ We also successfully tested the algorithm on our own Robotics Test Track with ve
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/urban_nav_all.png}
+  \includegraphics[width=0.8\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/urban_nav_all.png}
   \caption{GroundSeg3D results on the UrbanNav Tokyo dataset}
   \label{fig:urban_nav}
 \end{figure}
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/doals_all.png}
+  \includegraphics[width=0.8\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/doals_all.png}
   \caption{GroundSeg3D results on the DOALS dataset}
   \label{fig:doals}
 \end{figure}
@@ -854,14 +843,14 @@ We also successfully tested the algorithm on our own Robotics Test Track with ve
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/rellies3d_all.png}
-  \caption{GroundSeg3D results on the Rellis-3D dataset}
+  \includegraphics[width=0.8\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/rellies3d_all.png}
+  \caption{GroundSeg3D results on the RELLIS-3D dataset}
   \label{fig:rellies_3d}
 \end{figure}
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/botanic_garden_all.png}
+  \includegraphics[width=0.8\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/botanic_garden_all.png}
   \caption{GroundSeg3D results on the BotanicGarden dataset}
   \label{fig:botanic_garden}
 \end{figure}
@@ -876,24 +865,24 @@ We also successfully tested the algorithm on our own Robotics Test Track with ve
 \fi
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=\linewidth,trim={0 0 0 0cm},clip]{figures/sloped terrain/arter_all.png}
+  \includegraphics[width=0.8\linewidth,trim={0 0 0 0cm},clip]{figures/sloped terrain/arter_all.png}
   \caption{GroundSeg3D results on rough outdoor terrain at the Robotics Test Track at DFKI RIC}
   \label{fig:arter_all}
 \end{figure}
 
 
 On SemanticKITTI sequences 00, 01, 04, and~09 the average precision of GroundSeg3D is generally above~94\%, but due to some false positive ground points from vegetation (Fig.\@~\ref{fig:vegetation}), the precision drops to~92\% in sequence~09.
-The average recall stays above 86\%, except in sequence~01, due to gaps in the point cloud larger than grid cell size (Fig.\@~\ref{fig:gaps}). 
+The average recall stays above 86\%, except in sequence~01, due to gaps in the point cloud larger than grid cell size (Fig.\@~\ref{fig:gaps}). Increasing the number of seeds sells to 4 improves recall with significantly reduced standard deviation as shown in Table~\ref{tab:comparison_non_downsampled}.
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=\linewidth,trim={0 3cm 0 0cm},clip]{figures/limitations/vegetation.png}
+  \includegraphics[width=0.8\linewidth,trim={0 3cm 0 0cm},clip]{figures/limitations/vegetation.png}
   \caption{Over-segmentation of some vegetation points}
   \label{fig:vegetation}
 \end{figure}
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=\linewidth]{figures/limitations/gaps.png}
+  \includegraphics[width=0.8\linewidth]{figures/limitations/gaps.png}
   \caption{Under-segmentation of ground points due to point cloud with gaps exceeding grid cell size}
   \label{fig:gaps}
 \end{figure}
@@ -1166,6 +1155,14 @@ by the capability of GroundSeg3D to exhibit robust performance on varied terrain
 \end{table}
 \fi
 
+\section{Conclusion}
+
+This paper introduces a hybrid multi-phase ground segmentation algorithm for 3D point clouds, designed to operate without 
+the need for parameter tuning or dependence on specific sensor configurations, ensuring ease of deployment. Extensive experimental 
+evaluations demonstrate that the proposed GroundSeg3D algorithm consistently delivers robust performance across diverse and 
+challenging natural and urban environments.
+
+In future research, we plan to improve the runtime and explore new ways for selection of the seed cells.
 
 \section{Acknowledgment}
 We greatly acknowledge the open source Ground Segmentation Benchmark \cite{9466396,9981561} which we used for benchmarking.
