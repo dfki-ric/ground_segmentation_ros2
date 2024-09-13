@@ -107,14 +107,10 @@ Ground point extraction from a point cloud sample is a crucial step in the perce
 Numerous solutions have been proposed over the past few years. 
 \fi
 
-In this work, our primary focus was on extracting ground 
-points with minimal parameter dependency, eliminating the need for parameter fine-tuning to ensure 
-adaptability across various vehicles, robots, sensor configurations, for both indoor and outdoor environments. 
-Our algorithm was tested using a consistent set of parameters on real-world datasets, featuring different 
-types of point cloud sensors in various configurations and environments. The parameters in our solution are intuitive, 
-easy to understand, and do not require advanced domain knowledge. The segmentation process combines local eigen analysis, 
-model fitting, and region-growing algorithms. We explore the strengths and weaknesses of these approaches and integrate 
-them into a processing pipeline to achieve effective ground segmentation in diverse indoor and outdoor scenarios.
+In this work, our primary focus is to extract ground 
+points with minimal parameter dependency, eliminating the need for parameter tuning, and ensure consistent performance across 
+varied terrains and sensor configurations. Our algorithm was tested on real-world datasets, featuring different 
+types of point cloud sensors in various configurations and environments. 
 
 \iffalse
 \subsection{Benefits of Ground Segmentation}
@@ -137,10 +133,8 @@ This classification is supported by a recent survey on ground segmentation metho
 categorizes the current state-of-the-art solutions accordingly.
 
 \subsection{Traditional Solutions}
-The traditional solutions for ground segmentation use geometric properties of the
-points to segment the ground and non-ground points. Usual approaches discretize
-the point cloud into grid cells and then process the points in each cell
-individually. Such solutions are usually based on occupancy grids or elevation maps \cite{5650541,9558794}. Some
+The traditional solutions for ground segmentation use geometric properties for segmentation. Such solutions are usually based 
+on occupancy grids or elevation maps \cite{5650541,9558794}. Some
 approaches extend the grid cell and analyze the points in neighboring cells for
 a better estimation of surface properties \cite{9969541}. The modeling of the points in the
 grid cells using  plane fitting and line extraction is a common approach in many
@@ -153,10 +147,10 @@ on Conditional Random Field (CRF) and Markov Random Field (MRF) have also been u
 The advancements in deep learning meant that some researchers used the existing
 CNN networks originally used for object detection for ground segmentation using
 range images generated from the point cloud data. The development of PointNet \cite{qi2017pointnet} and its successor 
-PointNet++ \cite{qi2017pointnet++} give a unified
+PointNet++ \cite{qi2017pointnet++} gave a unified
 solution for various applications e.g. object and 
 scene segmentation. Various other solutions like GndNet \cite{paigwar2020gndnet}, PointPillars \cite{lang2019pointpillars}, JCP \cite{rs13163239}, SectorGSnet \cite{9691325}
-showcase good results.
+show good results.
 
 \section{Proposed Solution}
 \iffalse
@@ -319,8 +313,7 @@ The segmentation process is divided into two distinct phases (Fig.\@~\ref{fig:ph
   \includegraphics[width=\linewidth]{figures/overview/stages.png}
   \caption{A two phase approach is developed for robust segmentation of ground and non-ground points. Phase-I uses grid cells with large height
   to capture tall structures as non-ground points. The coarse ground points from Phase-I are subsequently used as
-  input for Phase-II in which the coarse ground points are processed using grid cells with small height. The small height ensures only actual ground
-  cells are expanded.}
+  input for Phase-II and processed using grid cells with small height.}
   \label{fig:phases}
 \end{figure}
 %
@@ -450,7 +443,7 @@ Non-planar Cell   & $< 0.40$ \\
   dominating Eigen vectors (green) are shown. 
   The cell is classified as Line~(\subref{fig:LineCell}), Plane~(\subref{fig:PlaneCell}),
   or Non-Planar~(\subref{fig:UnknownCell})
-  based of the local Eigen analysis.}
+  based of the local eigen analysis.}
 \end{figure}
 
 If the largest eigenvalue is significantly larger than the other eigenvalues, the cell is categorized as a Line Cell.
@@ -465,18 +458,20 @@ CellType &=
   \end{smallcases}
 \end{align}
 %
-The ground slope threshold is used to determine the classification of cells based on their angle of uprightness. 
+where $Threshold$ refers to the ground slope threshold.
+
+The ground slope threshold is a parameter and is used to determine the classification of cells based on their angle of uprightness. 
 % Cells with a small angle between the largest eigenvector and the positive z-axis are considered for classification
 % as obstacles. This is because ground cells typically do not exhibit a highly upright spatial distribution.
 For tentative ground cells we cannot be certain of their exact nature.  
 As a result, such cells are marked
-as tentative ground until it is clarified the region growth step (Section~\ref{sec:region_growth})
+as tentative ground until it is clarified in the region growth step (Section~\ref{sec:region_growth})
 
 
 However, because this configuration could also represent the top of an
 obstacle (such as a car roof or a table), we cannot be certain of its exact nature. 
 
-\subsubsection{Plane Cell}
+\subsubsection{Planar Cell}
 % \begin{figure}
 %   \centering
 %   \includegraphics[width=\linewidth]{plane_cell.png}
@@ -486,15 +481,8 @@ obstacle (such as a car roof or a table), we cannot be certain of its exact natu
 %   \label{fig:PlaneCell}
 % \end{figure}
 Cells that contain multiple scan lines are suitable candidates for plane fitting when the spatial distribution of the points 
-exhibits two dominant eigenvalues, with the third eigenvalue being negligibly small or significantly smaller. In such cases, 
-the cell is assessed to determine if it can be classified as a Plane Cell.
-
-Specifically, if the ratio of the largest eigenvalue to the sum of all eigenvalues is greater than 0.4, the points are 
-classified as Plane. This ratio indicates that the points align well with a planar surface, where the largest eigenvalue 
-reflects the direction perpendicular to the plane, and the other two eigenvalues are relatively small, suggesting minimal 
-variation within the plane.
-
-The Plane cells at this stage can not be considered as definitive ground because of the manner of points assigned to grid cells. It might be that the cell
+exhibits two dominant eigenvalues, with the third eigenvalue being negligibly small or significantly smaller. The Plane cells at 
+this stage can not be considered as definitive ground. It might be the case that the cell
 exhibiting a planar distrubtion of points is a car roof top or the top of an obstacle. 
 %\todo{Suggestion: One could check lowest EV/EV sum $<$ threshold}
 
@@ -507,14 +495,7 @@ exhibiting a planar distrubtion of points is a car roof top or the top of an obs
 %   \label{fig:UnknownCell}
 % \end{figure}
 
-If the ratio of the largest eigenvalue to the sum of all eigenvalues is smaller than 0.4, the cell is classified as non-planar. 
-In this scenario, the cell does not exhibit two clearly dominant eigenvalues, 
-suggesting that the points do not align well with a planar surface.
-
-While the threshold of 0.4 helps in distinguishing between Planar and Non-planar cells, it may lead to some false 
-classifications. Specifically, cells that should be classified as Plane or Non-planar might be incorrectly 
-categorized due to the threshold. However, these misclassifications are addressed and corrected automatically 
-during subsequent stages of the processing pipeline. Each Non-planar cell is individually processed in the segmentation stage.
+If a cell has three dominant eigenvalues, the cell is classified as non-planar, suggesting that the points do not align well with a planar surface.
 
 \subsection{Planar Model Fitting}
 \begin{figure}
@@ -524,55 +505,35 @@ during subsequent stages of the processing pipeline. Each Non-planar cell is ind
   \label{fig:PlaneFit}
 \end{figure}
 
-We chose a model-fitting approach for our solution because, when the input point cloud is divided into smaller cells, 
-it is reasonable to assume that these local cells are flat, given the small cell size. This assumption holds true more 
-often than not due to the reduced cell size, which leads to more accurate plane fitting. However, this approach increases 
-computational costs due to the larger number of cells.
-
-A larger grid cell size improves performance and yields good results in indoor environments or autonomous driving scenarios. 
-Nonetheless, it tends to flatten the natural curvature of the ground in outdoor settings. In areas with highly uneven terrain, 
-using a large grid size can lead to poor results, as the planar model fitting might ignore some points. This raises the question 
-of how to handle points marked as outliers but which are not truly outliers.
-
-Another challenge with the grid representation is the variability in point distribution within a cell. Depending on point 
-sparsity, a single cell may contain a line of points, a few lines, or even scattered points. This variability complicates 
-the grid-based point assignment.
-
-The plane model fitting is applied specifically to cells categorized as Plane. For these cells, we compute the gradient of 
-the fitted plane and apply a slope threshold to assess whether the cell meets the ground criteria. Cells that fulfill these 
-criteria are tentatively marked as potential ground cells. These ground cells are then used as initial seeds for the 
-region-growing algorithm. Cells that do not meet the ground criteria are marked as non-ground.
+The plane model fitting is applied only to cells categorized as Planar Cells. We compute the gradient of 
+the fitted plane and apply a slope threshold to assess whether the cell meets the ground criteria. The resultant ground cells 
+are used as candidates for initial seeds in the region-growing algorithm.
 %
 \begin{align}
 CellType &= 
   \begin{smallcases} 
-    \text{Ground}, & angle \le threshold \\
-    \text{Non-Ground}, & angle > threshold
+    \text{Tentative Ground}, & angle \le Threshold \\
+    \text{Non-Ground}, & angle > Threshold
   \end{smallcases}
 \end{align}
-where $threshold$ refers to the ground slope threshold.
+where $Threshold$ refers to the same ground slope threshold used in (Section~\ref{sec:}).
 
 \subsection{Seed Selection}
-The seed cells are selected from the tentative Ground cells based on the following conditions:
+The seed cells are selected from the tentative ground cells based on the following conditions:
 
 \begin{enumerate}
-  \item \textbf{High Confidence of Ground Classification:} The cell is considered to have high confidence if more than 95 percent 
-  of the points within it are inliers of the planar model fit.
+  \item \textbf{High Confidence of Ground Classification:} The cell is high confidence when a large percentage of total points 
+  are inliers of the planar model fit.
   
   \item \textbf{Proximity to Sensor:} The centroid of the cell must be within a user-defined distance threshold. Cells that are far 
   from the sensor typically have sparse points with large gaps, making them unsuitable for initial seed selection due to limited 
-  connectivity with neighboring cells. Therefore, a distance limit is set to ensure that only cells close to the sensor are considered 
-  as potential seed cells.
+  connectivity with neighboring cells.
   
   \item \textbf{Quadrant-Based Seed Selection:} Seed cells are selected from each of the four quadrants in the Euclidean space. 
-  This approach helps mitigate issues related to large occlusions or gaps in the point cloud, which could inhibit region growth 
-  if only a single seed cell were used. By selecting seed cells from four distinct groups (one per quadrant), we improve the 
+  This approach helps mitigate issues related to large occlusions or gaps in the point cloud, which could inhibit region growth. 
+  By selecting seed cells from four distinct groups (one per quadrant), we improve the 
   coverage and connectivity of the region-growing process.
-  
-  \item \textbf{Mean Height Calculation:} The mean height of the selected cells in each group is computed. This step helps 
-  minimize the impact of any false positive seed cells. A group is considered valid only if it contains at least a minimum 
-  number of selected seed cells, ensuring a robust basis for the region-growing process.
-  
+   
   \item \textbf{Selection of a Single Seed Cell:} From each valid group, one seed cell is selected based on the following criteria:
   \begin{itemize}
   \item The cell must have the highest number of ground neighbors compared to other cells in the group.
@@ -587,11 +548,10 @@ The seed cells are selected from the tentative Ground cells based on the followi
 We recursively expand all ground neighbors of the seed cells. This region-wise growth process ensures that cells falsely 
 classified as ground cells (i.e., cells that meet the slope criteria but are not truly ground) are not included in the final result.
 
-When expanding the neighbors of a cell, we consider up to 24 neighboring cells in its vicinity. Empty cells are not stored in the 3D grid, 
-which helps in focusing only on relevant neighboring cells. Therefore, to avoid including distant or irrelevant neighbors, we apply a maximum distance threshold.
-
-Each ground neighbor within the distance threshold is expanded and subsequently marked as expanded. This designation 
-prevents any cell from being expanded more than once, ensuring efficiency and accuracy in the expansion process.
+When expanding the neighbors of a cell, we consider neighboring cells in its vicinity. Empty cells are not stored in the 3D grid, 
+which helps in focusing only on relevant neighboring cells. Each ground neighbor within the distance threshold is expanded and 
+subsequently marked as expanded. This designation prevents any cell from being expanded more than once, ensuring efficiency 
+and accuracy in the expansion process.
 
 Phase II includes an additional step where points from neighboring cells above or below the expanded cell are checked. If most points in a neighboring cell 
 are within the ground inlier threshold, that cell is selected for further expansion. Conversely, if the majority of a neighboring cell's points are not 
