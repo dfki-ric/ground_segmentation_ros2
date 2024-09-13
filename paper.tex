@@ -323,10 +323,17 @@ the increased cell height can lead to false segmentation of ground points,
 especially where the ground is obscured by overhead objects. 
 These false detections are addressed in subsequent stages of the algorithm.
 
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/corrections/dual_phase_segmentation.png}
+  \caption{Correction of over-segmentation of ground points based on dual-phase segmentation}
+  \label{fig:dual_phase_segmentation}
+\end{figure}
+
 The second phase uses a smaller grid cell height to 
 refine the segmentation results from the first phase. 
 In this phase, false positive ground points from Phase~I are identified as obstacle points and false positive 
-non-ground points are identified as ground points based on neighborhood correction.
+non-ground points are identified as ground points based on neighborhood correction (Fig.\@~\ref{fig:dual_phase_segmentation}).
 
 \iffalse
 \begin{figure}[tb]
@@ -655,21 +662,24 @@ true nature of the environment.
 
 \section{Experiments}
 
-The goal of experimentation was to test not only the ground segmentation but also the adaptability to different environments and sensor configurations. For comparison,
-we selected some of the state-of-the-art ground segmentation works form literature. We used the standard parameters for the algorithms. Some algorithms require 
-the sensor height as a parameter. Therefore, sensor height was the only parameter which was updated. Our proposed solution does not require sensor height as a parameter 
-and we did not update any parameters in our tests throughout the experimentation. The results of our GroundSeg3D are with the same set of paramters shown in table.
+A ground segmentation algorithm must give robust and reliable performance without parameter tuning on varied terrains. The performance must be consistent across 
+various types of
+point cloud sensors. Therefore, we test the performance of GroundSeg3D on datasets from 
+challenging urban and natural environments with varied sensor configurations. For comparison, we selected state-of-the-art
+ground segmentation algorithms mentioned in Table~\ref{tab:comparison_non_downsampled} and used their default parameters. 
 
-The experimentation was performed exclusively on datasets with real world point cloud data. No simulation data was used during the tests. We selected a diverse set of datasets from urban and natural environments. Additonally, the datasets are based on different sensor configurations.
-A ground segmentation solution must be able to perform robustly for various sensor types and configurations without parameter tuning. To showcase that our solution is not
-bound to a sensor height, we selected a handheld dataset to test the adaptability of our ground segmentation to a changing height of the sensor. In contrast, most existing 
-solutions require a sensor height as a parameter with the assumption that the height of the sensor is unchanged. This assumption does not hold in case of handheld or UAV 
-based point cloud datasets. Futhermore, the constant sensor height assumption does not hold for mobile robots with the capability to change their height.
+We observed that some of the ground segmentation algorithms require 
+the sensor height as a parameter. We believe that a constant sensor height can not be guaranteed for point cloud data in real world applications e.g. handheld sensor,
+ AUV, legged robots 
+which can change their height etc. On the contrary, GroundSeg3D does not depend on the sensor height. Furthermore, the state-of-the-art algorithms require extensive 
+hand-tuning of many parameters while
+GroundSeg3D does not require any parameter tuning.
+
+For all experiements with GroundSeg3D, we use grids of sizes (2,2,10) and (2,2,0.5) in Phase-I and Phase-II respectively. The ground inlier threshold is 0.1 meters 
+and the ground slope threshold is 30 degrees.
 
 \subsection{Datasets}
-We used a varied set of available datasets to test the adaptability of GroundSeg3D to new sensors and environments. The datasets provide data from
-urban and natural environments. Each dataset uses a different type of sensors. The platforms used for data collection are Car, Mobile Robot and Handheld.
-The selection of the handheld dataset was to test how well the solutions perform in varying sensor heights.
+We selected datasets from urban and natural environments. Each dataset uses a different point cloud sensor. The platforms used for data collection are Car, Mobile Robot and Handheld.
 
 \begin{table}[tb]
   \centering
@@ -775,7 +785,6 @@ all the experimental results from various datasets use a single set of parameter
 
 \subsection{Performance on varied terrains}
 
-The ground segmentation on various datasets was performed without any paramter tuning. 
 The ground points [pink] and non-ground points [blue] are shown in figures \ref{fig:single_fig} to~\ref{fig:botanic_garden}. 
 
 \begin{figure}[tb]
@@ -822,25 +831,24 @@ The ground points [pink] and non-ground points [blue] are shown in figures \ref{
   \label{fig:ric}
 \end{figure}
 \fi
-We further analyze the runtime of GroundSeg3D on various datasets (Table~\ref{tab:runtime}). This should give the end user a good idea of the expected runtime.
+We further analyze the runtime of GroundSeg3D on various datasets (Table~\ref{tab:runtime}).
 
 \begin{table}[tb]
   \centering
   \caption{Runtime of GroundSeg3D on varied datasets}
-  \resizebox{\columnwidth}{!}{%
-  \begin{tabular}{|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
+  \begin{tabular}{|p{2cm}|p{2cm}|}
   \hline
-  \textbf{Dataset} & \textbf{Pointclouds} & \textbf{Average Points} & \textbf{Average Time (ms)} \\
+  \textbf{Dataset} & \textbf{Average Time (ms)} \\
   \hline
-  \textbf{SemanticKITTI} & 500 & 121253 & 86 \\ 
+  \textbf{SemanticKITTI} & 86 \\ 
   \hline
-  \textbf{UrbanNav} & 500 & 56639 & 42 \\ 
+  \textbf{UrbanNav} & 42 \\ 
   \hline
-  \textbf{DOALS} & 500 & 130895 & 60 \\ 
+  \textbf{DOALS} & 60 \\ 
   \hline
-  \textbf{BotanicGarden} & 500 & 25016 & 21 \\
+  \textbf{BotanicGarden} & 21 \\
   \hline
-  \textbf{RELLIS-3D} & 500 & 131071 & 82 \\
+  \textbf{RELLIS-3D} & 82 \\
   \hline
   \end{tabular}%
   }
@@ -848,13 +856,6 @@ We further analyze the runtime of GroundSeg3D on various datasets (Table~\ref{ta
   \end{table}
 
 %\subsection{Dual-Phase Ground Segmentation}
-
-\begin{figure}[tb]
-  \centering
-  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/corrections/dual_phase_segmentation.png}
-  \caption{Correction of over-segmentation of ground points based on dual-phase segmentation}
-  \label{fig:dual_phase_segmentation}
-\end{figure}
 
 %\subsection{Performance on Rough Terrain}
 
@@ -939,8 +940,7 @@ by the capability of GroundSeg3D to exhibit robust performance on varied terrain
 \subsection{Comparison with the state-of-the-art}
 
 In the section, we compare the results of GroundSeg3D with other ground segmentation solutions on the SemanticKITTI dataset. The True Positive [yellow], False Positive [Blue], 
-and False Negative [Purple] points are shown. For the sake of conciseness, we selected only a single frame for each solution where the solution under performs. We compare the
-segmentation results of our GroundSeg3D at those frames.
+and False Negative [Purple] points are shown.
 
 \begin{figure}[tb]
   \centering
@@ -986,11 +986,6 @@ segmentation results of our GroundSeg3D at those frames.
   \label{fig:botanicgarden_combined}
 \end{figure*}
 \fi
-
-We get the third highest precison only second to the LineFit and GPF algorithms and fourth highest F1 score. The recall has a high standard deviation because of the inherent nature
-of the region growth algorithm. The state-of-the-art solutions have a clear advantage in terms of runtime over GroundSeg3D. The precision are recall of GroundSeg3D are 
-on par with the other solutions. Furthermore, since GroundSeg3D is not only developed for SemanticKITTI and does not require any parameter tuning, we feel that the 
-relatively lower recall score is good trade off with the robust applicablity in urban and natural environments.
 
 \iftrue
 %combined table
