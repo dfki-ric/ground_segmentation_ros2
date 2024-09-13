@@ -248,7 +248,7 @@ and as a consequence, results in the deterioration of the performance of the
 plane fitting based segmentation.
 
 \subsection{False positive flat surfaces e.g. table top, car roof etc.}
-The gradient of the fitting plane to a grid cell can not be used as the sole
+The slope of the fitting plane to a grid cell can not be used as the sole
 criteria for the segmentation. The reason is the existence of flat surfaced
 obstacles in the robot's environment.
 \paragraph*{Solution} We apply region growing based on high confidence intial
@@ -278,7 +278,7 @@ point G to detect and correct segmentation mistakes.
 The real world ground surface has a curvature and plane fitting usually results in false 
 positive outliers upon fitting a ideal flat surface to the the points. 
 \paragraph*{Solution} It is common practice to define a distance threshold to fit a planar model to a set of 
-points. We also use a fixed distance threshold for the initial plane fit for for gradient estimation. However, the 
+points. We also use a fixed distance threshold for the initial plane fit for for slope estimation. However, the 
 extraction of ground and non-ground points uses an additional correction step using the actual resultant normal of 
 the points assinged to the cell. We use the strategy as mentioned in the point G to detect and correct segmentation mistakes.
 
@@ -344,14 +344,14 @@ The steps are described in the following sections.
   \caption{Behavior of steps in the first and second phase of segmentation}
   \label{tab:phase_behavior}
 %  \todo[inline]{Only write this inside text}
-  \begin{tabular}{@{}p{3.3cm}p{1.8cm}p{2.9cm}@{}}
+  \begin{tabular}{@{}p{3.3cm}p{1.9cm}@{\quad}p{2.9cm}@{}}
 \toprule
   \textbf{Step} & \textbf{First Phase} & \textbf{Second Phase} \\
 \midrule
   \textbf{Grid Representation} & Grid cells have a large height & Grid cells have a small height \\
   \textbf{Local Eigen Analysis} & Unchanged & Unchanged \\
   \textbf{Surface Gradient Analysis} & Unchanged & Unchanged \\
-  \textbf{Ground Region Growth} & Unchanged & A detailed neighborhood check is performed for neighboring cells during expansion \\
+  \textbf{Ground Region Growth} & All 17 neighbors below and at the same level are expanded & A detailed neighborhood check is performed for all 26 neighboring cells during expansion \\
   \textbf{Final Ground Segmentation\!\!\!} & Unchanged & Unchanged \\
 \bottomrule
   \end{tabular}%
@@ -418,7 +418,7 @@ Non-planar Cell   & $< 0.40$ \\
 
 %Each type of cell is processed using a distinct algorithm, and we refer to these cells as Line, Plane, and Non-Planar cells:
 
-\subsubsection{Line Cell}
+\subsubsection{Line Cell}\label{sec:LineCell}
 
 \begin{figure}
   \centering
@@ -455,7 +455,7 @@ CellType &=
   \begin{smallcases}
     \text{Obstacle}         & angle \ge 90\degree - Threshold \\
     \text{Tentative Ground} & angle < 90\degree - Threshold
-  \end{smallcases}
+  \end{smallcases}\label{eq:Line:GroundThreshold}
 \end{align}
 %
 where $Threshold$ refers to the ground slope threshold.
@@ -465,7 +465,7 @@ The ground slope threshold is a parameter and is used to determine the classific
 % as obstacles. This is because ground cells typically do not exhibit a highly upright spatial distribution.
 For tentative ground cells we cannot be certain of their exact nature.  
 As a result, such cells are marked
-as tentative ground until it is clarified in the region growth step (Section~\ref{sec:region_growth})
+as tentative ground until it is clarified in the region growth step (Section~\ref{sec:region_growth}).
 
 
 However, because this configuration could also represent the top of an
@@ -495,17 +495,20 @@ exhibiting a planar distrubtion of points is a car roof top or the top of an obs
 %   \label{fig:UnknownCell}
 % \end{figure}
 
-If a cell has three dominant eigenvalues, the cell is classified as non-planar, suggesting that the points do not align well with a planar surface.
+If a cell has no dominant eigenvalue, the cell is classified as non-planar, suggesting that the points do not align well with a planar surface.
 
-\subsection{Planar Model Fitting}
+\subsection{Surface Gradient Analysis}
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{plane_model_fit.png}
-  \caption{Plane model fit for local surface gradient estimation.}
+  \caption{Plane model fit for local surface slope estimation.}
   \label{fig:PlaneFit}
 \end{figure}
 
-The plane model fitting is applied only to cells categorized as Planar Cells. We compute the gradient of 
+\todo{Mention RANSAC threshold}
+For each Planar Cell,
+RANSAC-based plane model fitting is applied, getting a plane and separating the points into inliers and outliers.
+We compute the slope of 
 the fitted plane and apply a slope threshold to assess whether the cell meets the ground criteria. The resultant ground cells 
 are used as candidates for initial seeds in the region-growing algorithm.
 %
@@ -514,11 +517,16 @@ CellType &=
   \begin{smallcases} 
     \text{Tentative Ground}, & angle \le Threshold \\
     \text{Non-Ground}, & angle > Threshold
-  \end{smallcases}
+  \end{smallcases} \label{eq:Planar:Ground}
 \end{align}
-where $Threshold$ refers to the same ground slope threshold used in (Section~\ref{sec:}).
+where $Threshold$ refers to the same ground slope threshold used in (Section~\ref{sec:LineCell}, equation~\ref{eq:Line:GroundThreshold}).
 
-\subsection{Seed Selection}
+\subsection{Ground Region Growth}\label{sec:region_growth}
+
+The ground region growth selects seeds from tentative ground cells and recursively expands them until 
+all cells are expanded based on neighborhood connectivity.
+
+%\subsubsection{Seed Selection} \todo{starting paragraph rephrase}
 The seed cells are selected from the tentative ground cells based on the following conditions:
 
 \begin{enumerate}
@@ -531,12 +539,12 @@ The seed cells are selected from the tentative ground cells based on the followi
   
   \item \textbf{Quadrant-Based Seed Selection:} Seed cells are selected from each of the four quadrants in the Euclidean space. 
   This approach helps mitigate issues related to large occlusions or gaps in the point cloud, which could inhibit region growth. 
-  By selecting seed cells from four distinct groups (one per quadrant), we improve the 
-  coverage and connectivity of the region-growing process.
+%   By selecting seed cells from four distinct groups (one per quadrant), we improve the 
+%   coverage and connectivity of the region-growing process.
    
   \item \textbf{Selection of a Single Seed Cell:} From each valid group, one seed cell is selected based on the following criteria:
   \begin{itemize}
-  \item The cell must have the highest number of ground neighbors compared to other cells in the group.
+  \item The cell must have the highest number of tentative ground neighbors compared to other cells in the group.
   \item It should be closest to the mean height of the group.
   \end{itemize}
   
@@ -544,49 +552,88 @@ The seed cells are selected from the tentative ground cells based on the followi
   and the back (3rd and 4th quadrants). These two seed cells are then used for region growing.
   \end{enumerate}
 
-\subsection{Ground Region Growth}\label{sec:region_growth}
-We recursively expand all ground neighbors of the seed cells. This region-wise growth process ensures that cells falsely 
-classified as ground cells (i.e., cells that meet the slope criteria but are not truly ground) are not included in the final result.
+In Phase~I we recursively expand all ground neighbors of the seed cells in the grid. 
+This region-wise growth process ensures that only actual ground cells are identified from the set of tentative ground cells.
 
-When expanding the neighbors of a cell, we consider neighboring cells in its vicinity. Empty cells are not stored in the 3D grid, 
-which helps in focusing only on relevant neighboring cells. Each ground neighbor within the distance threshold is expanded and 
-subsequently marked as expanded. This designation prevents any cell from being expanded more than once, ensuring efficiency 
-and accuracy in the expansion process.
+In Phase~II we only expand cells if they are close to each other along the cell normal.
+This ensures continuity of the resulting ground cells.
+%The second cell is expanded if most of its points are within the ground-inliner threshold along the cell normal of the first.
 
-Phase II includes an additional step where points from neighboring cells above or below the expanded cell are checked. If most points in a neighboring cell 
-are within the ground inlier threshold, that cell is selected for further expansion. Conversely, if the majority of a neighboring cell's points are not 
-within the ground inlier threshold, the cell is not expanded. This step prevents expanding cells that meet the slope threshold criteria but are actually obstacles.
+
+% Phase II includes an additional step in which points from neighboring cells above or below the expanded cell are checked. If most points in a neighboring cell 
+% are within the ground inlier threshold, that cell is selected for further expansion. Conversely, if the majority of a neighboring cell's points are not 
+% within the ground inlier threshold, the cell is not expanded. This step prevents expanding cells that meet the slope threshold criteria but are actually obstacles.
 
 
 \subsection{Final Ground Segmentation}
 
-The final ground segmentation is a critical step in the pipeline for accurately interpreting ground points from the input point cloud data, 
-especially at junctions of ground and obstacle cells. This process involves analyzing and classifying the points in the cells based on
-their surface and neightborhood properties. The goal is to refine the cells obtained from previous steps in the pipeline and ensure 
-that each point in the cells is accurately categorized, considering both its local properties and its relationship with neighboring cells.
+The final ground segmentation refines the ground and obstacle cells by correcting over- and under-segmentation.
 
 \subsubsection{Ground Points}
 
-In our approach to point segmentation, each ground cell obtained from the region-growing phase is processed individually. 
-This helps us determine whether any outliers from the plane fitting were incorrectly marked. Specifically, we use the smallest 
-eigenvalue of the points in the cell, rather than the normal to the plane fit, to check for false negatives. This pointwise check uses KDTree's and
-helps in identifying and correcting false outliers.
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\linewidth]{figures/corrections/false_outliers/overview_1.png}
+  \caption{False outliers (non-ground points) from RANSAC plane fitting on uneven terrain}
+  \label{fig:false_outliers1}
+\end{figure}
 
-The process involves the following steps:
+\iffalse
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\linewidth]{figures/corrections/false_outliers/overview_2.png}
+  \caption{Overview2}
+  \label{fig:false_outliers2}
+\end{figure}
+\fi
 
-\paragraph*{Outlier Check}
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\linewidth]{figures/corrections/false_outliers/overview_3.png}
+  \caption{Correction of false outliers using Eigen normal (Eigen vector of the smallest Eigen value) instead of plane normal}
+  \label{fig:false_outliers3}
+\end{figure}
 
-\begin{enumerate}
-\item Identify the closest inlier point and compute the vector from this inlier to the outlier.
-\item Calculate the component of this vector along the ground normal.
-\item Based on the distance along the normal:
-\begin{enumerate}
-\item If the distance is less than or equal to the plane fit threshold, the outlier is classified as a ground point.
-\item If the distance exceeds the plane fit threshold, the outlier is classified as a non-ground point.
-\end{enumerate}
-\end{enumerate}
+As plane fitting on rough terrain produces false outliers. We iterate through the outliers of each ground cell,
+find the closest inlier point and compute the distance along the eigen normal direction (Fig.\@~\ref{fig:false_outliers3}).
+If the distance is below the ground threshold, the point is considered a ground point.
+
+% As shown in Fig.\@~\ref{fig:false_outliers1}, plane fitting to planar cells leads to false 
+% outliers because the fitted plane does not accurately model the spatial distribution of the 
+% points in the cell. Therefore we use the Eigen normal to correct these points (Fig.\@~\ref{fig:false_outliers3}).
+% 
+% 
+% 
+% Each ground cell obtained from the region-growing phase is processed individually. 
+% This helps us determine whether any outliers from the plane fitting were incorrectly marked. Specifically, we use the smallest 
+% eigenvalue of the points in the cell, rather than the normal to the plane fit, to check for false negatives. This pointwise check uses KDTree's and
+% helps in identifying and correcting false outliers.
+% 
+% The process involves the following steps:
+% 
+% \paragraph*{Outlier Check}
+% 
+% \begin{enumerate}
+% \item Identify the closest inlier point and compute the vector from this inlier to the outlier.
+% \item Calculate the component of this vector along the ground normal.
+% \item Based on the distance along the normal:
+% \begin{enumerate}
+% \item If the distance is less than or equal to the plane fit threshold, the outlier is classified as a ground point.
+% \item If the distance exceeds the plane fit threshold, the outlier is classified as a non-ground point.
+% \end{enumerate}
+% \end{enumerate}
 
 \subsubsection{Non-Ground Cells}
+
+%\subsection{Neighborhood Correction}
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/corrections/neighborhood_correction.png}
+  \caption{Correction of under-segmentation of ground points based on neighboring cells}
+  \label{fig:neighborhood_correction}
+\end{figure}
+
 
 Segmentation of non-ground cells presents additional challenges, especially at the boundaries where obstacles meet ground surfaces. 
 To address these challenges, we perform the following checks:
@@ -885,43 +932,9 @@ by the capability of GroundSeg3D to exhibit robust performance on varied terrain
   \label{fig:main_fig}
 \end{figure}
 \fi
-%\subsection{Neighborhood Correction}
-
-\begin{figure}[tb]
-  \centering
-  \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/corrections/neighborhood_correction.png}
-  \caption{Correction of under-segmentation of ground points based on neighboring cells}
-  \label{fig:neighborhood_correction}
-\end{figure}
 
 %\subsection {Correction of False Outliers}
 
-As shown in Fig.\@~\ref{fig:false_outliers1}, plane fitting to planar cells leads to false 
-outliers because the fitted plane does not accurately model the spatial distribution of the 
-points in the cell. Therefore we use the Eigen normal to correct these points (Fig.\@~\ref{fig:false_outliers3}).
-
-\begin{figure}[tb]
-  \centering
-  \includegraphics[width=\linewidth]{figures/corrections/false_outliers/overview_1.png}
-  \caption{False outliers (non-ground points) from RANSAC plane fitting on uneven terrain}
-  \label{fig:false_outliers1}
-\end{figure}
-
-\iffalse
-\begin{figure}[tb]
-  \centering
-  \includegraphics[width=\linewidth]{figures/corrections/false_outliers/overview_2.png}
-  \caption{Overview2}
-  \label{fig:false_outliers2}
-\end{figure}
-\fi
-
-\begin{figure}[tb]
-  \centering
-  \includegraphics[width=\linewidth]{figures/corrections/false_outliers/overview_3.png}
-  \caption{Correction of false outliers using Eigen normal (Eigen vector of the smallest Eigen value) instead of plane normal}
-  \label{fig:false_outliers3}
-\end{figure}
 
 \subsection{Comparison with the state-of-the-art}
 
