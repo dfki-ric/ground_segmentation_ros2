@@ -61,7 +61,7 @@ Ground Segmentation, Point Clouds, Mobile Robotics, Autonomous Driving, Rough Te
 
 \section{Introduction}
 The perception system of an autonomous system utilizes multiple sensors to
-capture salient features of the environment. These features are used as inputs by various subsystems e.g. navigation, control, learning etc. A core sensor of the perception system
+capture salient features of the environment. These features are used as inputs by various subsystems, e.\,g., navigation, control, learning etc. A core sensor of the perception system
 is the LiDAR and given the advancements in sensor design and reduced costs, it
 has become a standard sensor in autonomous systems \cite{Gomes2023}. The LiDAR uses bands of
 laser beams to scan the surrounding environment and the time-of-flight
@@ -143,7 +143,7 @@ The advancements in deep learning meant that some researchers used the existing
 CNN networks originally used for object detection for ground segmentation using
 range images generated from the point cloud data. The development of PointNet \cite{qi2017pointnet} and its successor 
 PointNet++ \cite{qi2017pointnet++} gave a unified
-solution for various applications e.g. object and 
+solution for various applications, e.\,g., object and 
 scene segmentation. Solutions like GATA \cite{GraphBasedGS}, GndNet \cite{paigwar2020gndnet}, PointPillars \cite{lang2019pointpillars}, JCP \cite{rs13163239}, SectorGSnet \cite{9691325}
 show good results.
 
@@ -188,7 +188,7 @@ does not always hold. Autonomous systems usually have to navigate
 on uneven terrain with varying degrees of roughness. Therefore, the ground segementation algorithms
 are not always easily applicable for msuch systems.
 
-\paragraph*{Solution} We use a combination of local and global terrain properties e.g. surface gradiant,
+\paragraph*{Solution} We use a combination of local and global terrain properties, e.\,g., surface gradiant,
 local spacial distribution of points, and global connectivity. We apply local eigen analysis to extract local 
 terrain surface properties and utilize a connectivity-based region growing algorithm based on initial seed selection. 
 
@@ -242,7 +242,7 @@ is that as the distance from the sensor origin increases, the cells get bigger
 and as a consequence, results in the deterioration of the performance of the
 plane fitting based segmentation.
 
-\subsection{False positive flat surfaces e.g. table top, car roof etc.}
+\subsection{False positive flat surfaces, e.\,g., table top, car roof etc.}
 The slope of the fitting plane to a grid cell can not be used as the sole
 criteria for the segmentation. The reason is the existence of flat surfaced
 obstacles in the robot's environment.
@@ -548,7 +548,7 @@ The seed cells are selected from the tentative ground cells based on the followi
   \end{itemize}
   
   \item Final Seed Cells: After shortlisting seed cells in all quadrants, we select the lowest cell from the front (1st and 2nd quadrants) 
-  and the back (3rd and 4th quadrants) in GroundSeg3D and use all four seed cells in all quadrants for GroundSeg3D$^{\star}$ as shown in Table~\ref{tab:comparison_non_downsampled}. The seed cells are then used for region growing.
+  and the back (3rd and 4th quadrants) in GroundSeg3D and use all four seed cells in all quadrants for GroundSeg3D+ as shown in Table~\ref{tab:comparison_non_downsampled}. The seed cells are then used for region growing.
   \end{enumerate}
 
 In Phase-I we recursively expand all ground neighbors of the seed cells in the grid. 
@@ -664,19 +664,19 @@ For comparison, we selected state-of-the-art
 ground segmentation algorithms mentioned in Table~\ref{tab:comparison_non_downsampled} using their default parameters. 
 
 Some of the ground segmentation algorithms require 
-the sensor height as a parameter. We believe that a constant sensor height can not be guaranteed for point cloud data in real world applications e.g. handheld sensor,
+the sensor height as a parameter. We believe that a constant sensor height can not be guaranteed for point cloud data in real world applications, e.\,g., handheld sensor,
  drones, legged robots 
 which can change their height etc. On the contrary, GroundSeg3D does not depend on the sensor height. Furthermore, the state-of-the-art algorithms require extensive 
 hand-tuning of many parameters while
 GroundSeg3D does not require any parameter tuning.
 
-For all experiments with GroundSeg3D, we use grids of sizes (2,2,10) and (2,2,0.5) in Phase-I and Phase-II respectively. The ground inlier threshold is 0.1 meters 
-and the ground slope threshold is 30 degrees.
+For all experiments with GroundSeg3D, we use grids of sizes $(2,2,10)$ and $(2,2,0.5)$ meters in Phase-I and \hbox{Phase-II} respectively. The ground inlier threshold is 0.1\,m 
+and the ground slope threshold is 30\textdegree.
 
 %combined table
 \begin{table*}[tb]
   \centering
-  \caption{Comparison of ground segmentation on SemanticKITTI sequences 00, 01, 04, and 09 with vegetation. As explained in section \ref{sec:region_growth}, two and four seed cells are used for expansion in GroundSeg3D and GroundSeg3D$^{\star}$ respectively.}.
+  \caption{Comparison of ground segmentation on SemanticKITTI sequences 00, 01, 04, and 09 with vegetation. As explained in section \ref{sec:region_growth}, two and four seed cells are used for expansion in GroundSeg3D and GroundSeg3D+ respectively.}.
   \label{tab:comparison_non_downsampled}
   \begin{tabular}{@{}l@{} l@{\ \ }l@{\ \ }l@{\ \ }l   l@{\ \ }l@{\ \ }l@{\ \ }l   rrrr}
   \toprule
@@ -694,7 +694,7 @@ and the ground slope threshold is 30 degrees.
   Patchwork++ \cite{9981561}\quad{} & $94.6\pm 2.8$ & $98.4\pm 0.7$ & $98.2\pm 0.8$ & $95.4\pm 3.4$ & $98.7\pm 1.1$  & $96.4\pm 2.9$  & $97.2\pm 2.2$ & $97.0\pm 3.3$ & 11 & 12& 13 & 13  \\ 
   \midrule                                                                                                                                                          
   GroundSeg3D\quad{}  & $94.8\pm 5.1$ & $94.8\pm 4.4$ & $97.5\pm 2.1$ & $92.8\pm 4.8$ & $86.9\pm 11.5$ & $78.4\pm 14.8$ & $86.7\pm 14.2$ & $88.8\pm 5.7$ & 85& 81& 98 & \!\!102\\ 
-  GroundSeg3D^{\star}\quad{}  & $94.4\pm 5.0$ & $94.4\pm 4.5$ & $97.8\pm 1.6$ & $92.2\pm 5.2$ & $89.1\pm 6.3$ & $80.4\pm 6.8$ & $89.0\pm 2.6$ & $89.3\pm 4.3$ & 84& 80& 98 & \!\!102\\ 
+  GroundSeg3D+\quad{}  & $94.4\pm 5.0$ & $94.4\pm 4.5$ & $97.8\pm 1.6$ & $92.2\pm 5.2$ & $89.1\pm 6.3$ & $80.4\pm 6.8$ & $89.0\pm 2.6$ & $89.3\pm 4.3$ & 84& 80& 98 & \!\!102\\ 
   \bottomrule
 \end{tabular}%
 \end{table*}
@@ -863,8 +863,10 @@ We also successfully tested the algorithm on our own Robotics Test Track with ve
 \fi
 \begin{figure}[tb]
   \centering
+  \includegraphics[width=0.7\linewidth]{figures/dfki_track/mfh.png}
+  \includegraphics[width=0.8\linewidth,trim={0 3.5cm 0 5.5cm},clip]{figures/dfki_track/actual_backyard.png}
   \includegraphics[width=0.8\linewidth,trim={0 0 0 0cm},clip]{figures/sloped terrain/arter_all.png}
-  \caption{GroundSeg3D results on rough outdoor terrain at the Robotics Test Track at DFKI RIC}
+  \caption{GroundSeg3D results on rough indoor and outdoor terrain at the Robotics Test Track at DFKI RIC}
   \label{fig:arter_all}
 \end{figure}
 
@@ -988,16 +990,7 @@ but outperform them on other datasets (Fig.\@ \ref{fig:comparison_botanic_garden
 %\subsection{Performance on Sloped Terrain}
 
 
-\iffalse
 %\subsection{Performance on Rocky and Flat Terrains}
-
-\begin{figure}[tb]
-  \centering
-  \includegraphics[width=\linewidth]{figures/dfki_track/mfh.png}
-  \caption{GroundSeg3D results on various types of ground surfaces}
-  \label{fig:mfh_all}
-\end{figure}
-\fi
 
 \iffalse
 %\subsection{GroundSeg3D Performance vs. Distance}
