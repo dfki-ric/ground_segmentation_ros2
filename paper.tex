@@ -73,13 +73,11 @@ points in the region of interest are relevant for the downstream algorithms.
 %For example, the obstacle detection 
 %algorithm is only interested in the obstacle points and the road detection algorithm only requires the ground points. 
 For example, object and obstacle detection algorithms often detect ground points as false
-    positives. Removal of ground points improves their performance and reduces computational burden \cite{Firkat2023}.
+    positives and removal of ground points improves performance and reduces computational burden \cite{Firkat2023}.
 %
 Additionally, ground points can be used for traversability analysis, navigation, and
-    static map generation \cite{TraversabilitySurvey, tsaiground, Arora2023}.
-Detection of ground points is a necessary precursor step for extraction
-    of useful information for downstream tasks in mobile
-    robot navigation \cite{Jimenez2021,Quatro}.
+    static map generation which makes ground segmentation a necessary precursor step for extraction
+    of useful information from point cloud data in autonomous systems \cite{TraversabilitySurvey, tsaiground, Arora2023,Jimenez2021,Quatro}.
 \begin{figure}[b]
   \centering
   \includegraphics[width=0.7\linewidth]{intro_combined.png}
@@ -132,13 +130,13 @@ Existing ground segmentation methods typically rely on either traditional techni
 The traditional solutions are usually based 
 on occupancy grids or elevation maps \cite{5650541,9558794,GroundGrid}. Some
 approaches extend the grid cell and analyze the points in neighboring cells for
-a better estimation of surface properties \cite{9969541}. The modeling of the points in the
+a better estimation of surface properties \cite{9969541}.
+The modeling of the points in the
 grid cells using Gaussian process regression, plane fitting and line extraction is a common approach in many
 solutions \cite{MultilevelGS,GPR,linefit,R-GPF,RANSAC,CascadedSeg,9466396,9981561,StagedGS,Hy-Seg}. Region growing and clustering is used to combine individual grid
-cells into a larger region of connected cells \cite{5164280}. Higher order inferences based
+cells into a larger region of connected cells \cite{5164280,GPF}. Higher order inferences based
 on Conditional Random Field (CRF) and Markov Random Field (MRF) have also been used
 \cite{9410344,7995861}. 
-Some algorithms are based on initial seed cells for the processing \cite{GPF}.
 
 \subsection{Learning Solutions}
 The advancements in deep learning meant that some researchers used the existing
@@ -322,7 +320,7 @@ These false detections are addressed in subsequent stages of the algorithm.
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.8\linewidth,trim={0 0 0 1.5cm},clip]{figures/corrections/dual_phase_segmentation.png}
-  \caption{Correction of over-segmentation of ground points based on dual-phase segmentation}
+  \caption{Correction of over-segmentation of ground points based on dual-phase segmentation.}
   \label{fig:dual_phase_segmentation}
 \end{figure}
 
@@ -531,25 +529,25 @@ all cells are expanded based on neighborhood connectivity.
 The seed cells are selected from the tentative ground cells based on the following conditions:
 
 \begin{enumerate}
-  \item \textbf{High Confidence of Ground Classification:} The cell is high confidence when a large percentage of total points 
+  \item High Confidence of Ground Classification: The cell is high confidence when a large percentage of total points 
   are inliers of the planar model fit.
   
-  \item \textbf{Proximity to Sensor:} Cells that are far 
+  \item Proximity to Sensor: Cells that are far 
   from the sensor typically have sparse points with large gaps, making them unsuitable for initial seed selection due to limited 
   connectivity with neighboring cells. Therefore, cells in close proximity to the sensor are selected.
   
-  \item \textbf{Quadrant-Based Seed Selection:} Seed cells are selected from each of the four quadrants in the Euclidean space. 
+  \item Quadrant-Based Seed Selection: Seed cells are selected from each of the four quadrants in the Euclidean space. 
   This approach helps mitigate issues related to large occlusions or gaps in the point cloud, which could inhibit region growth. 
 %   By selecting seed cells from four distinct groups (one per quadrant), we improve the 
 %   coverage and connectivity of the region-growing process.
    
-  \item \textbf{Selection of a Single Seed Cell:} From each valid group, one seed cell is selected based on the following criteria:
+  \item Selection of a Single Seed Cell: From each valid group, one seed cell is selected based on the following criteria:
   \begin{itemize}
   \item The cell must have the highest number of tentative ground neighbors compared to other cells in the group.
   \item It should be closest to the mean height of the group.
   \end{itemize}
   
-  \item \textbf{Final Seed Cells:} After shortlisting seed cells in all quadrants, we select the lowest cell from the front (1st and 2nd quadrants) 
+  \item Final Seed Cells: After shortlisting seed cells in all quadrants, we select the lowest cell from the front (1st and 2nd quadrants) 
   and the back (3rd and 4th quadrants) in GroundSeg3D and use all four seed cells in all quadrants for GroundSeg3D$^{\star}$ as shown in Table~\ref{tab:comparison_non_downsampled}. The seed cells are then used for region growing.
   \end{enumerate}
 
@@ -575,7 +573,7 @@ The final ground segmentation refines the ground and obstacle cells by correctin
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.8\linewidth]{figures/corrections/false_outliers/overview_1.png}
-  \caption{False outliers (non-ground points) from RANSAC plane fitting on uneven terrain}
+  \caption{False outliers (non-ground points) from RANSAC plane fitting on uneven terrain.}
   \label{fig:false_outliers1}
 \end{figure}
 
@@ -591,7 +589,7 @@ The final ground segmentation refines the ground and obstacle cells by correctin
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.8\linewidth]{figures/corrections/false_outliers/overview_3.png}
-  \caption{Correction of false outliers using eigen normal (eigen vector of the smallest eigen value) instead of plane normal}
+  \caption{Correction of false outliers using eigen normal (eigen vector of the smallest eigen value) instead of plane normal.}
   \label{fig:false_outliers3}
 \end{figure}
 
@@ -814,14 +812,14 @@ We also successfully tested the algorithm on our own Robotics Test Track with ve
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.8\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/kitti_all.png}
-  \caption{GroundSeg3D results on the SemanticKITTI dataset}
+  \caption{GroundSeg3D results on the SemanticKITTI dataset.}
   \label{fig:single_fig}
 \end{figure}
 
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.8\linewidth]{figures/sloped terrain/kitti_all.png}
-  \caption{GroundSeg3D results on sloped outdoor terrain in SemanticKITTI with color-coded height}
+  \caption{GroundSeg3D results on sloped outdoor terrain in SemanticKITTI with color-coded height.}
   \label{fig:kitti_sloped_terrain}
 \end{figure}
 
@@ -829,14 +827,14 @@ We also successfully tested the algorithm on our own Robotics Test Track with ve
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.8\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/urban_nav_all.png}
-  \caption{GroundSeg3D results on the UrbanNav Tokyo dataset}
+  \caption{GroundSeg3D results on the UrbanNav Tokyo dataset.}
   \label{fig:urban_nav}
 \end{figure}
 
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.8\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/doals_all.png}
-  \caption{GroundSeg3D results on the DOALS dataset}
+  \caption{GroundSeg3D results on the DOALS dataset.}
   \label{fig:doals}
 \end{figure}
 
@@ -844,14 +842,14 @@ We also successfully tested the algorithm on our own Robotics Test Track with ve
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.8\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/rellies3d_all.png}
-  \caption{GroundSeg3D results on the RELLIS-3D dataset}
+  \caption{GroundSeg3D results on the RELLIS-3D dataset.}
   \label{fig:rellies_3d}
 \end{figure}
 
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.8\linewidth,trim={0 0 0 1.5cm},clip]{figures/grouped_figures/botanic_garden_all.png}
-  \caption{GroundSeg3D results on the BotanicGarden dataset}
+  \caption{GroundSeg3D results on the BotanicGarden dataset.}
   \label{fig:botanic_garden}
 \end{figure}
 
@@ -876,14 +874,14 @@ The average recall stays above 86\%, except in sequence~01, due to gaps in the p
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.8\linewidth,trim={0 3cm 0 0cm},clip]{figures/limitations/vegetation.png}
-  \caption{Over-segmentation of some vegetation points}
+  \caption{Over-segmentation of some vegetation points.}
   \label{fig:vegetation}
 \end{figure}
 
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.8\linewidth]{figures/limitations/gaps.png}
-  \caption{Under-segmentation of ground points due to point cloud with gaps exceeding grid cell size}
+  \caption{Under-segmentation of ground points due to point cloud with gaps exceeding grid cell size.}
   \label{fig:gaps}
 \end{figure}
 
@@ -903,7 +901,7 @@ that GroundSeg3D shows consistent performance.
 \begin{figure}[tb]
   \centering
   \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/metrics/group_frame_20.png}
-  \caption{Frame 20 of the 0th sequence in the SemanticKITTI}
+  \caption{Frame 20 of the 0th sequence in the SemanticKITTI.}
   \label{fig:group_frame_20}
 \end{figure}
 
@@ -911,21 +909,21 @@ that GroundSeg3D shows consistent performance.
   \centering
   \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/metrics/group_frame_100.png}
   \caption{Frame 100 of the 0th sequence in the SemanticKITTI. Notice the significantly greater number of false positives [blue] points in the
-  Patchwork and Patchwork++ solutions}
+  Patchwork and Patchwork++ solutions.}
   \label{fig:group_frame_100}
 \end{figure}
 
 \begin{figure}[tb]
   \centering
   \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/metrics/group_frame_140.png}
-  \caption{Frame 140 of the 0th sequence in the SemanticKITTI}
+  \caption{Frame 140 of the 0th sequence in the SemanticKITTI.}
   \label{fig:group_frame_140}
 \end{figure}
 
 \begin{figure}[tb]
   \centering
   \includegraphics[width=\linewidth,trim={0 0 0 1.5cm},clip]{figures/metrics/group_frame_150.png}
-  \caption{Frame 150 of the 0th sequence in the SemanticKITTI}
+  \caption{Frame 150 of the 0th sequence in the SemanticKITTI.}
   \label{fig:group_frame_150}
 \end{figure}
 
@@ -1165,9 +1163,10 @@ challenging natural and urban environments.
 In future research, we plan to improve the runtime and explore new ways for selection of the seed cells.
 
 \section{Acknowledgment}
-We greatly acknowledge the open source Ground Segmentation Benchmark \cite{9466396,9981561} which we used for benchmarking.
+We greatly acknowledge the open source Ground Segmentation Benchmark \cite{9466396,9981561} which we used for benchmarking. PCL \cite{PCL} and Nanoflann \cite{NANOFLANN} were used for 
+processing the point clouds.
 %\footnote{https://github.com/url-kaist/Ground-Segmentation-Benchmark}
-Parts of our algorithm were written with support of ChatGPT.
+and parts of our algorithm were written with support of ChatGPT \cite{openai2023chatgpt}.
 
 \clearpage
 
