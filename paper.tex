@@ -76,10 +76,10 @@ For example, object and obstacle detection algorithms often detect ground points
     positives. Removal of ground points improves their performance and reduces computational burden \cite{Firkat2023}.
 %
 Additionally, ground points can be used for traversability analysis, navigation, and
-    static map generation.
+    static map generation \cite{TraversabilitySurvey, tsaiground, Arora2023}.
 Detection of ground points is a necessary precursor step for extraction
     of useful information for downstream tasks in mobile
-    robot navigation \cite{Jimenez2021,Arora2023}.
+    robot navigation \cite{Jimenez2021,Quatro}.
 \begin{figure}[b]
   \centering
   \includegraphics[width=0.7\linewidth]{intro_combined.png}
@@ -130,14 +130,14 @@ Existing ground segmentation methods typically rely on either traditional techni
 
 \subsection{Traditional Solutions}
 The traditional solutions are usually based 
-on occupancy grids or elevation maps \cite{5650541,9558794}. Some
+on occupancy grids or elevation maps \cite{5650541,9558794,GroundGrid}. Some
 approaches extend the grid cell and analyze the points in neighboring cells for
 a better estimation of surface properties \cite{9969541}. The modeling of the points in the
 grid cells using Gaussian process regression, plane fitting and line extraction is a common approach in many
-solutions \cite{GPR,linefit,R-GPF,RANSAC,CascadedSeg,9466396,9981561}. Region growing and clustering is used to combine individual grid
+solutions \cite{MultilevelGS,GPR,linefit,R-GPF,RANSAC,CascadedSeg,9466396,9981561,StagedGS,Hy-Seg}. Region growing and clustering is used to combine individual grid
 cells into a larger region of connected cells \cite{5164280}. Higher order inferences based
 on Conditional Random Field (CRF) and Markov Random Field (MRF) have also been used
-\cite{9410344,7995861}.
+\cite{9410344,7995861}. 
 Some algorithms are based on initial seed cells for the processing \cite{GPF}.
 
 \subsection{Learning Solutions}
@@ -146,7 +146,7 @@ CNN networks originally used for object detection for ground segmentation using
 range images generated from the point cloud data. The development of PointNet \cite{qi2017pointnet} and its successor 
 PointNet++ \cite{qi2017pointnet++} gave a unified
 solution for various applications e.g. object and 
-scene segmentation. Various other solutions like GndNet \cite{paigwar2020gndnet}, PointPillars \cite{lang2019pointpillars}, JCP \cite{rs13163239}, SectorGSnet \cite{9691325}
+scene segmentation. Solutions like GATA \cite{GraphBasedGS}, GndNet \cite{paigwar2020gndnet}, PointPillars \cite{lang2019pointpillars}, JCP \cite{rs13163239}, SectorGSnet \cite{9691325}
 show good results.
 
 \section{Proposed Solution}

@@ -18,7 +18,7 @@
   pages={1-6},
   doi={10.1109/ECMR50962.2021.9568799}}
 
-@ARTICLE{3,
+@ARTICLE{MultilevelGS,
   author={An, Yi and Liu, Wusong and Cui, Yunhao and Wang, Jinyu and Li, Xiusheng and Hu, Huosheng},
   journal={IEEE Transactions on Instrumentation and Measurement}, 
   title={Multilevel Ground Segmentation for 3-D Point Clouds of Outdoor Scenes Based on Shape Analysis}, 
@@ -42,7 +42,7 @@ ISSN = {1424-8220},
 ABSTRACT = {In the near future, autonomous vehicles with full self-driving features will populate our public roads. However, fully autonomous cars will require robust perception systems to safely navigate the environment, which includes cameras, RADAR devices, and Light Detection and Ranging (LiDAR) sensors. LiDAR is currently a key sensor for the future of autonomous driving since it can read the vehicle&rsquo;s vicinity and provide a real-time 3D visualization of the surroundings through a point cloud representation. These features can assist the autonomous vehicle in several tasks, such as object identification and obstacle avoidance, accurate speed and distance measurements, road navigation, and more. However, it is crucial to detect the ground plane and road limits to safely navigate the environment, which requires extracting information from the point cloud to accurately detect common road boundaries. This article presents a survey of existing methods used to detect and extract ground points from LiDAR point clouds. It summarizes the already extensive literature and proposes a comprehensive taxonomy to help understand the current ground segmentation methods that can be used in automotive LiDAR sensors.},
 DOI = {10.3390/s23020601}} 
 
-@ARTICLE{5,
+@ARTICLE{Hy-Seg,
   author={Qian, Yeqiang and Wang, Xiaoliang and Chen, Ziqing and Wang, Chunxiang and Yang, Ming},
   journal={IEEE Transactions on Intelligent Vehicles}, 
   title={{Hy-Seg}: A Hybrid Method for Ground Segmentation Using Point Clouds}, 
@@ -357,4 +357,82 @@ author={Chen, T. and Dai, B. and Wang, R. and others},
 booktitle={Journal of Intelligent and Robotic Systems}, 
 year={2014}, 
 pages={76(3-4):563-582}
+}
+
+@ARTICLE{GroundGrid,
+  author={Steinke, Nicolai and Goehring, Daniel and Rojas, Raúl},
+  journal={IEEE Robotics and Automation Letters}, 
+  title={GroundGrid: LiDAR Point Cloud Ground Segmentation and Terrain Estimation}, 
+  year={2024},
+  volume={9},
+  number={1},
+  pages={420-426},
+  keywords={Sensors;Point cloud compression;Estimation;Laser radar;Image segmentation;Task analysis;Robot sensing systems;Range Sensing;Mapping;Field Robots},
+  doi={10.1109/LRA.2023.3333233}}
+
+@Article{StagedGS,
+AUTHOR = {Deng, Weiye and Chen, Xiaoping and Jiang, Jingwei},
+TITLE = {A Staged Real-Time Ground Segmentation Algorithm of 3D LiDAR Point Cloud},
+JOURNAL = {Electronics},
+VOLUME = {13},
+YEAR = {2024},
+NUMBER = {5},
+ARTICLE-NUMBER = {841},
+URL = {https://www.mdpi.com/2079-9292/13/5/841},
+ISSN = {2079-9292},
+ABSTRACT = {Ground segmentation is a crucial task in the field of 3D LiDAR perception for autonomous driving. It is commonly used as a preprocessing step for tasks such as object detection and road extraction. However, the existing ground segmentation algorithms often struggle to meet the requirements of robustness and real-time performance due to significant variations in ground slopes and flatness across different scenes, as well as the influence of objects such as grass, flowerbeds, and trees in the environment. To address these challenges, this paper proposes a staged real-time ground segmentation algorithm. The proposed algorithm not only achieves high real-time performance but also exhibits improved robustness. Based on a concentric zone model, the algorithm filters out reflected noise points and vertical non-ground points in the first stage, improving the validity of the fitted ground plane. In the second stage, the algorithm effectively addresses the issue of undersegmentation of ground points through three steps: ground plane fitting, ground plane validity judgment, and ground plane repair. The experimental results on the SemanticKITTI dataset demonstrate that the proposed algorithm outperforms the existing methods in terms of segmentation results.},
+DOI = {10.3390/electronics13050841}
+} 
+
+@ARTICLE{GraphBasedGS,
+  author={Pino, Iván del and Santamaria-Navarro, Angel and Garrell Zulueta, Anaís and Torres, Fernando and Andrade-Cetto, Juan},
+  journal={IEEE Transactions on Intelligent Vehicles}, 
+  title={Probabilistic Graph-Based Real-Time Ground Segmentation for Urban Robotics}, 
+  year={2024},
+  volume={9},
+  number={5},
+  pages={4989-5002},
+  keywords={Real-time systems;Point cloud compression;Laser radar;Deep learning;Sensors;Semantic segmentation;Training;Ground segmentation;LiDAR;sequential innovation;terrain analysis},
+  doi={10.1109/TIV.2024.3383599}}
+
+@article{Quatro,
+author = {Hyungtae Lim and Beomsoo Kim and Daebeom Kim and Eungchang Mason Lee and Hyun Myung},
+title ={Quatro++: Robust global registration exploiting ground segmentation for loop closing in LiDAR SLAM},
+journal = {The International Journal of Robotics Research},
+volume = {43},
+number = {5},
+pages = {685-715},
+year = {2024},
+doi = {10.1177/02783649231207654},
+URL = {https://doi.org/10.1177/02783649231207654},
+eprint = {https://doi.org/10.1177/02783649231207654},
+abstract = { Global registration is a fundamental task that estimates the relative pose between two viewpoints of 3D point clouds. However, there are two issues that degrade the performance of global registration in LiDAR SLAM: one is the sparsity issue and the other is degeneracy. The sparsity issue is caused by the sparse characteristics of the 3D point cloud measurements in a mechanically spinning LiDAR sensor. The degeneracy issue sometimes occurs because the outlier-rejection methods reject too many correspondences, leaving less than three inliers. These two issues have become more severe as the pose discrepancy between the two viewpoints of 3D point clouds becomes greater. To tackle these problems, we propose a robust global registration framework, called Quatro++. Extending our previous work that solely focused on the global registration itself, we address the robust global registration in terms of the loop closing in LiDAR SLAM. To this end, ground segmentation is exploited to achieve robust global registration. Through the experiments, we demonstrate that our proposed method shows a higher success rate than the state-of-the-art global registration methods, overcoming the sparsity and degeneracy issues. In addition, we show that ground segmentation significantly helps to increase the success rate for the ground vehicles. Finally, we apply our proposed method to the loop closing module in LiDAR SLAM and confirm that the quality of the loop constraints is improved, showing more precise mapping results. Therefore, the experimental evidence corroborated the suitability of our method as an initial alignment in the loop closing. Our code is available at https://quatro-plusplus.github.io. }
+}
+
+@article{datasetsSurvey,
+  title={Survey on Datasets for Perception in Unstructured Outdoor Environments},
+  author={Mortimer, Peter and Maehlisch, Mirko},
+  journal={arXiv preprint arXiv:2404.18750},
+  year={2024}
+}
+
+@article{TraversabilitySurvey,
+  title={Similar but Different: A Survey of Ground Segmentation and Traversability Estimation for Terrestrial Robots},
+  author={Lim, Hyungtae and Oh, Minho and Lee, Seungjae and Ahn, Seunguk and Myung, Hyun},
+  journal={International Journal of Control, Automation and Systems},
+  volume={22},
+  number={2},
+  pages={347--359},
+  year={2024},
+  publisher={Springer}
+}
+
+@article{tsaiground,
+  title={Ground segmentation based point cloud feature extraction for 3D LiDAR SLAM enhancement},
+  author={Tsai, Tzu-Cheng and Peng, Chao-Chung},
+  journal={Measurement},
+  volume={236},
+  pages={114890},
+  year={2024},
+  publisher={Elsevier}
 }
