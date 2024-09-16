@@ -1,5 +1,14 @@
-\documentclass[conference]{IEEEtran}
-\IEEEoverridecommandlockouts
+\pdfminorversion=4
+\pdfcompresslevel=9
+\pdfobjcompresslevel=2
+\documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out if you need a4paper
+
+%\documentclass[a4paper, 10pt, conference]{ieeeconf}      % Use this line for a4 paper
+
+\IEEEoverridecommandlockouts                              % This command is only needed if 
+                                                          % you want to use the \thanks command
+
+\overrideIEEEmargins                                      % Needed to meet printer requirements.
 % The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
@@ -8,10 +17,10 @@
 \usepackage{subcaption} % For subfigures
 \usepackage{textcomp}
 \usepackage{xcolor}
-\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
-    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+% \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+%     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
-\usepackage[textsize=tiny]{todonotes}
+%\usepackage[textsize=tiny]{todonotes}
 \usepackage{multirow}
 \usepackage{booktabs}
 
@@ -29,16 +38,30 @@
 
 \begin{document}
 
-\title{GroundSeg3D: A Robust 3D Grid-Based Hybrid Approach for Ground Segmentation in Point Clouds Across Varied Terrains
-\thanks{Funded by the German Federal Ministry of Education and Research, grant number: 13N16537.
-All code will be published after acceptance.}}
+\title{GroundSeg3D: A Robust 3D Grid-Based Hybrid Approach for Ground Segmentation in Point Clouds Across Varied Terrains}
 
+\author{Muhammad Haider Khan Lodhi and Christoph Hertzberg% <-this % stops a space
+\thanks{Both authors are researchers at the Robotics Innovation Center, 
+German Research Center for Artificial Intelligence (DFKI),
+Bremen, Germany.
+Email: {\tt\small Haider\_Khan.Lodhi@dfki.de, Christoph.Hertzberg@dfki.de}}
+\thanks{Funded by the German Federal Ministry of Education and Research, grant number: 13N16537.
+All code will be published after acceptance.}%
+% \thanks{$^{1}$Albert Author is with Faculty of Electrical Engineering, Mathematics and Computer Science,
+%         University of Twente, 7500 AE Enschede, The Netherlands
+%         {\tt\small albert.author@papercept.net}}%
+% \thanks{$^{2}$Bernard D. Researcheris with the Department of Electrical Engineering, Wright State University,
+%         Dayton, OH 45435, USA
+%         {\tt\small b.d.researcher@ieee.org}
+}%
+\iffalse
 \author{\IEEEauthorblockN{Muhammad Haider Khan Lodhi and Christoph Hertzberg}
 \IEEEauthorblockA{\textit{Robotics Innovation Center}, 
 German Research Center for Artificial Intelligence (DFKI),
 Bremen, Germany\\
 Email: Haider\_Khan.Lodhi@dfki.de, Christoph.Hertzberg@dfki.de}%
 }%
+\fi
 
 \maketitle
 
@@ -54,9 +77,9 @@ combines the strengths of different approaches as a single solution and produces
 good ground segmentation of point cloud data on varied terrains.
 \end{abstract}
 
-\begin{IEEEkeywords}
-Ground Segmentation, Point Clouds, Mobile Robotics, Autonomous Driving, Rough Terrain, LiDAR, 3D~Grid-Based Approach
-\end{IEEEkeywords}
+% \begin{IEEEkeywords}
+% Ground Segmentation, Point Clouds, Mobile Robotics, Autonomous Driving, Rough Terrain, LiDAR, 3D~Grid-Based Approach
+% \end{IEEEkeywords}
 
 
 \section{Introduction}
@@ -678,9 +701,9 @@ and the ground slope threshold is 30\textdegree.
   \centering
   \caption{Comparison of ground segmentation on SemanticKITTI sequences 00, 01, 04, and 09 with vegetation. As explained in section \ref{sec:region_growth}, two and four seed cells are used for expansion in GroundSeg3D and GroundSeg3D+ respectively.}.
   \label{tab:comparison_non_downsampled}
-  \begin{tabular}{@{}l@{} l@{\ \ }l@{\ \ }l@{\ \ }l   l@{\ \ }l@{\ \ }l@{\ \ }l   rrrr}
+  \begin{tabular}{@{}l@{} l@{\ \ }l@{\ \ }l@{\ \ }l  l@{\ \ }l@{\ \ }l@{\ \ }l   r@{\ \ }r@{\ \ }r@{\ \ }r}
   \toprule
-   Algorithm   & \multicolumn{4}{c}{Average precision $\pm$ standard deviation (\%)} & \multicolumn{4}{c}{Average recall $\pm$ standard deviation (\%)} & \multicolumn{4}{c}{Average Time (ms)}  \\
+   Algorithm   & \multicolumn{4}{c}{Average precision $\pm$ standard deviation (\%)} & \multicolumn{4}{c}{Average recall $\pm$ standard deviation (\%)} & \multicolumn{4}{c}{Avg. Time (ms)}  \\
    \cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
    \multicolumn{1}{r}{Sequence:}& 00 & 01 & 04 & 09 & 00 & 01 & 04 & 09 & 00  & 01 & 04 & 09\\
 \midrule
@@ -1146,7 +1169,7 @@ by the capability of GroundSeg3D to exhibit robust performance on varied terrain
 \end{table}
 \fi
 
-\section{Conclusion}
+\section{Conclusions}
 
 This paper introduces a hybrid multi-phase ground segmentation algorithm for 3D point clouds, designed to operate without 
 the need for parameter tuning or dependence on specific sensor configurations, ensuring ease of deployment. Extensive experimental 
