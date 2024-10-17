@@ -18,7 +18,6 @@ find_package(Eigen3 REQUIRED)
 find_package(PkgConfig REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-find_package(CGAL REQUIRED COMPONENTS Core)
 find_package(visualization_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
@@ -67,7 +66,6 @@ ament_target_dependencies(ground_segmentation_node
 target_link_libraries(ground_segmentation_node
         PkgConfig::pointcloud_obstacle_detection
         ${PCL_LIBRARIES}
-        CGAL::CGAL
 )
 
 qt5_wrap_cpp(MOC_FILES include/grid_map_plugin/GridMapDisplay.hpp)

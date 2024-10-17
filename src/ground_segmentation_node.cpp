@@ -28,47 +28,6 @@
 using namespace pointcloud_obstacle_detection;
 using PointType = PointXYZILID;
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Polyhedron_3.h>
-#include <CGAL/Surface_mesh.h>
-#include <CGAL/convex_hull_3.h>
-#include <CGAL/Polygon_mesh_processing/intersection.h>
-#include <CGAL/Homogeneous.h>
-
-#ifdef CGAL_USE_GMP
-#include <CGAL/Gmpz.h>
-typedef CGAL::Gmpz RT;
-#else
-#include <CGAL/MP_Float.h>
-typedef CGAL::MP_Float RT;
-#endif
-
-typedef CGAL::Exact_predicates_inexact_constructions_kernel  K;
-typedef CGAL::Polyhedron_3<K>                                Polyhedron_3;
-typedef K::Point_3                                           Point_3;
-typedef CGAL::Surface_mesh<Point_3>                          Surface_mesh;
-typedef Polyhedron_3::Vertex_const_iterator Vertex_const_iterator;
-typedef CGAL::Homogeneous<RT>::Segment_3                     Segment_3;
-
-#include <CGAL/Polygon_mesh_processing/IO/polygon_mesh_io.h>
-#include <CGAL/point_generators_3.h>
-#include <CGAL/Side_of_triangle_mesh.h>
-
-namespace PMP = CGAL::Polygon_mesh_processing;
-
-double max_coordinate(const Polyhedron_3& poly)
-{
-  double max_coord = -std::numeric_limits<double>::infinity();
-  for(Polyhedron_3::Vertex_handle v : vertices(poly))
-  {
-    Point_3 p = v->point();
-    max_coord = (std::max)(max_coord, CGAL::to_double(p.x()));
-    max_coord = (std::max)(max_coord, CGAL::to_double(p.y()));
-    max_coord = (std::max)(max_coord, CGAL::to_double(p.z()));
-  }
-  return max_coord;
-}
-
 class GroundSegmentatioNode : public rclcpp::Node {
 public:
     GroundSegmentatioNode(rclcpp::NodeOptions options) : Node("ground_segmentation",options) {
@@ -96,7 +55,6 @@ public:
         double slopeThresholdDegrees = this->get_parameter("slopeThresholdDegrees").as_double();
         double groundInlierThreshold = this->get_parameter("groundInlierThreshold").as_double();
 
-        use_convex_hulls_3d = this->get_parameter("use_convex_hulls_3d").as_bool();
         show_benchmark = this->get_parameter("show_benchmark").as_bool();
         show_seed_cells = this->get_parameter("show_seed_cells").as_bool();
 
@@ -124,7 +82,6 @@ public:
 
 private:
 
-    bool use_convex_hulls_3d;
     bool show_benchmark;
     bool show_seed_cells;
 
@@ -230,102 +187,10 @@ private:
 
         *final_non_ground_points = *pre_non_ground_points + *post_non_ground_points;
 
-        if (!use_convex_hulls_3d){
-            final_ground_points = post_ground_points;
-        }
-        else{
-            std::vector<pcl::PointCloud<PointType>::Ptr> obstacles = processor.Clustering_euclideanCluster(final_non_ground_points,0.3,3,1000000);
-            std::vector<pcl::PointCloud<PointType>::Ptr> non_obstacles = processor.Clustering_euclideanCluster(post_ground_points,0.3,3,1000000);
-            // define polyhedron to hold convex hull
-            std::vector<Polyhedron_3> polygons_3d;
-            for (const auto& obstacle : obstacles){
-                std::vector<Point_3> points;
-                for (typename pcl::PointCloud<PointType>::iterator it = obstacle->begin(); it != obstacle->end(); ++it){
-                    Point_3 p(it->x, it->y, it->z);
-                    points.push_back(p);
-                }
-                
-                CGAL::Object ch_object;
-                CGAL::convex_hull_3(points.begin(), points.end(), ch_object);
-                Polyhedron_3 polyhedron;
-                CGAL::assign (polyhedron, ch_object);
-                polygons_3d.push_back(polyhedron);
-            }
-
-            // define polyhedron to hold convex hull
-            std::vector<Polyhedron_3> polygons_3d_ground;
-            for (const auto& obstacle : non_obstacles){
-                std::vector<Point_3> points;
-                for (typename pcl::PointCloud<PointType>::iterator it = obstacle->begin(); it != obstacle->end(); ++it){
-                    Point_3 p(it->x, it->y, it->z);
-                    points.push_back(p);
-                }
-                
-                CGAL::Object ch_object;
-                CGAL::convex_hull_3(points.begin(), points.end(), ch_object);
-                Polyhedron_3 polyhedron;
-                CGAL::assign (polyhedron, ch_object);
-                polygons_3d_ground.push_back(polyhedron);
-            }
-            
-            pcl::ExtractIndices<PointType> extract_ground;
-            pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-            
-            for (int i{0}; i < polygons_3d_ground.size(); ++i){
-                bool collision{false};    
-                inliers->indices.clear();
-                for (int j{0}; j < polygons_3d.size(); ++j){
-
-                    // Calculate bounding boxes using Polygon_mesh_processing::bbox
-                    CGAL::Bbox_3 bbox1 = CGAL::Polygon_mesh_processing::bbox(polygons_3d[j]);
-                    CGAL::Bbox_3 bbox2 = CGAL::Polygon_mesh_processing::bbox(polygons_3d_ground[i]);    
-
-                    // Optional: Quick rejection test using bounding boxes
-                    if (!CGAL::do_overlap(bbox1, bbox2)) {
-                        continue;
-                    }
-
-                    if (CGAL::Polygon_mesh_processing::do_intersect(polygons_3d[j], polygons_3d_ground[i])){
-                        collision = true;
-                        int count{0};
-                        for (typename pcl::PointCloud<PointType>::iterator it = non_obstacles[i]->begin(); it != non_obstacles[i]->end(); ++it)
-                        {
-                            Eigen::Vector3d point(it->x, it->y, it->z);
-                            CGAL::Side_of_triangle_mesh<Polyhedron_3, K> inside(polygons_3d[j]);
-                            Point_3 p(it->x, it->y, it->z);
-                            CGAL::Bounded_side res = inside(p);
-                            if (res == CGAL::ON_BOUNDED_SIDE || res == CGAL::ON_BOUNDARY){ 
-                                //final_non_ground_points->points.push_back(*it); 
-                                inliers->indices.push_back(count);
-                            }
-                            count++;
-                        }
-                    }
-                }
-
-                if(!collision){
-                    *final_ground_points += *non_obstacles[i];
-                 }     
-                else{
-                    typename pcl::PointCloud<PointType>::Ptr temp(new pcl::PointCloud<PointType>());
-                    extract_ground.setInputCloud(non_obstacles[i]);
-                    extract_ground.setIndices(inliers);
-                    extract_ground.setNegative(true);
-                    extract_ground.filter(*temp);
-                    *final_ground_points += *temp;
-                    extract_ground.setNegative(false);
-                    extract_ground.filter(*temp);
-                    *final_non_ground_points += *temp;
-                }
-            }
-        }
-
-        //End time
-        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        double rt = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() * 0.001;
-
         if (show_benchmark){
-
+            //End time
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+            double rt = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() * 0.001;
             // Estimation
             static double      precision, recall, precision_wo_veg, recall_wo_veg;
             static double      precision_o, recall_o;

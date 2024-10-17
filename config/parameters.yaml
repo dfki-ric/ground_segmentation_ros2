@@ -32,9 +32,6 @@ ground_segmentation:
     slopeThresholdDegrees: 30.0
     groundInlierThreshold: 0.1
 
-    #post processing
-    use_convex_hulls_3d: false
-
     #debug
     show_benchmark: true
     show_seed_cells: true
