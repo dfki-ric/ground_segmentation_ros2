@@ -182,7 +182,6 @@ private:
         typename pcl::PointCloud<PointType>::Ptr post_ground_points = post_result.first;
         typename pcl::PointCloud<PointType>::Ptr post_non_ground_points  = post_result.second;
 
-        typename pcl::PointCloud<PointType>::Ptr final_ground_points(new pcl::PointCloud<PointType>());
         typename pcl::PointCloud<PointType>::Ptr final_non_ground_points(new pcl::PointCloud<PointType>());
 
         *final_non_ground_points = *pre_non_ground_points + *post_non_ground_points;
@@ -198,8 +197,8 @@ private:
             static std::vector<int> TPFNs_wo_veg; // TP, FP, FN, TF order
             static std::vector<int> TPFNs_o; // TP, FP, FN, TF order
 
-            calculate_precision_recall(*filtered_cloud_ptr, *final_ground_points, precision, recall, TPFNs);
-            calculate_precision_recall_without_vegetation(*filtered_cloud_ptr, *final_ground_points, precision_wo_veg, recall_wo_veg, TPFNs_wo_veg);
+            calculate_precision_recall(*filtered_cloud_ptr, *post_ground_points, precision, recall, TPFNs);
+            calculate_precision_recall_without_vegetation(*filtered_cloud_ptr, *post_ground_points, precision_wo_veg, recall_wo_veg, TPFNs_wo_veg);
             recall_arr.push_back(recall);
             prec_arr.push_back(precision);
             runtime.push_back(rt);
@@ -211,7 +210,7 @@ private:
             std::cout << "\033[1;32m Avg P: " << prec_mean << ", " << cal_stdev(prec_arr) <<  " | Avg R: " << recall_mean << ", " << cal_stdev(recall_arr) <<  " | Avg F1: " << f1_score << "\033[0m" << std::endl;
             std::cout << "Avg Time difference = " << rt_mean << "[ms]" << ", " << cal_stdev(runtime) << std::endl;
 
-            calculate_precision_recall_origin(*filtered_cloud_ptr, *final_ground_points, precision_o, recall_o, TPFNs_o);
+            calculate_precision_recall_origin(*filtered_cloud_ptr, *post_ground_points, precision_o, recall_o, TPFNs_o);
             recall_o_arr.push_back(recall_o);
             prec_o_arr.push_back(precision_o);
 
@@ -223,8 +222,8 @@ private:
             pcl::PointCloud<PointType> FP;
             pcl::PointCloud<PointType> FN;
             pcl::PointCloud<PointType> TN;
-            //discern_ground(*final_ground_points, TP, FP);
-            discern_ground_without_vegetation(*final_ground_points, TP, FP);
+            //discern_ground(*post_ground_points, TP, FP);
+            discern_ground_without_vegetation(*post_ground_points, TP, FP);
             //discern_ground(*final_non_ground_points, FN, TN);
             discern_ground_without_vegetation(*final_non_ground_points, FN, TN);
 
@@ -349,27 +348,28 @@ private:
 
         post_grid_map_publisher->publish(post_grid_map_msg);
 
-        //Temp Hack!
-        typename pcl::PointCloud<PointType>::Ptr final_two(new pcl::PointCloud<PointType>());
-        sensor_msgs::msg::PointCloud2::SharedPtr final_two_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
+        post_ground_points->width = post_ground_points->points.size();
+        post_ground_points->height = 1;
+        post_ground_points->is_dense = true;  
+
+        final_non_ground_points->width = final_non_ground_points->points.size();
+        final_non_ground_points->height = 1;
+        final_non_ground_points->is_dense = true;  
+
         pcl::toROSMsg(*filtered_cloud_ptr, *raw_ground_points);
-
-        pcl::toROSMsg(*final_ground_points, *ground_points);
-        pcl::fromROSMsg(*ground_points, *final_two);
-        pcl::toROSMsg(*final_two, *final_two_msg);
-
+        pcl::toROSMsg(*post_ground_points, *ground_points);
         pcl::toROSMsg(*final_non_ground_points, *obstacle_points);
 
-        final_two_msg->header.frame_id = target_frame;
+        ground_points->header.frame_id = target_frame;
         obstacle_points->header.frame_id = target_frame;
         raw_ground_points->header.frame_id = target_frame;
 
-        final_two_msg->header.stamp = this->now();
+        ground_points->header.stamp = this->now();
         obstacle_points->header.stamp = this->now();
         raw_ground_points->header.stamp = this->now();
 
         // Publish the message
-        publisher_ground_points->publish(*final_two_msg);
+        publisher_ground_points->publish(*ground_points);
         publisher_obstacle_points->publish(*obstacle_points);
         publisher_raw_ground_points->publish(*raw_ground_points);
    }
