@@ -78,6 +78,8 @@ public:
 
         precision = 0.0;
         recall = 0.0;
+        final_non_ground_points = std::make_shared<pcl::PointCloud<PointType>>(); 
+        final_ground_points = std::make_shared<pcl::PointCloud<PointType>>(); 
     }
 
 private:
@@ -115,6 +117,8 @@ private:
 
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscription;
 
+    typename pcl::PointCloud<PointType>::Ptr final_non_ground_points;
+    typename pcl::PointCloud<PointType>::Ptr final_ground_points;
     void PointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
         sensor_msgs::msg::PointCloud2::SharedPtr raw_ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
@@ -181,8 +185,6 @@ private:
         std::pair< typename pcl::PointCloud<PointType>::Ptr,  typename pcl::PointCloud<PointType>::Ptr> post_result = post_processor->segmentPoints();
         typename pcl::PointCloud<PointType>::Ptr post_ground_points = post_result.first;
         typename pcl::PointCloud<PointType>::Ptr post_non_ground_points  = post_result.second;
-
-        typename pcl::PointCloud<PointType>::Ptr final_non_ground_points(new pcl::PointCloud<PointType>());
 
         *final_non_ground_points = *pre_non_ground_points + *post_non_ground_points;
 
@@ -356,8 +358,13 @@ private:
         final_non_ground_points->height = 1;
         final_non_ground_points->is_dense = true;  
 
+        *final_ground_points = *post_ground_points;
+        final_ground_points->width = final_ground_points->points.size();
+        final_ground_points->height = 1;
+        final_ground_points->is_dense = true;  
+
         pcl::toROSMsg(*filtered_cloud_ptr, *raw_ground_points);
-        pcl::toROSMsg(*post_ground_points, *ground_points);
+        pcl::toROSMsg(*final_ground_points, *ground_points);
         pcl::toROSMsg(*final_non_ground_points, *obstacle_points);
 
         ground_points->header.frame_id = target_frame;
