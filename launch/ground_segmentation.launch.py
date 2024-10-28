@@ -15,7 +15,8 @@ def launch_setup(context, *args, **kwargs):
         executable="ground_segmentation_node",
         parameters=[parameters],
         #arguments=['--ros-args', '--log-level', 'debug'],
-        remappings=[('/ground_segmentation/input', LaunchConfiguration('remapped_input'))],
+        remappings=[('/ground_segmentation/input_pointcloud', LaunchConfiguration('pointcloud_topic')),
+                    ('/ground_segmentation/input_imu', LaunchConfiguration('imu_topic'))],
         output="screen",
     )
 
@@ -28,10 +29,16 @@ def generate_launch_description():
     declared_arguments = []
     declared_arguments.append(
         DeclareLaunchArgument(
-            'remapped_input',
-            default_value='/ground_segmentation/input',
-            description='Topic name to be remapped'
+            'pointcloud_topic',
+            default_value='/ground_segmentation/input_pointcloud',
+            description='Topic name for the pointcloud'
         )
     )
-
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            'imu_topic',
+            default_value='/ground_segmentation/input_imu',
+            description='Topic name for the imu'
+        )
+    )
     return LaunchDescription(declared_arguments + [OpaqueFunction(function=launch_setup)])

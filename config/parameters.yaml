@@ -1,20 +1,19 @@
 ground_segmentation:
   ros__parameters:
     # pre processing
-    #target_frame: "base_link"
-    #target_frame: "base_link/base_link"
-    #target_frame: "velodyne"
-    #target_frame: "laser_data_frame"
-    target_frame: "arter/base_link"
-    #target_frame: "zed2_left_camera_frame"
-    #target_frame: "ouster00"
-    #target_frame: "map"
-    #target_frame: "velodyne_top"
-    #target_frame: "husky"
-    #target_frame: "os1_lidar"
-    #target_frame: "ouster1/os1_lidar"
-    #target_frame: "lexus3/os_center_a_laser_data_frame"
-    #target_frame: "os_sensor"
+    robot_frame: "base_link"
+    #robot_frame: "base_link/base_link"
+    #robot_frame: "velodyne"
+    #robot_frame: "laser_data_frame"
+    #robot_frame: "arter/base_link"
+    #robot_frame: "zed2_left_camera_frame"
+    #robot_frame: "ouster00"
+    #robot_frame: "velodyne_top"
+    #robot_frame: "husky"
+    #robot_frame: "os1_lidar"
+    #robot_frame: "ouster1/os1_lidar"
+    #robot_frame: "lexus3/os_center_a_laser_data_frame"
+    #robot_frame: "os_sensor"
     maxX:  80.0
     minX: -80.0
     maxY:  80.0
@@ -31,7 +30,9 @@ ground_segmentation:
     startCellDistanceThreshold: 10.0
     slopeThresholdDegrees: 30.0
     groundInlierThreshold: 0.1
+    use_imu_orientation: true
 
     #debug
-    show_benchmark: true
-    show_seed_cells: true
+    show_benchmark: false
+    show_seed_cells: false
+    show_grid: false

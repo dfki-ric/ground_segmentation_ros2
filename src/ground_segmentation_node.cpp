@@ -15,9 +15,15 @@
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "sensor_msgs/msg/point_cloud2.hpp"
+#include "sensor_msgs/msg/imu.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include <visualization_msgs/msg/marker_array.hpp>
+
+#include "message_filters/time_synchronizer.h"
+#include "message_filters/subscriber.h"
+#include "message_filters/sync_policies/exact_time.h"
+#include "message_filters/sync_policies/approximate_time.h"
 
 #include <Eigen/Dense>
 #include <memory>
@@ -31,39 +37,47 @@ using PointType = PointXYZILID;
 class GroundSegmentatioNode : public rclcpp::Node {
 public:
     GroundSegmentatioNode(rclcpp::NodeOptions options) : Node("ground_segmentation",options) {
-
-        subscription = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-            "/ground_segmentation/input", 10, std::bind(&GroundSegmentatioNode::PointCloudCallback, this, std::placeholders::_1)
-        );
-
         publisher_ground_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/ground_points", 10);
         publisher_obstacle_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/obstacle_points", 10);
-        publisher_raw_ground_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/filtered_input", 10);
-        publisher_start_cells = this->create_publisher<visualization_msgs::msg::MarkerArray>("/ground_segmentation/start_cells", 10);
+        publisher_raw_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/raw_points", 10);
 
-        pub_tp = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/TP", 10);
-        pub_fn = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/FN", 10);
-        pub_fp = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/FP", 10);
-
-        pre_grid_map_publisher = this->create_publisher<ground_segmentation::msg::GridMap>("/ground_segmentation/pre_grid_map", 10);
-        post_grid_map_publisher = this->create_publisher<ground_segmentation::msg::GridMap>("/ground_segmentation/post_grid_map", 10);
-
-        double cellSizeX = this->get_parameter("cellSizeX").as_double();
-        double cellSizeY = this->get_parameter("cellSizeY").as_double();
-        double cellSizeZ = this->get_parameter("cellSizeZ").as_double();
-        double startCellDistanceThreshold = this->get_parameter("startCellDistanceThreshold").as_double();
-        double slopeThresholdDegrees = this->get_parameter("slopeThresholdDegrees").as_double();
-        double groundInlierThreshold = this->get_parameter("groundInlierThreshold").as_double();
+        if (this->get_parameter("use_imu_orientation").as_bool()){
+            subscriber_synced_pointcloud = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>(this, "/ground_segmentation/input_pointcloud");
+            subscriber_synced_imu = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Imu>>(this, "/ground_segmentation/input_imu");
+            sync = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(SyncPolicy(50), *subscriber_synced_pointcloud, *subscriber_synced_imu);
+            sync->registerCallback(std::bind(&GroundSegmentatioNode::syncedCallback, this, std::placeholders::_1, std::placeholders::_2));
+        }
+        else {
+            subscriber_pointcloud = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+                "/ground_segmentation/input_pointcloud", 10, std::bind(&GroundSegmentatioNode::callback, this, std::placeholders::_1));
+        }
 
         show_benchmark = this->get_parameter("show_benchmark").as_bool();
-        show_seed_cells = this->get_parameter("show_seed_cells").as_bool();
+        if(show_benchmark){
+            pub_tp = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/TP", 10);
+            pub_fn = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/FN", 10);
+            pub_fp = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/FP", 10);
+        }
 
-        pre_processor_config.cellSizeX = cellSizeX;
-        pre_processor_config.cellSizeY = cellSizeY;
-        pre_processor_config.cellSizeZ = cellSizeZ;
-        pre_processor_config.startCellDistanceThreshold = startCellDistanceThreshold;
-        pre_processor_config.slopeThresholdDegrees = slopeThresholdDegrees;
-        pre_processor_config.groundInlierThreshold = groundInlierThreshold;             
+        show_seed_cells = this->get_parameter("show_seed_cells").as_bool();
+        if (show_seed_cells){
+            publisher_start_cells = this->create_publisher<visualization_msgs::msg::MarkerArray>("/ground_segmentation/start_cells", 10);
+        }
+
+        show_grid = this->get_parameter("show_grid").as_bool();
+        if (show_grid){
+            pre_grid_map_publisher = this->create_publisher<ground_segmentation::msg::GridMap>("/ground_segmentation/pre_grid_map", 10);
+            post_grid_map_publisher = this->create_publisher<ground_segmentation::msg::GridMap>("/ground_segmentation/post_grid_map", 10);
+        }
+
+        robot_frame = this->get_parameter("robot_frame").as_string();
+
+        pre_processor_config.cellSizeX = this->get_parameter("cellSizeX").as_double();
+        pre_processor_config.cellSizeY = this->get_parameter("cellSizeY").as_double();
+        pre_processor_config.cellSizeZ = this->get_parameter("cellSizeZ").as_double();
+        pre_processor_config.startCellDistanceThreshold = this->get_parameter("startCellDistanceThreshold").as_double();
+        pre_processor_config.slopeThresholdDegrees = this->get_parameter("slopeThresholdDegrees").as_double();
+        pre_processor_config.groundInlierThreshold = this->get_parameter("groundInlierThreshold").as_double();             
 
         post_processor_config = pre_processor_config;
         post_processor_config.cellSizeZ = 0.5;
@@ -84,43 +98,55 @@ public:
 
 private:
 
-    bool show_benchmark;
-    bool show_seed_cells;
+    std::string robot_frame;
 
+    bool show_benchmark, show_seed_cells, show_grid;
     double precision, recall;
-
-    std::vector<double> runtime;
-    std::vector<double> recall_arr;
-    std::vector<double> prec_arr;
-    std::vector<double> recall_o_arr;
-    std::vector<double> prec_o_arr;
+    std::vector<double> runtime, recall_arr, prec_arr, recall_o_arr, prec_o_arr;
 
     std::shared_ptr<tf2_ros::Buffer> buffer;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener;
     ProcessPointCloud<PointType> processor;
-    std::unique_ptr<PointCloudGrid<PointType>> pre_processor;
-    std::unique_ptr<PointCloudGrid<PointType>> post_processor;
-    GridConfig pre_processor_config;
-    GridConfig post_processor_config;
+    std::unique_ptr<PointCloudGrid<PointType>> pre_processor, post_processor;
+    GridConfig pre_processor_config, post_processor_config;
 
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr publisher_raw_ground_points;
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr publisher_ground_points;
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr publisher_obstacle_points;
-    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr publisher_start_cells;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr 
+        publisher_raw_points, 
+        publisher_ground_points, 
+        publisher_obstacle_points, 
+        pub_tp, 
+        pub_fn, 
+        pub_fp;
+    
+    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr 
+        publisher_start_cells;
+    
+    rclcpp::Publisher<ground_segmentation::msg::GridMap>::SharedPtr 
+        pre_grid_map_publisher, 
+        post_grid_map_publisher;
 
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_tp;
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_fn;
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_fp;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscriber_pointcloud;
 
-    rclcpp::Publisher<ground_segmentation::msg::GridMap>::SharedPtr pre_grid_map_publisher;
-    rclcpp::Publisher<ground_segmentation::msg::GridMap>::SharedPtr post_grid_map_publisher;
 
-    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscription;
+    std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> subscriber_synced_pointcloud;
+    std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Imu>> subscriber_synced_imu;
+
+    using SyncPolicy = message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::PointCloud2, sensor_msgs::msg::Imu>;
+    std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync;
 
     typename pcl::PointCloud<PointType>::Ptr final_non_ground_points;
     typename pcl::PointCloud<PointType>::Ptr final_ground_points;
-    void PointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
-        sensor_msgs::msg::PointCloud2::SharedPtr raw_ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
+
+    void callback(const sensor_msgs::msg::PointCloud2::SharedPtr pointcloud_msg){
+        segmentation(pointcloud_msg);
+    }
+
+    void syncedCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &pointcloud_msg, const sensor_msgs::msg::Imu::ConstSharedPtr &imu_msg){
+        segmentation(pointcloud_msg, imu_msg);
+    }
+
+    void segmentation(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &pointcloud_msg, const sensor_msgs::msg::Imu::ConstSharedPtr &imu_msg = nullptr){
+        sensor_msgs::msg::PointCloud2::SharedPtr raw_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr obstacle_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
 
@@ -131,9 +157,8 @@ private:
         // Convert the ROS 2 PointCloud2 message to a PCL PointCloud
         typename pcl::PointCloud<PointType> input_cloud;
         typename pcl::PointCloud<PointType> transformed_cloud;
-        pcl::fromROSMsg(*msg, input_cloud);
+        pcl::fromROSMsg(*pointcloud_msg, input_cloud);
 
-        std::string target_frame = this->get_parameter("target_frame").as_string();
         double maxX = this->get_parameter("maxX").as_double();
         double minX = this->get_parameter("minX").as_double();
         double maxY = this->get_parameter("maxY").as_double();
@@ -144,19 +169,15 @@ private:
         double downsample_resolution = this->get_parameter("downsample_resolution").as_double();
 
         typename pcl::PointCloud<PointType>::Ptr input_cloud_ptr;
-        if (target_frame != msg->header.frame_id){
+        if (robot_frame != pointcloud_msg->header.frame_id){
             try {
-                // Lookup transform from lidar frame to base_link frame
                 const geometry_msgs::msg::TransformStamped transformStamped = buffer->lookupTransform(
-                    target_frame, msg->header.frame_id, tf2::TimePointZero);
+                    robot_frame, pointcloud_msg->header.frame_id, pointcloud_msg->header.stamp,tf2::durationFromSec(0.1));
 
-                // Transform each point
                 pcl_ros::transformPointCloud(input_cloud, transformed_cloud, transformStamped);
 
-                // Process transformed point cloud
-                // Your processing logic here
             } catch (tf2::TransformException &ex) {
-                RCLCPP_ERROR(this->get_logger(), "Transform exception: %s", ex.what());
+                RCLCPP_ERROR(this->get_logger(), "Pointcloud Transform exception: %s", ex.what());
                 return;
             }        
             input_cloud_ptr = std::make_shared<typename pcl::PointCloud<PointType>>(transformed_cloud);
@@ -164,9 +185,38 @@ private:
         else{
             input_cloud_ptr = std::make_shared<typename pcl::PointCloud<PointType>>(input_cloud);
         }
-        
-        //TODO: Read robot orientation
-        Eigen::Quaterniond orientation(1.0, 0.0, 0.0, 0.0);
+
+        tf2::Quaternion robot_in_gravity(0,0,0,1);
+        if (imu_msg != nullptr){
+            tf2::Quaternion imu_in_gravity(imu_msg->orientation.x,
+                                           imu_msg->orientation.y,
+                                           imu_msg->orientation.z,
+                                           imu_msg->orientation.w);
+                tf2::Quaternion robot_in_imu;
+                try
+                {
+                    geometry_msgs::msg::TransformStamped robot_in_imu_transform = buffer->lookupTransform(
+                        imu_msg->header.frame_id, robot_frame, imu_msg->header.stamp,tf2::durationFromSec(0.1));
+                    robot_in_imu.setX(robot_in_imu_transform.transform.rotation.x);
+                    robot_in_imu.setY(robot_in_imu_transform.transform.rotation.y);
+                    robot_in_imu.setZ(robot_in_imu_transform.transform.rotation.z);
+                    robot_in_imu.setW(robot_in_imu_transform.transform.rotation.w);
+                }
+                catch (tf2::TransformException &ex)
+                {
+                    RCLCPP_ERROR(this->get_logger(), "IMU Transform exception: %s", ex.what());
+                    return;
+                }
+
+                robot_in_gravity = imu_in_gravity * robot_in_imu;
+                robot_in_gravity.normalize();
+        }
+
+        Eigen::Quaterniond robot_orientation{robot_in_gravity.getW(),
+                                             robot_in_gravity.getX(),
+                                             robot_in_gravity.getY(),
+                                             robot_in_gravity.getZ()};
+
         Eigen::Vector4f min{minX,minY,minZ, 1};
         Eigen::Vector4f max{maxX,maxY,maxZ,1};
 
@@ -175,13 +225,13 @@ private:
         typename pcl::PointCloud<PointType>::Ptr filtered_cloud_ptr = processor.FilterCloud(input_cloud_ptr, downsample, downsample_resolution, min, max);
 
         //PRE
-        pre_processor->setInputCloud(filtered_cloud_ptr, orientation);
+        pre_processor->setInputCloud(filtered_cloud_ptr, robot_orientation);
         std::pair< typename pcl::PointCloud<PointType>::Ptr,  typename pcl::PointCloud<PointType>::Ptr> pre_result = pre_processor->segmentPoints();
         typename pcl::PointCloud<PointType>::Ptr pre_ground_points = pre_result.first;
         typename pcl::PointCloud<PointType>::Ptr pre_non_ground_points = pre_result.second;
 
         //POST
-        post_processor->setInputCloud(pre_ground_points, orientation);
+        post_processor->setInputCloud(pre_ground_points, robot_orientation);
         std::pair< typename pcl::PointCloud<PointType>::Ptr,  typename pcl::PointCloud<PointType>::Ptr> post_result = post_processor->segmentPoints();
         typename pcl::PointCloud<PointType>::Ptr post_ground_points = post_result.first;
         typename pcl::PointCloud<PointType>::Ptr post_non_ground_points  = post_result.second;
@@ -233,12 +283,12 @@ private:
             pcl::toROSMsg(FP, *msg_FP);
             pcl::toROSMsg(FN, *msg_FN);
 
-            msg_TP->header.frame_id = target_frame;
+            msg_TP->header.frame_id = robot_frame;
             msg_TP->header.stamp = this->now();
 
-            msg_FP->header.frame_id = target_frame;
+            msg_FP->header.frame_id = robot_frame;
             msg_FP->header.stamp = this->now();
-            msg_FN->header.frame_id = target_frame;
+            msg_FN->header.frame_id = robot_frame;
             msg_FN->header.stamp = this->now();
 
             pub_tp->publish(*msg_TP);
@@ -275,7 +325,7 @@ private:
                 colour.b = 1;
 
                 visualization_msgs::msg::Marker marker;
-                marker.header.frame_id = target_frame;
+                marker.header.frame_id = robot_frame;
                 marker.header.stamp = this->now();
                 marker.action = visualization_msgs::msg::Marker::ADD;
                 marker.type = visualization_msgs::msg::Marker::CUBE;
@@ -290,65 +340,66 @@ private:
             publisher_start_cells->publish(markers);
         }
 
-        ground_segmentation::msg::GridMap pre_grid_map_msg;
-        pre_grid_map_msg.cell_size_x = pre_processor_config.cellSizeX;
-        pre_grid_map_msg.cell_size_y = pre_processor_config.cellSizeY;
-        pre_grid_map_msg.cell_size_z = pre_processor_config.cellSizeZ;
-        pre_grid_map_msg.header.frame_id = this->get_parameter("target_frame").as_string();
+        if (show_grid){
+            ground_segmentation::msg::GridMap pre_grid_map_msg;
+            pre_grid_map_msg.cell_size_x = pre_processor_config.cellSizeX;
+            pre_grid_map_msg.cell_size_y = pre_processor_config.cellSizeY;
+            pre_grid_map_msg.cell_size_z = pre_processor_config.cellSizeZ;
+            pre_grid_map_msg.header.frame_id = this->get_parameter("robot_frame").as_string();
 
-        auto pre_grid_cells = pre_processor->getGridCells();
+            auto pre_grid_cells = pre_processor->getGridCells();
+            for (auto& cellPair : pre_grid_cells){
+                auto& cell = cellPair.second;
 
-        for (auto& cellPair : pre_grid_cells){
-            auto& cell = cellPair.second;
+                if (cell.points->size() < 1){
+                    continue;
+                }
+                ground_segmentation::msg::GridCell cell_msg;
 
-            if (cell.points->size() < 1){
-                continue;
+                cell_msg.position.x = (cell.x * pre_processor_config.cellSizeX) + pre_processor_config.cellSizeX/2;
+                cell_msg.position.y = (cell.y * pre_processor_config.cellSizeY) + pre_processor_config.cellSizeY/2;
+                cell_msg.position.z = (cell.z * pre_processor_config.cellSizeZ) + pre_processor_config.cellSizeZ/2;
+
+                cell_msg.color.r = 0;
+                cell_msg.color.g = 1;
+                cell_msg.color.b = 0;
+                cell_msg.color.a = 1;
+
+                pre_grid_map_msg.cells.push_back(cell_msg);
             }
-            ground_segmentation::msg::GridCell cell_msg;
+            pre_grid_map_publisher->publish(pre_grid_map_msg);
 
-            cell_msg.position.x = (cell.x * pre_processor_config.cellSizeX) + pre_processor_config.cellSizeX/2;
-            cell_msg.position.y = (cell.y * pre_processor_config.cellSizeY) + pre_processor_config.cellSizeY/2;
-            cell_msg.position.z = (cell.z * pre_processor_config.cellSizeZ) + pre_processor_config.cellSizeZ/2;
+            ground_segmentation::msg::GridMap post_grid_map_msg;
+            post_grid_map_msg.cell_size_x = post_processor_config.cellSizeX;
+            post_grid_map_msg.cell_size_y = post_processor_config.cellSizeY;
+            post_grid_map_msg.cell_size_z = post_processor_config.cellSizeZ;
+            post_grid_map_msg.header.frame_id = this->get_parameter("robot_frame").as_string();
 
-            cell_msg.color.r = 0;
-            cell_msg.color.g = 1;
-            cell_msg.color.b = 0;
-            cell_msg.color.a = 1;
+            auto post_grid_cells = post_processor->getGridCells();
 
-            pre_grid_map_msg.cells.push_back(cell_msg);
-        }
-        pre_grid_map_publisher->publish(pre_grid_map_msg);
+            for (auto& cellPair : post_grid_cells){
+                auto& cell = cellPair.second;
 
-        ground_segmentation::msg::GridMap post_grid_map_msg;
-        post_grid_map_msg.cell_size_x = post_processor_config.cellSizeX;
-        post_grid_map_msg.cell_size_y = post_processor_config.cellSizeY;
-        post_grid_map_msg.cell_size_z = post_processor_config.cellSizeZ;
-        post_grid_map_msg.header.frame_id = this->get_parameter("target_frame").as_string();
+                if (cell.points->size() < 1){
+                    continue;
+                }
 
-        auto post_grid_cells = post_processor->getGridCells();
+                ground_segmentation::msg::GridCell cell_msg;
 
-        for (auto& cellPair : post_grid_cells){
-            auto& cell = cellPair.second;
+                cell_msg.position.x = (cell.x * post_processor_config.cellSizeX) + post_processor_config.cellSizeX/2;
+                cell_msg.position.y = (cell.y * post_processor_config.cellSizeY) + post_processor_config.cellSizeY/2;
+                cell_msg.position.z = (cell.z * post_processor_config.cellSizeZ) + post_processor_config.cellSizeZ/2;
 
-            if (cell.points->size() < 1){
-                continue;
+                cell_msg.color.r = 0;
+                cell_msg.color.g = 1;
+                cell_msg.color.b = 0;
+                cell_msg.color.a = 1;
+                
+                post_grid_map_msg.cells.push_back(cell_msg);
             }
 
-            ground_segmentation::msg::GridCell cell_msg;
-
-            cell_msg.position.x = (cell.x * post_processor_config.cellSizeX) + post_processor_config.cellSizeX/2;
-            cell_msg.position.y = (cell.y * post_processor_config.cellSizeY) + post_processor_config.cellSizeY/2;
-            cell_msg.position.z = (cell.z * post_processor_config.cellSizeZ) + post_processor_config.cellSizeZ/2;
-
-            cell_msg.color.r = 0;
-            cell_msg.color.g = 1;
-            cell_msg.color.b = 0;
-            cell_msg.color.a = 1;
-            
-            post_grid_map_msg.cells.push_back(cell_msg);
+            post_grid_map_publisher->publish(post_grid_map_msg);
         }
-
-        post_grid_map_publisher->publish(post_grid_map_msg);
 
         post_ground_points->width = post_ground_points->points.size();
         post_ground_points->height = 1;
@@ -363,23 +414,24 @@ private:
         final_ground_points->height = 1;
         final_ground_points->is_dense = true;  
 
-        pcl::toROSMsg(*filtered_cloud_ptr, *raw_ground_points);
+        pcl::toROSMsg(*filtered_cloud_ptr, *raw_points);
         pcl::toROSMsg(*final_ground_points, *ground_points);
         pcl::toROSMsg(*final_non_ground_points, *obstacle_points);
 
-        ground_points->header.frame_id = target_frame;
-        obstacle_points->header.frame_id = target_frame;
-        raw_ground_points->header.frame_id = target_frame;
+        ground_points->header.frame_id = robot_frame;
+        obstacle_points->header.frame_id = robot_frame;
+        raw_points->header.frame_id = robot_frame;
 
         ground_points->header.stamp = this->now();
         obstacle_points->header.stamp = this->now();
-        raw_ground_points->header.stamp = this->now();
+        raw_points->header.stamp = this->now();
 
         // Publish the message
         publisher_ground_points->publish(*ground_points);
         publisher_obstacle_points->publish(*obstacle_points);
-        publisher_raw_ground_points->publish(*raw_ground_points);
-   }
+        publisher_raw_points->publish(*raw_points);
+
+    }
 };
 
 int main(int argc, char** argv) {
