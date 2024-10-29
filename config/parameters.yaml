@@ -23,14 +23,18 @@ ground_segmentation:
     downsample: false
     downsample_resolution: 0.1
 
-    # ground detection
+    ##ground detection
+    #tunable parameters    
     cellSizeX: 2.0
     cellSizeY: 2.0
     cellSizeZ: 10.0
     startCellDistanceThreshold: 10.0
     slopeThresholdDegrees: 30.0
     groundInlierThreshold: 0.1
+
+    #non-tunable parameters
     use_imu_orientation: true
+    num_seed_cells: 2 # options are 2 and 4
 
     #debug
     show_benchmark: false

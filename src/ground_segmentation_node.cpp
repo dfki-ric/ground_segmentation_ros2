@@ -77,7 +77,8 @@ public:
         pre_processor_config.cellSizeZ = this->get_parameter("cellSizeZ").as_double();
         pre_processor_config.startCellDistanceThreshold = this->get_parameter("startCellDistanceThreshold").as_double();
         pre_processor_config.slopeThresholdDegrees = this->get_parameter("slopeThresholdDegrees").as_double();
-        pre_processor_config.groundInlierThreshold = this->get_parameter("groundInlierThreshold").as_double();             
+        pre_processor_config.groundInlierThreshold = this->get_parameter("groundInlierThreshold").as_double();
+        pre_processor_config.num_seed_cells = this->get_parameter("num_seed_cells").as_int();             
 
         post_processor_config = pre_processor_config;
         post_processor_config.cellSizeZ = 0.5;
@@ -168,6 +169,7 @@ private:
         bool downsample = this->get_parameter("downsample").as_bool();
         double downsample_resolution = this->get_parameter("downsample_resolution").as_double();
 
+        //Idea: We could also align the whole pointcloud with gravity.
         typename pcl::PointCloud<PointType>::Ptr input_cloud_ptr;
         if (robot_frame != pointcloud_msg->header.frame_id){
             try {
