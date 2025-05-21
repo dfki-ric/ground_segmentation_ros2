@@ -21,7 +21,7 @@ ground_segmentation:
     groundInlierThreshold: 0.1
 
     #non-tunable parameters
-    use_imu_orientation: true
+    use_imu_orientation: false
     num_seed_cells: 2 # options are 2 and 4
 
     #debug
