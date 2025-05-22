@@ -30,9 +30,58 @@
 #include <chrono>
 #include <vector>
 #include <limits>
+#include <type_traits>
+
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Polyhedron_3.h>
+#include <CGAL/Surface_mesh.h>
+#include <CGAL/convex_hull_3.h>
+#include <CGAL/Polygon_mesh_processing/intersection.h>
+#include <CGAL/Homogeneous.h>
+
+#ifdef CGAL_USE_GMP
+#include <CGAL/Gmpz.h>
+typedef CGAL::Gmpz RT;
+#else
+#include <CGAL/MP_Float.h>
+typedef CGAL::MP_Float RT;
+#endif
+
+typedef CGAL::Exact_predicates_inexact_constructions_kernel  K;
+typedef CGAL::Polyhedron_3<K>                                Polyhedron_3;
+typedef K::Point_3                                           Point_3;
+typedef CGAL::Surface_mesh<Point_3>                          Surface_mesh;
+typedef Polyhedron_3::Vertex_const_iterator Vertex_const_iterator;
+typedef CGAL::Homogeneous<RT>::Segment_3                     Segment_3;
+
+#include <CGAL/Polygon_mesh_processing/IO/polygon_mesh_io.h>
+#include <CGAL/point_generators_3.h>
+#include <CGAL/Side_of_triangle_mesh.h>
+
+namespace PMP = CGAL::Polygon_mesh_processing;
+
+double max_coordinate(const Polyhedron_3& poly)
+{
+  double max_coord = -std::numeric_limits<double>::infinity();
+  for(Polyhedron_3::Vertex_handle v : vertices(poly))
+  {
+    Point_3 p = v->point();
+    max_coord = (std::max)(max_coord, CGAL::to_double(p.x()));
+    max_coord = (std::max)(max_coord, CGAL::to_double(p.y()));
+    max_coord = (std::max)(max_coord, CGAL::to_double(p.z()));
+  }
+  return max_coord;
+}
 
 using namespace pointcloud_obstacle_detection;
-using PointType = PointXYZILID;
+
+#define USE_POINTXYZ  // or USE_POINTXYZILID
+
+#ifdef USE_POINTXYZ
+    using PointType = pcl::PointXYZ;
+#elif defined(USE_POINTXYZILID)
+    using PointType = PointXYZILID;
+#endif
 
 void checkSubscriptionConnection(
     const rclcpp::SubscriptionBase::SharedPtr& subscription,
@@ -54,6 +103,7 @@ void checkSubscriptionConnection(
 class GroundSegmentatioNode : public rclcpp::Node {
 public:
     GroundSegmentatioNode(rclcpp::NodeOptions options) : Node("ground_segmentation",options) {
+        publisher_clusters = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/clusters", 10);
         publisher_ground_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/ground_points", 10);
         publisher_obstacle_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/obstacle_points", 10);
         publisher_raw_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/raw_points", 10);
@@ -95,6 +145,9 @@ public:
             post_grid_map_publisher = this->create_publisher<ground_segmentation::msg::GridMap>("/ground_segmentation/post_grid_map", 10);
         }
 
+        compute_clusters = this->get_parameter("compute_clusters").as_bool();
+        //use_convex_hulls_3d = this->get_parameter("use_convex_hulls_3d").as_bool();
+   
         robot_frame = this->get_parameter("robot_frame").as_string();
 
         pre_processor_config.cellSizeX = this->get_parameter("cellSizeX").as_double();
@@ -126,7 +179,7 @@ private:
 
     std::string robot_frame;
 
-    bool show_benchmark, show_seed_cells, show_grid;
+    bool show_benchmark, show_seed_cells, show_grid, compute_clusters, use_convex_hulls_3d;
     double precision, recall;
     std::vector<double> runtime, recall_arr, prec_arr, recall_o_arr, prec_o_arr;
 
@@ -136,6 +189,7 @@ private:
     GridConfig pre_processor_config, post_processor_config;
 
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr 
+        publisher_clusters,
         publisher_raw_points, 
         publisher_ground_points, 
         publisher_obstacle_points, 
@@ -266,46 +320,172 @@ private:
 
         *final_non_ground_points = *pre_non_ground_points + *post_non_ground_points;
 
+        if (compute_clusters){
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr colored_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+#ifdef USE_POINTXYZ
+            std::vector<pcl::PointCloud<PointType>::Ptr> clusters = processor.fastEuclideanClustering(final_non_ground_points,1,3,1000000);
+#else 
+            std::vector<pcl::PointCloud<PointType>::Ptr> clusters = processor.euclideanClustering(final_non_ground_points,1,3,1000000);
+#endif
+            for (const auto& cluster : clusters){
+                // Assign a unique color to this cluster
+                uint8_t r = rand() % 256;
+                uint8_t g = rand() % 256;
+                uint8_t b = rand() % 256;
+                uint32_t rgb = (static_cast<uint32_t>(r) << 16 | static_cast<uint32_t>(g) << 8 | static_cast<uint32_t>(b));
+                
+                for (typename pcl::PointCloud<PointType>::iterator it = cluster->begin(); it != cluster->end(); ++it){
+                    pcl::PointXYZRGB point;
+                    point.x = it->x;
+                    point.y = it->y;
+                    point.z = it->z;
+                    point.rgb = *reinterpret_cast<float*>(&rgb); // Assign the color
+
+                    colored_cloud->points.push_back(point);
+                }
+            }  
+            colored_cloud->width = colored_cloud->points.size();
+            colored_cloud->height = 1;
+            colored_cloud->is_dense = true;  
+
+            // Convert PCL PointCloud back to ROS PointCloud2
+            sensor_msgs::msg::PointCloud2 output;
+            pcl::toROSMsg(*colored_cloud, output);
+            output.header = pointcloud_msg->header;
+            publisher_clusters->publish(output);
+        }
+
+/*
+        if (!use_convex_hulls_3d){
+            final_ground_points = post_ground_points;
+        }
+        else{
+
+#ifdef USE_POINTXYZ
+            std::vector<pcl::PointCloud<PointType>::Ptr> obstacles = processor.fastEuclideanClustering(final_non_ground_points,0.5,3,1000000);
+            std::vector<pcl::PointCloud<PointType>::Ptr> non_obstacles = processor.fastEuclideanClustering(post_ground_points,0.5,3,1000000);
+#else 
+            std::vector<pcl::PointCloud<PointType>::Ptr> obstacles = processor.euclideanClustering(final_non_ground_points,0.5,3,1000000);
+            std::vector<pcl::PointCloud<PointType>::Ptr> non_obstacles = processor.euclideanClustering(post_ground_points,0.5,3,1000000);
+#endif
+
+            // define polyhedron to hold convex hull
+            std::vector<Polyhedron_3> polygons_3d;
+            for (const auto& obstacle : obstacles){
+                std::vector<Point_3> points;
+                for (typename pcl::PointCloud<PointType>::iterator it = obstacle->begin(); it != obstacle->end(); ++it){
+                    Point_3 p(it->x, it->y, it->z);
+                    points.push_back(p);
+                }
+                
+                CGAL::Object ch_object;
+                CGAL::convex_hull_3(points.begin(), points.end(), ch_object);
+                Polyhedron_3 polyhedron;
+                CGAL::assign (polyhedron, ch_object);
+                polygons_3d.push_back(polyhedron);
+            }
+
+            // define polyhedron to hold convex hull
+            std::vector<Polyhedron_3> polygons_3d_ground;
+            for (const auto& obstacle : non_obstacles){
+                std::vector<Point_3> points;
+                for (typename pcl::PointCloud<PointType>::iterator it = obstacle->begin(); it != obstacle->end(); ++it){
+                    Point_3 p(it->x, it->y, it->z);
+                    points.push_back(p);
+                }
+                
+                CGAL::Object ch_object;
+                CGAL::convex_hull_3(points.begin(), points.end(), ch_object);
+                Polyhedron_3 polyhedron;
+                CGAL::assign (polyhedron, ch_object);
+                polygons_3d_ground.push_back(polyhedron);
+            }
+            
+            pcl::ExtractIndices<PointType> extract_ground;
+            pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+            
+            for (int i{0}; i < polygons_3d_ground.size(); ++i){
+                bool collision{false};    
+                inliers->indices.clear();
+                for (int j{0}; j < polygons_3d.size(); ++j){
+
+                    CGAL::Bbox_3 bbox1 = CGAL::Polygon_mesh_processing::bbox(polygons_3d[j]);
+                    CGAL::Bbox_3 bbox2 = CGAL::Polygon_mesh_processing::bbox(polygons_3d_ground[i]);    
+
+                    if (!CGAL::do_overlap(bbox1, bbox2)) {
+                        continue;
+                    }
+
+                    collision = true;
+
+                    int count{0};
+                    for (typename pcl::PointCloud<PointType>::iterator it = non_obstacles[i]->begin(); it != non_obstacles[i]->end(); ++it)
+                    {
+                        Eigen::Vector3d point(it->x, it->y, it->z);
+                        CGAL::Side_of_triangle_mesh<Polyhedron_3, K> inside(polygons_3d[j]);
+                        Point_3 p(it->x, it->y, it->z);
+                        CGAL::Bounded_side res = inside(p);
+                        if (res == CGAL::ON_BOUNDED_SIDE || res == CGAL::ON_BOUNDARY){ 
+                            //final_non_ground_points->points.push_back(*it); 
+                            inliers->indices.push_back(count);
+                        }
+                        count++;
+                    }
+                }
+
+                if(!collision){
+                    *final_ground_points += *non_obstacles[i];
+                 }     
+                else{
+                    typename pcl::PointCloud<PointType>::Ptr temp(new pcl::PointCloud<PointType>());
+                    extract_ground.setInputCloud(non_obstacles[i]);
+                    extract_ground.setIndices(inliers);
+                    extract_ground.setNegative(true);
+                    extract_ground.filter(*temp);
+                    *final_ground_points += *temp;
+                    temp->clear(); 
+                    extract_ground.setNegative(false);
+                    extract_ground.filter(*temp);
+                    *final_non_ground_points += *temp;
+                }
+            }
+        }
+*/
         if (show_benchmark){
             //End time
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
             double rt = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() * 0.001;
+            runtime.push_back(rt);
+            double rt_mean =(double)accumulate(runtime.begin(), runtime.end(), 0.0)/runtime.size();
+            std::cout << "Avg Time difference = " << rt_mean << "[ms]" << ", " << cal_stdev(runtime) << std::endl;
+
+#ifdef USE_POINTXYZILID
             // Estimation
-            static double      precision, recall, precision_wo_veg, recall_wo_veg;
-            static double      precision_o, recall_o;
+            static double precision, recall, precision_wo_veg, recall_wo_veg;
+            static double precision_o, recall_o;
             static std::vector<int> TPFNs; // TP, FP, FN, TF order
             static std::vector<int> TPFNs_wo_veg; // TP, FP, FN, TF order
             static std::vector<int> TPFNs_o; // TP, FP, FN, TF order
 
-            calculate_precision_recall(*filtered_cloud_ptr, *post_ground_points, precision, recall, TPFNs);
-            calculate_precision_recall_without_vegetation(*filtered_cloud_ptr, *post_ground_points, precision_wo_veg, recall_wo_veg, TPFNs_wo_veg);
-            recall_arr.push_back(recall);
+            calculate_precision_recall(*filtered_cloud_ptr, *final_ground_points, precision, recall, TPFNs);
+            //calculate_precision_recall_without_vegetation(*filtered_cloud_ptr, *final_ground_points, precision_wo_veg, recall_wo_veg, TPFNs_wo_veg);
             prec_arr.push_back(precision);
-            runtime.push_back(rt);
-
-            double rt_mean =(double)accumulate(runtime.begin(), runtime.end(), 0.0)/runtime.size();
+            recall_arr.push_back(recall);
             double recall_mean =(double)accumulate(recall_arr.begin(), recall_arr.end(), 0)/recall_arr.size();
             double prec_mean =(double)accumulate(prec_arr.begin(), prec_arr.end(), 0)/prec_arr.size();
             double f1_score =  2 * (prec_mean * recall_mean) / (prec_mean + recall_mean);
             std::cout << "\033[1;32m Avg P: " << prec_mean << ", " << cal_stdev(prec_arr) <<  " | Avg R: " << recall_mean << ", " << cal_stdev(recall_arr) <<  " | Avg F1: " << f1_score << "\033[0m" << std::endl;
-            std::cout << "Avg Time difference = " << rt_mean << "[ms]" << ", " << cal_stdev(runtime) << std::endl;
-
-            calculate_precision_recall_origin(*filtered_cloud_ptr, *post_ground_points, precision_o, recall_o, TPFNs_o);
-            recall_o_arr.push_back(recall_o);
-            prec_o_arr.push_back(precision_o);
-
-            double recall_o_mean =(double)accumulate(recall_o_arr.begin(), recall_o_arr.end(), 0)/recall_o_arr.size();
-            double prec_o_mean =(double)accumulate(prec_o_arr.begin(), prec_o_arr.end(), 0)/prec_o_arr.size();
 
             // Publish msg
             pcl::PointCloud<PointType> TP;
             pcl::PointCloud<PointType> FP;
             pcl::PointCloud<PointType> FN;
             pcl::PointCloud<PointType> TN;
-            //discern_ground(*post_ground_points, TP, FP);
-            discern_ground_without_vegetation(*post_ground_points, TP, FP);
-            //discern_ground(*final_non_ground_points, FN, TN);
-            discern_ground_without_vegetation(*final_non_ground_points, FN, TN);
+ 
+            discern_ground(*final_ground_points, TP, FP);
+            //discern_ground_without_vegetation(*post_ground_points, TP, FP);
+            discern_ground(*final_non_ground_points, FN, TN);
+            //discern_ground_without_vegetation(*final_non_ground_points, FN, TN);
 
             pcl::toROSMsg(TP, *msg_TP);
             pcl::toROSMsg(FP, *msg_FP);
@@ -322,13 +502,11 @@ private:
             pub_tp->publish(*msg_TP);
             pub_fp->publish(*msg_FP);
             pub_fn->publish(*msg_FN);
-
+#endif
         }
 
         if (show_seed_cells){
-
             auto grid_cells = post_processor->getGridCells();
-
             visualization_msgs::msg::MarkerArray markers;
             std::vector<Index3D> post_start_cells = post_processor->getSeedCells();
 
@@ -427,16 +605,12 @@ private:
             post_grid_map_publisher->publish(post_grid_map_msg);
         }
 
-        post_ground_points->width = post_ground_points->points.size();
-        post_ground_points->height = 1;
-        post_ground_points->is_dense = true;  
-
         final_non_ground_points->width = final_non_ground_points->points.size();
         final_non_ground_points->height = 1;
         final_non_ground_points->is_dense = true;  
 
-        *final_ground_points = *post_ground_points;
-        final_ground_points->width = final_ground_points->points.size();
+        final_ground_points = post_ground_points;
+        final_ground_points->width = post_ground_points->points.size();
         final_ground_points->height = 1;
         final_ground_points->is_dense = true;  
 
@@ -457,6 +631,8 @@ private:
         publisher_obstacle_points->publish(*obstacle_points);
         publisher_raw_points->publish(*raw_points);
 
+        final_ground_points->clear();
+        final_non_ground_points->clear();
     }
 };
 

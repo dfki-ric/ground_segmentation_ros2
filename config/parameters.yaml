@@ -25,6 +25,10 @@ ground_segmentation:
     num_seed_cells: 2 # options are 2 and 4
 
     #debug
-    show_benchmark: false
+    show_benchmark: true
     show_seed_cells: false
     show_grid: false
+
+    #post-processing
+    compute_clusters: true
+    #use_convex_hulls_3d : true
