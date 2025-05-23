@@ -9,11 +9,12 @@
 
 #include "pcl/point_types.h"
 #include "pcl_conversions/pcl_conversions.h"
-#include <pcl_ros/impl/transforms.hpp>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/common/transforms.h>
 
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
+#include <tf2_eigen/tf2_eigen.h>
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
@@ -255,8 +256,8 @@ private:
             try {
                 const geometry_msgs::msg::TransformStamped transformStamped = buffer->lookupTransform(
                     robot_frame, pointcloud_msg->header.frame_id, pointcloud_msg->header.stamp,tf2::durationFromSec(0.1));
-
-                pcl_ros::transformPointCloud(input_cloud, transformed_cloud, transformStamped);
+		Eigen::Affine3f transformEigen = tf2::transformToEigen(transformStamped.transform).cast<float>();
+                pcl::transformPointCloud(input_cloud, transformed_cloud, transformEigen);
 
             } catch (tf2::TransformException &ex) {
                 RCLCPP_ERROR(this->get_logger(), "Pointcloud Transform exception: %s", ex.what());

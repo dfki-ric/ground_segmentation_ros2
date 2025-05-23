@@ -52,6 +52,7 @@ set(dependencies
   tf2
   tf2_geometry_msgs
   tf2_ros
+  tf2_eigen
   visualization_msgs
   pcl_conversions
   rviz_common
@@ -64,8 +65,11 @@ ament_target_dependencies(ground_segmentation_node
   ${dependencies}
 )
 
+target_include_directories(ground_segmentation_node PRIVATE
+    ${pointcloud_obstacle_detection_INCLUDE_DIRS}
+)
+
 target_link_libraries(ground_segmentation_node
-        PkgConfig::pointcloud_obstacle_detection
         ${PCL_LIBRARIES}
         CGAL::CGAL
 )
