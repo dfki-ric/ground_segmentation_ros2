@@ -24,7 +24,6 @@ find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(pluginlib REQUIRED)
-find_package(CGAL REQUIRED COMPONENTS Core)
 
 pkg_check_modules(pointcloud_obstacle_detection IMPORTED_TARGET REQUIRED pointcloud_obstacle_detection)
 
@@ -71,7 +70,6 @@ target_include_directories(ground_segmentation_node PRIVATE
 
 target_link_libraries(ground_segmentation_node
         ${PCL_LIBRARIES}
-        CGAL::CGAL
 )
 
 qt5_wrap_cpp(MOC_FILES include/grid_map_plugin/GridMapDisplay.hpp)

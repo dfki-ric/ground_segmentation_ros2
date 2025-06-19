@@ -31,4 +31,3 @@ ground_segmentation:
 
     #post-processing
     compute_clusters: true
-    #use_convex_hulls_3d : true
