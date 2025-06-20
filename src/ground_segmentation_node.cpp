@@ -60,6 +60,49 @@ void checkSubscriptionConnection(
     }
 }
 
+void injectSyntheticGroundDisk(pcl::PointCloud<PointType>::Ptr& cloud,
+                               float max_radius,
+                               float z,
+                               int rings,
+                               int points_per_ring) {
+    for (int r = 1; r <= rings; ++r) {
+        float radius = max_radius * r / rings;
+        int num_points = points_per_ring * r; // more points on outer rings
+        for (int i = 0; i < num_points; ++i) {
+            float angle = 2.0f * M_PI * i / num_points;
+            float x = radius * std::cos(angle);
+            float y = radius * std::sin(angle);
+
+            PointType pt;
+            pt.x = x;
+            pt.y = y;
+            pt.z = z;
+#ifdef USE_POINTXYZILID
+            pt.intensity = 0.0f;
+            pt.label = 1;  // optional: label as ground
+            pt.id = 9999;  // optional: ID for synthetic point
+#endif
+            cloud->points.push_back(pt);
+        }
+    }
+
+    // Optionally add a center point
+    PointType center;
+    center.x = 0.0f;
+    center.y = 0.0f;
+    center.z = z;
+#ifdef USE_POINTXYZILID
+    center.intensity = 0.0f;
+    center.label = 1;
+    center.id = 9999;
+#endif
+    cloud->points.push_back(center);
+
+    cloud->width = cloud->points.size();
+    cloud->height = 1;
+    cloud->is_dense = false;
+}
+
 class GroundSegmentatioNode : public rclcpp::Node {
 public:
     GroundSegmentatioNode(rclcpp::NodeOptions options) : Node("ground_segmentation",options) {
@@ -133,6 +176,10 @@ public:
         recall = 0.0;
         final_non_ground_points = std::make_shared<pcl::PointCloud<PointType>>(); 
         final_ground_points = std::make_shared<pcl::PointCloud<PointType>>(); 
+        injected_points_ptr = std::make_shared<pcl::PointCloud<PointType>>(); 
+
+        injectSyntheticGroundDisk(injected_points_ptr, 3, -1.7, 10, 1000);
+
     }
 
 private:
@@ -177,6 +224,7 @@ private:
 
     typename pcl::PointCloud<PointType>::Ptr final_non_ground_points;
     typename pcl::PointCloud<PointType>::Ptr final_ground_points;
+    typename pcl::PointCloud<PointType>::Ptr injected_points_ptr;
 
     void callback(const sensor_msgs::msg::PointCloud2::SharedPtr pointcloud_msg){
         segmentation(pointcloud_msg);
@@ -264,6 +312,9 @@ private:
 
         //Start time
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+        *input_cloud_ptr += *injected_points_ptr;
+
         typename pcl::PointCloud<PointType>::Ptr filtered_cloud_ptr = processor.filterCloud(input_cloud_ptr, downsample, downsample_resolution, min, max);
 
         //PRE
