@@ -377,41 +377,44 @@ private:
             publisher_clusters->publish(output);
         }
 
-        if (show_benchmark){
-            //End time
+        if (show_benchmark) {
+            // End time
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
             double rt = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() * 0.001;
             runtime.push_back(rt);
-            double rt_mean =(double)accumulate(runtime.begin(), runtime.end(), 0.0)/runtime.size();
+            double rt_mean = std::accumulate(runtime.begin(), runtime.end(), 0.0) / runtime.size();
             std::cout << "Avg Time difference = " << rt_mean << "[ms]" << ", " << cal_stdev(runtime) << std::endl;
 
 #ifdef USE_POINTXYZILID
             // Estimation
-            static double precision, recall, precision_wo_veg, recall_wo_veg;
-            static double precision_o, recall_o;
+            double precision = 0.0, recall = 0.0;
             static std::vector<int> TPFNs; // TP, FP, FN, TF order
-            static std::vector<int> TPFNs_wo_veg; // TP, FP, FN, TF order
-            static std::vector<int> TPFNs_o; // TP, FP, FN, TF order
 
-            calculate_precision_recall(*filtered_cloud_ptr, *post_ground_points, precision, recall, TPFNs);
-            //calculate_precision_recall_without_vegetation(*filtered_cloud_ptr, *post_ground_points, precision_wo_veg, recall_wo_veg, TPFNs_wo_veg);
-            prec_arr.push_back(precision);
-            recall_arr.push_back(recall);
-            double recall_mean =(double)accumulate(recall_arr.begin(), recall_arr.end(), 0)/recall_arr.size();
-            double prec_mean =(double)accumulate(prec_arr.begin(), prec_arr.end(), 0)/prec_arr.size();
-            double f1_score =  2 * (prec_mean * recall_mean) / (prec_mean + recall_mean);
-            std::cout << "\033[1;32m Avg P: " << prec_mean << ", " << cal_stdev(prec_arr) <<  " | Avg R: " << recall_mean << ", " << cal_stdev(recall_arr) <<  " | Avg F1: " << f1_score << "\033[0m" << std::endl;
+            calculate_precision_recall(*filtered_cloud_ptr, *final_ground_points, precision, recall, TPFNs);
+
+            if (precision >= 0 && recall >= 0) { // extra safety check
+                prec_arr.push_back(precision);
+                recall_arr.push_back(recall);
+
+                double recall_mean = std::accumulate(recall_arr.begin(), recall_arr.end(), 0.0) / recall_arr.size();
+                double prec_mean = std::accumulate(prec_arr.begin(), prec_arr.end(), 0.0) / prec_arr.size();
+
+                double f1_score = 0.0;
+                if ((prec_mean + recall_mean) > 0)
+                    f1_score = 2 * (prec_mean * recall_mean) / (prec_mean + recall_mean);
+
+                std::cout << "\033[1;32m Avg P: " << prec_mean << ", " << cal_stdev(prec_arr)
+                        << " | Avg R: " << recall_mean << ", " << cal_stdev(recall_arr)
+                        << " | Avg F1: " << f1_score << "\033[0m" << std::endl;
+            } else {
+                std::cout << "Warning: Invalid precision/recall values detected, skipping this entry.\n";
+            }
 
             // Publish msg
-            pcl::PointCloud<PointType> TP;
-            pcl::PointCloud<PointType> FP;
-            pcl::PointCloud<PointType> FN;
-            pcl::PointCloud<PointType> TN;
- 
-            discern_ground(*post_ground_points, TP, FP);
-            //discern_ground_without_vegetation(*post_ground_points, TP, FP);
+            pcl::PointCloud<PointType> TP, FP, FN, TN;
+
+            discern_ground(*final_ground_points, TP, FP);
             discern_ground(*final_non_ground_points, FN, TN);
-            //discern_ground_without_vegetation(*final_non_ground_points, FN, TN);
 
             pcl::toROSMsg(TP, *msg_TP);
             pcl::toROSMsg(FP, *msg_FP);
@@ -430,6 +433,7 @@ private:
             pub_fn->publish(*msg_FN);
 #endif
         }
+
 
         if (show_grid){
             ground_segmentation::msg::GridMap pre_grid_map_msg;
