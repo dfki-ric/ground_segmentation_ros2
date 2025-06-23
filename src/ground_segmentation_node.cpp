@@ -151,7 +151,6 @@ public:
         pre_processor_config.cellSizeX = this->get_parameter("cellSizeX").as_double();
         pre_processor_config.cellSizeY = this->get_parameter("cellSizeY").as_double();
         pre_processor_config.cellSizeZ = this->get_parameter("cellSizeZ").as_double();
-        pre_processor_config.startCellDistanceThreshold = this->get_parameter("startCellDistanceThreshold").as_double();
         pre_processor_config.slopeThresholdDegrees = this->get_parameter("slopeThresholdDegrees").as_double();
         pre_processor_config.groundInlierThreshold = this->get_parameter("groundInlierThreshold").as_double();
 

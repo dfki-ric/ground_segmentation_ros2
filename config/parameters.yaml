@@ -1,37 +1,27 @@
 ground_segmentation:
   ros__parameters:
-    # pre processing
+    # pre/post processing
     robot_frame: "base_link"
-    maxX:  80.0
-    minX: -80.0
-    maxY:  80.0
-    minY: -80.0
-    maxZ:  80.0
-    minZ: -80.0
+    maxX:  40.0
+    minX: -40.0
+    maxY:  40.0
+    minY: -40.0
+    maxZ:  40.0
+    minZ: -40.0
     downsample: false
     downsample_resolution: 0.1
+    dist_to_ground: 1.8
+    robot_radius: 2.0
+    compute_clusters: false
 
     ##ground detection
-    #tunable parameters    
-    cellSizeX: 2.0
-    cellSizeY: 2.0
+    cellSizeX: 1.5
+    cellSizeY: 1.5
     cellSizeZ: 10.0
-    startCellDistanceThreshold: 10.0
     slopeThresholdDegrees: 30.0
     groundInlierThreshold: 0.1
-
-    #non-tunable parameters
     use_imu_orientation: false
-    num_seed_cells: 2 # options are 2 and 4
 
     #debug
     show_benchmark: true
-    show_seed_cells: false
     show_grid: false
-
-    #post-processing
-    compute_clusters: false
-
-    #
-    dist_to_ground: 1.8
-    robot_radius: 2.0
