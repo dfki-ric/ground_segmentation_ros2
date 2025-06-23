@@ -172,12 +172,6 @@ public:
         final_ground_points = std::make_shared<pcl::PointCloud<PointType>>(); 
         injected_points_ptr = std::make_shared<pcl::PointCloud<PointType>>(); 
 
-        //pts
-        //max_radius
-        //distance to ground
-        //rings
-        //pts per print
-
         double dist_to_ground = this->get_parameter("dist_to_ground").as_double();
         double robot_radius = this->get_parameter("robot_radius").as_double();
 
@@ -320,7 +314,7 @@ private:
         //Start time
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-        typename pcl::PointCloud<PointType>::Ptr filtered_cloud_ptr = processor.filterCloud(input_cloud_ptr, downsample, downsample_resolution, min, max);
+        typename pcl::PointCloud<PointType>::Ptr filtered_cloud_ptr = processor.filterCloud(input_cloud_ptr, downsample, downsample_resolution, min, max, false);
 
         //PRE
         pre_processor->setInputCloud(filtered_cloud_ptr, robot_orientation);
@@ -334,8 +328,20 @@ private:
         typename pcl::PointCloud<PointType>::Ptr post_ground_points = post_result.first;
         typename pcl::PointCloud<PointType>::Ptr post_non_ground_points  = post_result.second;
 
-        final_ground_points = post_ground_points;
+        double robot_radius = this->get_parameter("robot_radius").as_double();
+        double dist_to_ground = this->get_parameter("dist_to_ground").as_double();
+
+        Eigen::Vector4f min_radius{-robot_radius,-robot_radius,-dist_to_ground, 1};
+        Eigen::Vector4f max_radius{robot_radius,robot_radius,-dist_to_ground+1,1};
+
+        final_ground_points = processor.filterCloud(post_ground_points, downsample,
+                                                    downsample_resolution, min_radius, max_radius, true);
+
         *final_non_ground_points = *pre_non_ground_points + *post_non_ground_points;
+
+        final_non_ground_points = processor.filterCloud(final_non_ground_points, downsample,
+                                                    downsample_resolution, min_radius, max_radius, true);
+
 
         if (compute_clusters){
             pcl::PointCloud<pcl::PointXYZRGB>::Ptr colored_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -489,8 +495,7 @@ private:
         final_non_ground_points->height = 1;
         final_non_ground_points->is_dense = true;  
 
-        final_ground_points = post_ground_points;
-        final_ground_points->width = post_ground_points->points.size();
+        final_ground_points->width = final_ground_points->points.size();
         final_ground_points->height = 1;
         final_ground_points->is_dense = true;  
 
