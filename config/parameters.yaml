@@ -31,3 +31,7 @@ ground_segmentation:
 
     #post-processing
     compute_clusters: false
+
+    #
+    dist_to_ground: 1.8
+    robot_radius: 2.0

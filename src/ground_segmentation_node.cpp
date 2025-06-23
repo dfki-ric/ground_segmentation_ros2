@@ -137,11 +137,6 @@ public:
             pub_fp = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/FP", 10);
         }
 
-        show_seed_cells = this->get_parameter("show_seed_cells").as_bool();
-        if (show_seed_cells){
-            publisher_start_cells = this->create_publisher<visualization_msgs::msg::MarkerArray>("/ground_segmentation/start_cells", 10);
-        }
-
         show_grid = this->get_parameter("show_grid").as_bool();
         if (show_grid){
             pre_grid_map_publisher = this->create_publisher<ground_segmentation::msg::GridMap>("/ground_segmentation/pre_grid_map", 10);
@@ -159,7 +154,6 @@ public:
         pre_processor_config.startCellDistanceThreshold = this->get_parameter("startCellDistanceThreshold").as_double();
         pre_processor_config.slopeThresholdDegrees = this->get_parameter("slopeThresholdDegrees").as_double();
         pre_processor_config.groundInlierThreshold = this->get_parameter("groundInlierThreshold").as_double();
-        pre_processor_config.num_seed_cells = this->get_parameter("num_seed_cells").as_int();             
 
         post_processor_config = pre_processor_config;
         post_processor_config.cellSizeZ = 0.5;
@@ -178,15 +172,23 @@ public:
         final_ground_points = std::make_shared<pcl::PointCloud<PointType>>(); 
         injected_points_ptr = std::make_shared<pcl::PointCloud<PointType>>(); 
 
-        injectSyntheticGroundDisk(injected_points_ptr, 3, -1.7, 10, 1000);
+        //pts
+        //max_radius
+        //distance to ground
+        //rings
+        //pts per print
 
+        double dist_to_ground = this->get_parameter("dist_to_ground").as_double();
+        double robot_radius = this->get_parameter("robot_radius").as_double();
+
+        injectSyntheticGroundDisk(injected_points_ptr, robot_radius, -dist_to_ground, 5, 20);
     }
 
 private:
 
     std::string robot_frame;
 
-    bool show_benchmark, show_seed_cells, show_grid, compute_clusters, use_convex_hulls_3d;
+    bool show_benchmark, show_grid, compute_clusters, use_convex_hulls_3d;
     double precision, recall;
     std::vector<double> runtime, recall_arr, prec_arr, recall_o_arr, prec_o_arr;
 
@@ -257,14 +259,19 @@ private:
         bool downsample = this->get_parameter("downsample").as_bool();
         double downsample_resolution = this->get_parameter("downsample_resolution").as_double();
 
+
+        pcl::PointCloud<PointType> combined_cloud = input_cloud; // Copy or assign input_cloud
+        combined_cloud += *injected_points_ptr;
+
         //Idea: We could also align the whole pointcloud with gravity.
         typename pcl::PointCloud<PointType>::Ptr input_cloud_ptr;
+
         if (robot_frame != pointcloud_msg->header.frame_id){
             try {
                 const geometry_msgs::msg::TransformStamped transformStamped = buffer->lookupTransform(
                     robot_frame, pointcloud_msg->header.frame_id, pointcloud_msg->header.stamp,tf2::durationFromSec(0.1));
 		Eigen::Affine3f transformEigen = tf2::transformToEigen(transformStamped.transform).cast<float>();
-                pcl::transformPointCloud(input_cloud, transformed_cloud, transformEigen);
+                pcl::transformPointCloud(combined_cloud, transformed_cloud, transformEigen);
 
             } catch (tf2::TransformException &ex) {
                 RCLCPP_ERROR(this->get_logger(), "Pointcloud Transform exception: %s", ex.what());
@@ -273,7 +280,7 @@ private:
             input_cloud_ptr = std::make_shared<typename pcl::PointCloud<PointType>>(transformed_cloud);
         }
         else{
-            input_cloud_ptr = std::make_shared<typename pcl::PointCloud<PointType>>(input_cloud);
+            input_cloud_ptr = std::make_shared<typename pcl::PointCloud<PointType>>(combined_cloud);
         }
 
         tf2::Quaternion robot_in_gravity(0,0,0,1);
@@ -312,8 +319,6 @@ private:
 
         //Start time
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
-        *input_cloud_ptr += *injected_points_ptr;
 
         typename pcl::PointCloud<PointType>::Ptr filtered_cloud_ptr = processor.filterCloud(input_cloud_ptr, downsample, downsample_resolution, min, max);
 
@@ -419,47 +424,6 @@ private:
             pub_fp->publish(*msg_FP);
             pub_fn->publish(*msg_FN);
 #endif
-        }
-
-        if (show_seed_cells){
-            auto grid_cells = post_processor->getGridCells();
-            visualization_msgs::msg::MarkerArray markers;
-            std::vector<Index3D> post_start_cells = post_processor->getSeedCells();
-
-            int marker_count{0};
-            for (const auto& start_cell_id : post_start_cells){
-                auto start_cell = grid_cells[start_cell_id];
-
-                geometry_msgs::msg::Pose pose;
-                pose.position.x = start_cell.centroid.x();
-                pose.position.y = start_cell.centroid.y();
-                pose.position.z = start_cell.centroid.z();
-                
-                pose.orientation.x = 0;
-                pose.orientation.y = 0;
-                pose.orientation.z = 0;
-                pose.orientation.w = 1;
-
-                std_msgs::msg::ColorRGBA colour;
-                colour.a = 1;
-                colour.r = 0;
-                colour.g = 0;
-                colour.b = 1;
-
-                visualization_msgs::msg::Marker marker;
-                marker.header.frame_id = robot_frame;
-                marker.header.stamp = this->now();
-                marker.action = visualization_msgs::msg::Marker::ADD;
-                marker.type = visualization_msgs::msg::Marker::CUBE;
-                marker.pose = pose;
-                marker.id = marker_count++;
-                marker.scale.x = 1;
-                marker.scale.y = 1;
-                marker.scale.z = 1;
-                marker.color = colour;       
-                markers.markers.push_back(marker);     
-            }
-            publisher_start_cells->publish(markers);
         }
 
         if (show_grid){
