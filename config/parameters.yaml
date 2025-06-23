@@ -30,4 +30,4 @@ ground_segmentation:
     show_grid: false
 
     #post-processing
-    compute_clusters: true
+    compute_clusters: false
