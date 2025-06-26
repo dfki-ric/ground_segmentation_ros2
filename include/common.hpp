@@ -436,6 +436,57 @@ void save_all_accuracy(const pcl::PointCloud<PointXYZILID>& pc_curr,
   sc_output2.close();
 }
 
+void calculate_precision_recall_non_ground(
+    const pcl::PointCloud<PointXYZILID>& pc_curr,                // ground truth
+    const pcl::PointCloud<PointXYZILID>& non_ground_estimated,   // predicted as non-ground
+    double &precision,
+    double &recall,
+    std::vector<int>& TPFNs,
+    bool reject_num_of_outliers = true)
+{
+    std::set<int> ground_label_set(ground_classes.begin(), ground_classes.end());
+
+    // Helper lambda: is this point considered ground, with vegetation height check?
+    auto is_ground = [](const PointXYZILID& pt) {
+        if (pt.label == VEGETATION)
+            return pt.z < VEGETATION_THR;
+        return std::find(ground_classes.begin(), ground_classes.end(), pt.label) != ground_classes.end();
+    };
+
+    // 1. GT non-ground points
+    int num_non_ground_gt = 0;
+    for (const auto& pt : pc_curr.points) {
+        if (!is_ground(pt)) num_non_ground_gt++;
+    }
+
+    // 2. Estimated non-ground points
+    int num_non_ground_est = non_ground_estimated.size();
+
+    // 3. True Positives: estimated as non-ground AND GT is non-ground
+    int num_TP = 0;
+    for (const auto& pt : non_ground_estimated.points) {
+        if (!is_ground(pt)) num_TP++;
+    }
+
+    // 4. False Positives: predicted as non-ground but GT is ground
+    int num_FP = num_non_ground_est - num_TP;
+
+    // 5. False Negatives: GT is non-ground but missed in prediction
+    int num_FN = num_non_ground_gt - num_TP;
+
+    // 6. True Negatives: all others
+    int num_TN = pc_curr.points.size() - (num_TP + num_FP + num_FN);
+
+    // 7. Metrics
+    precision = (num_TP + 1e-12) / (num_TP + num_FP + 1e-12) * 100.0;
+    recall    = (num_TP + 1e-12) / (num_TP + num_FN + 1e-12) * 100.0;
+
+    TPFNs.clear();
+    TPFNs = {num_TP, num_FP, num_FN, num_TN};
+}
+
+
+
 void pc2pcdfile(const pcl::PointCloud<PointXYZILID>& TP, const pcl::PointCloud<PointXYZILID>& FP,
                 const pcl::PointCloud<PointXYZILID>& FN, const pcl::PointCloud<PointXYZILID>& TN,
                 std::string pcd_filename){

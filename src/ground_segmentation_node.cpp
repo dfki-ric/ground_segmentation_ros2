@@ -392,6 +392,8 @@ private:
 
             calculate_precision_recall(*filtered_cloud_ptr, *final_ground_points, precision, recall, TPFNs);
 
+            //calculate_precision_recall_non_ground(*filtered_cloud_ptr, *final_non_ground_points, precision, recall, TPFNs);
+
             if (precision >= 0 && recall >= 0) { // extra safety check
                 prec_arr.push_back(precision);
                 recall_arr.push_back(recall);
