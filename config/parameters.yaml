@@ -16,10 +16,12 @@ ground_segmentation:
 
     ##ground detection
     cellSizeX: 1.5
-    cellSizeY: 1.5
-    cellSizeZ: 10.0
+    cellSizeY: 1.0
+    cellSizeZ: 1.5
     slopeThresholdDegrees: 30.0
     groundInlierThreshold: 0.1
+    maxCentroidHeightDiff: 0.5
+    centroidSearchRadius: 5.0
     use_imu_orientation: false
 
     #debug

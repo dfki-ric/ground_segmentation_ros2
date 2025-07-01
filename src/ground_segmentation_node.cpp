@@ -2,6 +2,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include <pointcloud_obstacle_detection/ground_detection_types.hpp>
 #include <pointcloud_obstacle_detection/ground_detection.hpp>
+#include <pointcloud_obstacle_detection/pointcloud_processor.hpp>
+
 #include "common.hpp"
 
 #include "ground_segmentation/msg/grid_map.hpp"
@@ -144,7 +146,6 @@ public:
         }
 
         compute_clusters = this->get_parameter("compute_clusters").as_bool();
-        //use_convex_hulls_3d = this->get_parameter("use_convex_hulls_3d").as_bool();
    
         robot_frame = this->get_parameter("robot_frame").as_string();
 
@@ -153,9 +154,13 @@ public:
         pre_processor_config.cellSizeZ = this->get_parameter("cellSizeZ").as_double();
         pre_processor_config.slopeThresholdDegrees = this->get_parameter("slopeThresholdDegrees").as_double();
         pre_processor_config.groundInlierThreshold = this->get_parameter("groundInlierThreshold").as_double();
+        pre_processor_config.maxCentroidHeightDiff = this->get_parameter("maxCentroidHeightDiff").as_double();
+        pre_processor_config.distToGround = this->get_parameter("dist_to_ground").as_double();
+        pre_processor_config.centroidSearchRadius = this->get_parameter("centroidSearchRadius").as_double();
+        
 
         post_processor_config = pre_processor_config;
-        post_processor_config.cellSizeZ = 0.5;
+        post_processor_config.cellSizeZ = 0.2;
         post_processor_config.processing_phase = 2;
 
         pre_processor = std::make_unique<PointCloudGrid<PointType>>(pre_processor_config);
@@ -181,7 +186,7 @@ private:
 
     std::string robot_frame;
 
-    bool show_benchmark, show_grid, compute_clusters, use_convex_hulls_3d;
+    bool show_benchmark, show_grid, compute_clusters;
     double precision, recall;
     std::vector<double> runtime, recall_arr, prec_arr, recall_o_arr, prec_o_arr;
 
@@ -436,7 +441,7 @@ private:
 #endif
         }
 
-
+/*
         if (show_grid){
             ground_segmentation::msg::GridMap pre_grid_map_msg;
             pre_grid_map_msg.cell_size_x = pre_processor_config.cellSizeX;
@@ -495,6 +500,7 @@ private:
 
             post_grid_map_publisher->publish(post_grid_map_msg);
         }
+*/
 
         final_non_ground_points->width = final_non_ground_points->points.size();
         final_non_ground_points->height = 1;
