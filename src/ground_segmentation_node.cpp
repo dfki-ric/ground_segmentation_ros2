@@ -315,11 +315,11 @@ private:
         Eigen::Vector4f min{minX,minY,minZ, 1};
         Eigen::Vector4f max{maxX,maxY,maxZ,1};
 
-        //Start time
-        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
         typename pcl::PointCloud<PointType>::Ptr filtered_cloud_ptr = processor.filterCloud(input_cloud_ptr, downsample, downsample_resolution, min, max, false);
 
+        //Start time
+
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         //PRE
         pre_processor->setInputCloud(filtered_cloud_ptr, robot_orientation);
         std::pair< typename pcl::PointCloud<PointType>::Ptr,  typename pcl::PointCloud<PointType>::Ptr> pre_result = pre_processor->segmentPoints();
@@ -345,6 +345,9 @@ private:
 
         final_non_ground_points = processor.filterCloud(final_non_ground_points, downsample,
                                                     downsample_resolution, min_radius, max_radius, true);
+        
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
 
 
         if (compute_clusters){
@@ -384,7 +387,6 @@ private:
 
         if (show_benchmark) {
             // End time
-            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
             double rt = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() * 0.001;
             runtime.push_back(rt);
             double rt_mean = std::accumulate(runtime.begin(), runtime.end(), 0.0) / runtime.size();
