@@ -20,7 +20,6 @@ ground_segmentation:
     cellSizeZ: 1.5
     slopeThresholdDegrees: 30.0
     groundInlierThreshold: 0.1
-    maxCentroidHeightDiff: 0.5
     centroidSearchRadius: 5.0
     use_imu_orientation: false
 
