@@ -10,8 +10,8 @@ ground_segmentation:
     minZ: -100.0
     downsample: false
     downsample_resolution: 0.1
-    dist_to_ground: 1.78
-    robot_radius: 3.0
+    dist_to_ground: 1.723
+    robot_radius: 2.7
     compute_clusters: false
 
     ##ground detection
@@ -19,7 +19,7 @@ ground_segmentation:
     cellSizeY: 1.0
     cellSizeZ: 1.5
     slopeThresholdDegrees: 30.0
-    groundInlierThreshold: 0.1
+    groundInlierThreshold: 0.125
     centroidSearchRadius: 5.0
     use_imu_orientation: false
 
