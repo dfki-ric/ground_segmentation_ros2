@@ -25,4 +25,3 @@ ground_segmentation:
 
     #debug
     show_benchmark: true
-    show_grid: false

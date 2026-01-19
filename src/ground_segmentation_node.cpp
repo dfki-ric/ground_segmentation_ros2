@@ -6,9 +6,6 @@
 
 #include "common.hpp"
 
-#include "ground_segmentation/msg/grid_map.hpp"
-#include "ground_segmentation/msg/grid_cell.hpp"
-
 #include "pcl/point_types.h"
 #include "pcl_conversions/pcl_conversions.h"
 #include <pcl/filters/extract_indices.h>
@@ -137,12 +134,6 @@ public:
             pub_tp = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/TP", 10);
             pub_fn = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/FN", 10);
             pub_fp = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/FP", 10);
-        }
-
-        show_grid = this->get_parameter("show_grid").as_bool();
-        if (show_grid){
-            pre_grid_map_publisher = this->create_publisher<ground_segmentation::msg::GridMap>("/ground_segmentation/pre_grid_map", 10);
-            post_grid_map_publisher = this->create_publisher<ground_segmentation::msg::GridMap>("/ground_segmentation/post_grid_map", 10);
         }
 
         compute_clusters = this->get_parameter("compute_clusters").as_bool();
@@ -441,67 +432,6 @@ private:
             pub_fn->publish(*msg_FN);
 #endif
         }
-
-/*
-        if (show_grid){
-            ground_segmentation::msg::GridMap pre_grid_map_msg;
-            pre_grid_map_msg.cell_size_x = pre_processor_config.cellSizeX;
-            pre_grid_map_msg.cell_size_y = pre_processor_config.cellSizeY;
-            pre_grid_map_msg.cell_size_z = pre_processor_config.cellSizeZ;
-            pre_grid_map_msg.header.frame_id = this->get_parameter("robot_frame").as_string();
-
-            auto pre_grid_cells = pre_processor->getGridCells();
-            for (auto& [idx, cell] : pre_grid_cells){
-
-                if (cell.points->empty()){
-                    continue;
-                }
-                ground_segmentation::msg::GridCell cell_msg;
-
-                cell_msg.position.x = (idx.x * pre_processor_config.cellSizeX) + pre_processor_config.cellSizeX/2;
-                cell_msg.position.y = (idx.y * pre_processor_config.cellSizeY) + pre_processor_config.cellSizeY/2;
-                cell_msg.position.z = (idx.z * pre_processor_config.cellSizeZ) + pre_processor_config.cellSizeZ/2;
-
-                cell_msg.color.r = 0;
-                cell_msg.color.g = 1;
-                cell_msg.color.b = 0;
-                cell_msg.color.a = 1;
-
-                pre_grid_map_msg.cells.push_back(cell_msg);
-            }
-            pre_grid_map_publisher->publish(pre_grid_map_msg);
-
-            ground_segmentation::msg::GridMap post_grid_map_msg;
-            post_grid_map_msg.cell_size_x = post_processor_config.cellSizeX;
-            post_grid_map_msg.cell_size_y = post_processor_config.cellSizeY;
-            post_grid_map_msg.cell_size_z = post_processor_config.cellSizeZ;
-            post_grid_map_msg.header.frame_id = this->get_parameter("robot_frame").as_string();
-
-            auto post_grid_cells = post_processor->getGridCells();
-
-            for (auto& [idx,cell] : post_grid_cells){
-
-                if (cell.points->empty()){
-                    continue;
-                }
-
-                ground_segmentation::msg::GridCell cell_msg;
-
-                cell_msg.position.x = (idx.x * post_processor_config.cellSizeX) + post_processor_config.cellSizeX/2;
-                cell_msg.position.y = (idx.y * post_processor_config.cellSizeY) + post_processor_config.cellSizeY/2;
-                cell_msg.position.z = (idx.z * post_processor_config.cellSizeZ) + post_processor_config.cellSizeZ/2;
-
-                cell_msg.color.r = 0;
-                cell_msg.color.g = 1;
-                cell_msg.color.b = 0;
-                cell_msg.color.a = 1;
-                
-                post_grid_map_msg.cells.push_back(cell_msg);
-            }
-
-            post_grid_map_publisher->publish(post_grid_map_msg);
-        }
-*/
 
         final_non_ground_points->width = final_non_ground_points->points.size();
         final_non_ground_points->height = 1;
