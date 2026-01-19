@@ -18,12 +18,6 @@ find_package(Eigen3 REQUIRED)
 find_package(PkgConfig REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-find_package(visualization_msgs REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
-find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
-find_package(rviz_common REQUIRED)
-find_package(rviz_rendering REQUIRED)
-find_package(pluginlib REQUIRED)
 
 pkg_check_modules(pointcloud_obstacle_detection IMPORTED_TARGET REQUIRED pointcloud_obstacle_detection)
 
@@ -44,7 +38,6 @@ set(dependencies
   tf2_geometry_msgs
   tf2_ros
   tf2_eigen
-  visualization_msgs
   pcl_conversions
   message_filters
 )

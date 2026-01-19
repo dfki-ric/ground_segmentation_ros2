@@ -12,7 +12,6 @@ ground_segmentation:
     downsample_resolution: 0.1
     dist_to_ground: 1.723
     robot_radius: 2.7
-    compute_clusters: false
 
     ##ground detection
     cellSizeX: 1.5

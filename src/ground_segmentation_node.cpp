@@ -18,7 +18,6 @@
 #include "sensor_msgs/msg/imu.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
-#include <visualization_msgs/msg/marker_array.hpp>
 
 #include "message_filters/time_synchronizer.h"
 #include "message_filters/subscriber.h"
@@ -105,7 +104,6 @@ void injectSyntheticGroundDisk(pcl::PointCloud<PointType>::Ptr& cloud,
 class GroundSegmentatioNode : public rclcpp::Node {
 public:
     GroundSegmentatioNode(rclcpp::NodeOptions options) : Node("ground_segmentation",options) {
-        publisher_clusters = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/clusters", 10);
         publisher_ground_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/ground_points", 10);
         publisher_obstacle_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/obstacle_points", 10);
         publisher_raw_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/raw_points", 10);
@@ -135,8 +133,6 @@ public:
             pub_fn = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/FN", 10);
             pub_fp = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/FP", 10);
         }
-
-        compute_clusters = this->get_parameter("compute_clusters").as_bool();
    
         robot_frame = this->get_parameter("robot_frame").as_string();
 
@@ -176,7 +172,7 @@ private:
 
     std::string robot_frame;
 
-    bool show_benchmark, show_grid, compute_clusters;
+    bool show_benchmark;
     double precision, recall;
     std::vector<double> runtime, recall_arr, prec_arr, recall_o_arr, prec_o_arr;
 
@@ -186,23 +182,14 @@ private:
     GridConfig pre_processor_config, post_processor_config;
 
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr 
-        publisher_clusters,
         publisher_raw_points, 
         publisher_ground_points, 
         publisher_obstacle_points, 
         pub_tp, 
         pub_fn, 
         pub_fp;
-    
-    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr 
-        publisher_start_cells;
-    
-    rclcpp::Publisher<ground_segmentation::msg::GridMap>::SharedPtr 
-        pre_grid_map_publisher, 
-        post_grid_map_publisher;
 
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscriber_pointcloud;
-
 
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> subscriber_synced_pointcloud;
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Imu>> subscriber_synced_imu;
@@ -246,7 +233,6 @@ private:
         double minZ = this->get_parameter("minZ").as_double();
         bool downsample = this->get_parameter("downsample").as_bool();
         double downsample_resolution = this->get_parameter("downsample_resolution").as_double();
-
 
         pcl::PointCloud<PointType> combined_cloud = input_cloud; // Copy or assign input_cloud
         combined_cloud += *injected_points_ptr;
@@ -308,7 +294,6 @@ private:
         typename pcl::PointCloud<PointType>::Ptr filtered_cloud_ptr = processor.filterCloud(input_cloud_ptr, downsample, downsample_resolution, min, max, false);
 
         //Start time
-
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         //PRE
         pre_processor->setInputCloud(filtered_cloud_ptr, robot_orientation);
@@ -337,43 +322,6 @@ private:
                                                     downsample_resolution, min_radius, max_radius, true);
         
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-
-
-
-        if (compute_clusters){
-            pcl::PointCloud<pcl::PointXYZRGB>::Ptr colored_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-#ifdef USE_POINTXYZ
-            std::vector<pcl::PointCloud<PointType>::Ptr> clusters = processor.fastEuclideanClustering(final_non_ground_points,1,3,1000000);
-#else 
-            std::vector<pcl::PointCloud<PointType>::Ptr> clusters = processor.euclideanClustering(final_non_ground_points,1,3,1000000);
-#endif
-            for (const auto& cluster : clusters){
-                // Assign a unique color to this cluster
-                uint8_t r = rand() % 256;
-                uint8_t g = rand() % 256;
-                uint8_t b = rand() % 256;
-                uint32_t rgb = (static_cast<uint32_t>(r) << 16 | static_cast<uint32_t>(g) << 8 | static_cast<uint32_t>(b));
-                
-                for (typename pcl::PointCloud<PointType>::iterator it = cluster->begin(); it != cluster->end(); ++it){
-                    pcl::PointXYZRGB point;
-                    point.x = it->x;
-                    point.y = it->y;
-                    point.z = it->z;
-                    point.rgb = *reinterpret_cast<float*>(&rgb); // Assign the color
-
-                    colored_cloud->points.push_back(point);
-                }
-            }  
-            colored_cloud->width = colored_cloud->points.size();
-            colored_cloud->height = 1;
-            colored_cloud->is_dense = true;  
-
-            // Convert PCL PointCloud back to ROS PointCloud2
-            sensor_msgs::msg::PointCloud2 output;
-            pcl::toROSMsg(*colored_cloud, output);
-            output.header = pointcloud_msg->header;
-            publisher_clusters->publish(output);
-        }
 
         if (show_benchmark) {
             // End time
