@@ -111,4 +111,12 @@ This mode is intended for **evaluation and dataset experiments**, not deployment
 - Synthetic ground points are removed before final output
 - Designed for CPU real-time execution
 
+## Benchmarking
+
+For quantitative evaluation, we use the benchmarking infrastructure provided by
+the **Ground Segmentation Benchmark (KAIST)**, including the `common.h`.
+
+Benchmark repository:  
+https://github.com/url-kaist/Ground-Segmentation-Benchmark
+
 © DFKI Robotics Innovation Center

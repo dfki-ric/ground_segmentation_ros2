@@ -7,12 +7,12 @@ from launch_ros.actions import Node, SetParameter
 def launch_setup(context, *args, **kwargs):
 
     parameters = PathJoinSubstitution(
-        [FindPackageShare("ground_segmentation"), "config", "parameters.yaml"]
+        [FindPackageShare("ground_segmentation_ros2"), "config", "parameters.yaml"]
     )
 
-    ground_segmentation_node = Node(
-        package="ground_segmentation",
-        executable="ground_segmentation_node",
+    ground_segmentation_ros2_node = Node(
+        package="ground_segmentation_ros2",
+        executable="ground_segmentation_ros2_node",
         parameters=[parameters],
         #arguments=['--ros-args', '--log-level', 'debug'],
         remappings=[('/ground_segmentation/input_pointcloud', LaunchConfiguration('pointcloud_topic')),
@@ -20,7 +20,7 @@ def launch_setup(context, *args, **kwargs):
         output="screen",
     )
 
-    nodes_to_start = [ground_segmentation_node]
+    nodes_to_start = [ground_segmentation_ros2_node]
     
     return nodes_to_start
 

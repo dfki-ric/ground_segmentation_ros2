@@ -1,8 +1,8 @@
 #define PCL_NO_PRECOMPILE
 #include "rclcpp/rclcpp.hpp"
-#include <ground_segmentation/ground_detection_types.hpp>
-#include <ground_segmentation/ground_detection.hpp>
-#include <ground_segmentation/pointcloud_processor.hpp>
+#include <ground_detection_types.hpp>
+#include <ground_detection.hpp>
+#include <pointcloud_processor.hpp>
 
 #include "common.hpp"
 
@@ -13,7 +13,7 @@
 
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
-#include <tf2_eigen/tf2_eigen.h>
+#include <tf2_eigen/tf2_eigen.hpp>
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"

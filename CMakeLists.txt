@@ -13,6 +13,7 @@ find_package(Eigen3 REQUIRED)
 find_package(PkgConfig REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(ground_segmentation REQUIRED)
 
 set(dependencies
   geometry_msgs
@@ -28,21 +29,19 @@ set(dependencies
   message_filters
 )
 
-pkg_check_modules(ground_segmentation IMPORTED_TARGET REQUIRED ground_segmentation)
-
 add_executable(ground_segmentation_ros2_node src/ground_segmentation_ros2_node.cpp)
 target_include_directories(ground_segmentation_ros2_node PUBLIC
   ${pcl_conversions_INCLUDE_DIRS}
   ${CMAKE_SOURCE_DIR}/include
-  ${ground_segmentation_INCLUDE_DIRS}
 )
 
 ament_target_dependencies(ground_segmentation_ros2_node
   ${dependencies}
 )
 
-target_link_libraries(ground_segmentation_ros2_node
+target_link_libraries(ground_segmentation_ros2_node 
   ${PCL_LIBRARIES}
+  ground_segmentation::ground_segmentation
 )
 
 install(TARGETS ground_segmentation_ros2_node
