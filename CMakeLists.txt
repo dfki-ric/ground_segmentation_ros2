@@ -1,11 +1,6 @@
-cmake_minimum_required(VERSION 3.8)
-project(ground_segmentation)
+cmake_minimum_required(VERSION 3.9)
+project(ground_segmentation_ros2)
 
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
-
-# find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(PCL REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -18,15 +13,6 @@ find_package(Eigen3 REQUIRED)
 find_package(PkgConfig REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-
-pkg_check_modules(pointcloud_obstacle_detection IMPORTED_TARGET REQUIRED pointcloud_obstacle_detection)
-
-add_executable(ground_segmentation_node src/ground_segmentation_node.cpp)
-
-target_include_directories(ground_segmentation_node PUBLIC
-        ${pcl_conversions_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/include
-)
 
 set(dependencies
   geometry_msgs
@@ -42,19 +28,24 @@ set(dependencies
   message_filters
 )
 
-ament_target_dependencies(ground_segmentation_node
+pkg_check_modules(ground_segmentation IMPORTED_TARGET REQUIRED ground_segmentation)
+
+add_executable(ground_segmentation_ros2_node src/ground_segmentation_ros2_node.cpp)
+target_include_directories(ground_segmentation_ros2_node PUBLIC
+  ${pcl_conversions_INCLUDE_DIRS}
+  ${CMAKE_SOURCE_DIR}/include
+  ${ground_segmentation_INCLUDE_DIRS}
+)
+
+ament_target_dependencies(ground_segmentation_ros2_node
   ${dependencies}
 )
 
-target_include_directories(ground_segmentation_node PRIVATE
-    ${pointcloud_obstacle_detection_INCLUDE_DIRS}
+target_link_libraries(ground_segmentation_ros2_node
+  ${PCL_LIBRARIES}
 )
 
-target_link_libraries(ground_segmentation_node
-        ${PCL_LIBRARIES}
-)
-
-install(TARGETS ground_segmentation_node
+install(TARGETS ground_segmentation_ros2_node
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch config

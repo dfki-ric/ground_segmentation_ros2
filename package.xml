@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>ground_segmentation</name>
+  <name>ground_segmentation_ros2</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
   <maintainer email="image@builder.me">dockeruser</maintainer>
@@ -17,7 +17,7 @@
   <depend>tf2</depend>
   <depend>tf2_geometry_msgs</depend>
   <depend>tf2_ros</depend>
-  <depend>pointcloud_obstacle_detection</depend>
+  <depend>ground_segmentation</depend>
   <depend>rviz_common</depend>
   <depend>message_filters</depend>
 
@@ -26,7 +26,7 @@
  
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
-  
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>

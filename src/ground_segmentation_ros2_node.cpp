@@ -1,8 +1,8 @@
 #define PCL_NO_PRECOMPILE
 #include "rclcpp/rclcpp.hpp"
-#include <pointcloud_obstacle_detection/ground_detection_types.hpp>
-#include <pointcloud_obstacle_detection/ground_detection.hpp>
-#include <pointcloud_obstacle_detection/pointcloud_processor.hpp>
+#include <ground_segmentation/ground_detection_types.hpp>
+#include <ground_segmentation/ground_detection.hpp>
+#include <ground_segmentation/pointcloud_processor.hpp>
 
 #include "common.hpp"
 
@@ -31,7 +31,7 @@
 #include <limits>
 #include <type_traits>
 
-using namespace pointcloud_obstacle_detection;
+using namespace ground_segmentation;
 
 #define USE_POINTXYZILID  // or USE_POINTXYZILID
 
