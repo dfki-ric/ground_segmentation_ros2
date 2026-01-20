@@ -89,6 +89,13 @@ Compile-time selection via macros:
 - `PointXYZILID` enables semantic labels and benchmarking
 - `PointXYZ` for lightweight operation
 
+
+### Build Instructions
+
+```bash
+colcon build --packages-up-to ground_segmentation_ros2 --cmake-args -DCMAKE_BUILD_TYPE=RELEASE
+```
+
 ## Benchmarking Mode
 
 When `show_benchmark=true` and using `PointXYZILID`:
