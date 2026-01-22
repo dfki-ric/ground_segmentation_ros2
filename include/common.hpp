@@ -1,3 +1,5 @@
+//Source: https://github.com/url-kaist/Ground-Segmentation-Benchmark
+
 #ifndef COMMON_H
 #define COMMON_H
 #define PCL_NO_PRECOMPILE

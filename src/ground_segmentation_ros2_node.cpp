@@ -165,7 +165,7 @@ public:
         double dist_to_ground = this->get_parameter("dist_to_ground").as_double();
         double robot_radius = this->get_parameter("robot_radius").as_double();
 
-        injectSyntheticGroundDisk(injected_points_ptr, robot_radius, -dist_to_ground, 5, 20);
+        injectSyntheticGroundDisk(injected_points_ptr, robot_radius, dist_to_ground, 5, 20);
     }
 
 private:
@@ -310,8 +310,8 @@ private:
         double robot_radius = this->get_parameter("robot_radius").as_double();
         double dist_to_ground = this->get_parameter("dist_to_ground").as_double();
 
-        Eigen::Vector4f min_radius{-robot_radius,-robot_radius,-dist_to_ground, 1};
-        Eigen::Vector4f max_radius{robot_radius,robot_radius,-dist_to_ground+1,1};
+        Eigen::Vector4f min_radius{-robot_radius,-robot_radius, dist_to_ground, 1};
+        Eigen::Vector4f max_radius{robot_radius,robot_radius, dist_to_ground+1,1};
 
         final_ground_points = processor.filterCloud(post_ground_points, downsample,
                                                     downsample_resolution, min_radius, max_radius, true);

@@ -10,7 +10,7 @@ ground_segmentation:
     minZ: -100.0
     downsample: false
     downsample_resolution: 0.1
-    dist_to_ground: 1.723
+    dist_to_ground: -1.73
     robot_radius: 2.7
 
     ##ground detection

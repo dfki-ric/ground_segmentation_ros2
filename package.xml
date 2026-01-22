@@ -3,8 +3,8 @@
 <package format="3">
   <name>ground_segmentation_ros2</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="image@builder.me">dockeruser</maintainer>
+  <description>ROS2 wrapper for the ground_segmentation library</description>
+  <maintainer email="haider_lodhi@hotmail.com">haider8645</maintainer>
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
@@ -18,7 +18,6 @@
   <depend>tf2_geometry_msgs</depend>
   <depend>tf2_ros</depend>
   <depend>ground_segmentation</depend>
-  <depend>rviz_common</depend>
   <depend>message_filters</depend>
 
   <build_depend>libpcl-all-dev</build_depend>

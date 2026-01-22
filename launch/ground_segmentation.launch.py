@@ -2,7 +2,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 from launch_ros.substitutions import FindPackageShare
-from launch_ros.actions import Node, SetParameter
+from launch_ros.actions import Node
 
 def launch_setup(context, *args, **kwargs):
 
