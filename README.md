@@ -1,6 +1,6 @@
 # Ground Segmentation ROS 2 Node (GSeg3D)
 
-This file implements a **ROS 2 node** that wraps the GSeg3D ground segmentation algorithm and exposes it as a real-time perception component for robotic systems.
+This file implements a **ROS 2 node** that wraps the [GSeg3D ground segmentation](https://git.hb.dfki.de/dfki-perception/ground_segmentation) algorithm and exposes it as a real-time perception component for robotic systems.
 
 The node subscribes to LiDAR point clouds (optionally synchronized with IMU data), performs **two-phase grid-based ground segmentation**, and publishes ground and obstacle point clouds for downstream navigation and perception modules.
 
