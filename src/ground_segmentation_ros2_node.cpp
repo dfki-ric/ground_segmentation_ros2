@@ -187,8 +187,6 @@ private:
         pre_processor->setDistToGround(z_ground_base);
         post_processor->setDistToGround(z_ground_base);
 
-        std::cout << z_ground_base << std::endl;
-
         //Idea: We could also align the whole pointcloud with gravity.
         typename pcl::PointCloud<PointType>::Ptr input_cloud_ptr;
 
