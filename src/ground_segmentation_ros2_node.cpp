@@ -58,49 +58,6 @@ void checkSubscriptionConnection(
     }
 }
 
-void injectSyntheticGroundDisk(pcl::PointCloud<PointType>::Ptr& cloud,
-                               float max_radius,
-                               float z,
-                               int rings,
-                               int points_per_ring) {
-    for (int r = 1; r <= rings; ++r) {
-        float radius = max_radius * r / rings;
-        int num_points = points_per_ring * r; // more points on outer rings
-        for (int i = 0; i < num_points; ++i) {
-            float angle = 2.0f * M_PI * i / num_points;
-            float x = radius * std::cos(angle);
-            float y = radius * std::sin(angle);
-
-            PointType pt;
-            pt.x = x;
-            pt.y = y;
-            pt.z = z;
-#ifdef USE_POINTXYZILID
-            pt.intensity = 0.0f;
-            pt.label = 1;  // optional: label as ground
-            pt.id = 9999;  // optional: ID for synthetic point
-#endif
-            cloud->points.push_back(pt);
-        }
-    }
-
-    // Optionally add a center point
-    PointType center;
-    center.x = 0.0f;
-    center.y = 0.0f;
-    center.z = z;
-#ifdef USE_POINTXYZILID
-    center.intensity = 0.0f;
-    center.label = 1;
-    center.id = 9999;
-#endif
-    cloud->points.push_back(center);
-
-    cloud->width = cloud->points.size();
-    cloud->height = 1;
-    cloud->is_dense = false;
-}
-
 class GroundSegmentatioNode : public rclcpp::Node {
 public:
     GroundSegmentatioNode(rclcpp::NodeOptions options) : Node("ground_segmentation",options) {
@@ -141,7 +98,6 @@ public:
         pre_processor_config.cellSizeZ = this->get_parameter("cellSizeZ").as_double();
         pre_processor_config.slopeThresholdDegrees = this->get_parameter("slopeThresholdDegrees").as_double();
         pre_processor_config.groundInlierThreshold = this->get_parameter("groundInlierThreshold").as_double();
-        pre_processor_config.distToGround = this->get_parameter("dist_to_ground").as_double();
         pre_processor_config.centroidSearchRadius = this->get_parameter("centroidSearchRadius").as_double();
         
 
@@ -160,12 +116,6 @@ public:
         recall = 0.0;
         final_non_ground_points = std::make_shared<pcl::PointCloud<PointType>>(); 
         final_ground_points = std::make_shared<pcl::PointCloud<PointType>>(); 
-        injected_points_ptr = std::make_shared<pcl::PointCloud<PointType>>(); 
-
-        double dist_to_ground = this->get_parameter("dist_to_ground").as_double();
-        double robot_radius = this->get_parameter("robot_radius").as_double();
-
-        injectSyntheticGroundDisk(injected_points_ptr, robot_radius, dist_to_ground, 5, 20);
     }
 
 private:
@@ -201,7 +151,36 @@ private:
 
     typename pcl::PointCloud<PointType>::Ptr final_non_ground_points;
     typename pcl::PointCloud<PointType>::Ptr final_ground_points;
-    typename pcl::PointCloud<PointType>::Ptr injected_points_ptr;
+
+    double computeGroundZInBase(
+        const rclcpp::Time& stamp,
+        const std::string& base_frame,
+        const std::string& velo_frame,
+        double lidar_to_ground)
+    {
+        // Transform: base <- velo
+        geometry_msgs::msg::TransformStamped tf =
+            buffer->lookupTransform(
+                base_frame,
+                velo_frame,
+                stamp,
+                tf2::durationFromSec(0.1));
+
+        Eigen::Isometry3d T =
+            tf2::transformToEigen(tf.transform);
+
+        // Ground point expressed in velodyne frame
+        // IMPORTANT:
+        //  - lidar_to_ground is SIGNED
+        //  - Use +Z or -Z depending on your sensor convention
+        Eigen::Vector3d p_velo(0.0, 0.0, lidar_to_ground);
+
+        // Transform into base frame
+        Eigen::Vector3d p_base = T * p_velo;
+
+        // Ground height in base_link
+        return p_base.z();
+    }
 
     void callback(const sensor_msgs::msg::PointCloud2::SharedPtr pointcloud_msg){
         segmentation(pointcloud_msg);
@@ -234,18 +213,32 @@ private:
         bool downsample = this->get_parameter("downsample").as_bool();
         double downsample_resolution = this->get_parameter("downsample_resolution").as_double();
 
-        pcl::PointCloud<PointType> combined_cloud = input_cloud; // Copy or assign input_cloud
-        combined_cloud += *injected_points_ptr;
+        double lidar_to_ground =
+            this->get_parameter("lidar_to_ground").as_double();
+
+        std::string velo_frame = pointcloud_msg->header.frame_id;
+
+        double z_ground_base =
+            computeGroundZInBase(
+                pointcloud_msg->header.stamp,
+                robot_frame,        // e.g. "arter/base_link"
+                velo_frame,         // e.g. "arter/velodyne"
+                lidar_to_ground);
+
+        pre_processor->setDistToGround(z_ground_base);
+        post_processor->setDistToGround(z_ground_base);
+
+        std::cout << z_ground_base << std::endl;
 
         //Idea: We could also align the whole pointcloud with gravity.
         typename pcl::PointCloud<PointType>::Ptr input_cloud_ptr;
 
-        if (robot_frame != pointcloud_msg->header.frame_id){
+        if (robot_frame != velo_frame){
             try {
                 const geometry_msgs::msg::TransformStamped transformStamped = buffer->lookupTransform(
-                    robot_frame, pointcloud_msg->header.frame_id, pointcloud_msg->header.stamp,tf2::durationFromSec(0.1));
+                    robot_frame, velo_frame, pointcloud_msg->header.stamp,tf2::durationFromSec(0.1));
 		Eigen::Affine3f transformEigen = tf2::transformToEigen(transformStamped.transform).cast<float>();
-                pcl::transformPointCloud(combined_cloud, transformed_cloud, transformEigen);
+                pcl::transformPointCloud(input_cloud, transformed_cloud, transformEigen);
 
             } catch (tf2::TransformException &ex) {
                 RCLCPP_ERROR(this->get_logger(), "Pointcloud Transform exception: %s", ex.what());
@@ -254,7 +247,7 @@ private:
             input_cloud_ptr = std::make_shared<typename pcl::PointCloud<PointType>>(transformed_cloud);
         }
         else{
-            input_cloud_ptr = std::make_shared<typename pcl::PointCloud<PointType>>(combined_cloud);
+            input_cloud_ptr = std::make_shared<typename pcl::PointCloud<PointType>>(input_cloud);
         }
 
         tf2::Quaternion robot_in_gravity(0,0,0,1);
@@ -308,10 +301,18 @@ private:
         typename pcl::PointCloud<PointType>::Ptr post_non_ground_points  = post_result.second;
 
         double robot_radius = this->get_parameter("robot_radius").as_double();
-        double dist_to_ground = this->get_parameter("dist_to_ground").as_double();
 
-        Eigen::Vector4f min_radius{-robot_radius,-robot_radius, dist_to_ground, 1};
-        Eigen::Vector4f max_radius{robot_radius,robot_radius, dist_to_ground+1,1};
+        Eigen::Vector4f min_radius(
+            -robot_radius,
+            -robot_radius,
+            static_cast<float>(z_ground_base),
+            1.0f);
+
+        Eigen::Vector4f max_radius(
+            robot_radius,
+            robot_radius,
+            static_cast<float>(z_ground_base + 1.0),
+            1.0f);
 
         final_ground_points = processor.filterCloud(post_ground_points, downsample,
                                                     downsample_resolution, min_radius, max_radius, true);
