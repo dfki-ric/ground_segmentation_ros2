@@ -1,7 +1,7 @@
 ground_segmentation:
   ros__parameters:
     # pre/post processing
-    robot_frame: "arter/velodyne_link"
+    robot_frame: "base_link"
     maxX:  100.0
     minX: -100.0
     maxY:  100.0
