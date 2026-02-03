@@ -65,6 +65,7 @@ IMU synchronization is enabled via the parameter `use_imu_orientation`.
 | `robot_frame` | Target frame for segmentation |
 | `use_imu_orientation` | Enable IMU-based gravity alignment |
 | `cellSizeX`, `cellSizeY`, `cellSizeZ` | Grid resolution (Phase I) |
+| `cellSizeZPhase2`| Grid resolution in z (Phase II) |
 | `slopeThresholdDegrees` | Max slope for ground |
 | `groundInlierThreshold` | Plane fitting inlier threshold |
 | `centroidSearchRadius` | KD-tree expansion radius |
