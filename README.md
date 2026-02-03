@@ -69,6 +69,7 @@ IMU synchronization is enabled via the parameter `use_imu_orientation`.
 | `groundInlierThreshold` | Plane fitting inlier threshold |
 | `centroidSearchRadius` | KD-tree expansion radius |
 | `lidar_to_ground` | Lidar to ground distance |
+| `transform_tolerance` | Tolerance for fetching transforms from TF |
 | `show_benchmark` | Enable precision/recall evaluation |
 
 ### Build Instructions

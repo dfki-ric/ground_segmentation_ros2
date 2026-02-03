@@ -79,6 +79,7 @@ public:
    
         robot_frame = this->get_parameter("robot_frame").as_string();
         lidar_to_ground = this->get_parameter("lidar_to_ground").as_double();
+        transform_tolerance = this->get_parameter("transform_tolerance").as_double();
 
         pre_processor_config.cellSizeX = this->get_parameter("cellSizeX").as_double();
         pre_processor_config.cellSizeY = this->get_parameter("cellSizeY").as_double();
@@ -105,7 +106,7 @@ public:
 private:
 
     std::string robot_frame;
-    double lidar_to_ground;
+    double lidar_to_ground,transform_tolerance;
     bool show_benchmark;
     std::vector<double> runtime;
 
@@ -163,7 +164,7 @@ private:
         // Transform: base <- velo
         geometry_msgs::msg::TransformStamped tf;
         try {
-            tf =  buffer->lookupTransform(robot_frame, velo_frame, pointcloud_msg->header.stamp, tf2::durationFromSec(0.1));
+            tf =  buffer->lookupTransform(robot_frame, velo_frame, pointcloud_msg->header.stamp, tf2::durationFromSec(transform_tolerance));
         } catch (tf2::TransformException &ex) {
             RCLCPP_ERROR(this->get_logger(), "Pointcloud Transform exception: %s", ex.what());
             return;
@@ -210,7 +211,7 @@ private:
                 try
                 {
                     geometry_msgs::msg::TransformStamped robot_in_imu_transform = buffer->lookupTransform(
-                        imu_msg->header.frame_id, robot_frame, imu_msg->header.stamp,tf2::durationFromSec(0.1));
+                        imu_msg->header.frame_id, robot_frame, imu_msg->header.stamp,tf2::durationFromSec(transform_tolerance));
                     robot_in_imu.setX(robot_in_imu_transform.transform.rotation.x);
                     robot_in_imu.setY(robot_in_imu_transform.transform.rotation.y);
                     robot_in_imu.setZ(robot_in_imu_transform.transform.rotation.z);

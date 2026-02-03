@@ -11,6 +11,7 @@ ground_segmentation:
     downsample: false
     downsample_resolution: 0.1
     lidar_to_ground: -1.73
+    transform_tolerance: 0.1
 
     ##ground detection
     cellSizeX: 1.5
