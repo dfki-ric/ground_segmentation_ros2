@@ -1,7 +1,7 @@
 ground_segmentation:
   ros__parameters:
     # pre/post processing
-    robot_frame: "base_link"
+    robot_frame: "arter/velodyne_link"
     maxX:  100.0
     minX: -100.0
     maxY:  100.0
@@ -11,7 +11,6 @@ ground_segmentation:
     downsample: false
     downsample_resolution: 0.1
     lidar_to_ground: -1.73
-    robot_radius: 2.7
 
     ##ground detection
     cellSizeX: 1.5

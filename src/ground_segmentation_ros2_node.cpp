@@ -4,8 +4,6 @@
 #include <ground_detection.hpp>
 #include <pointcloud_processor.hpp>
 
-#include "common.hpp"
-
 #include "pcl/point_types.h"
 #include "pcl_conversions/pcl_conversions.h"
 #include <pcl/filters/extract_indices.h>
@@ -32,14 +30,7 @@
 #include <type_traits>
 
 using namespace ground_segmentation;
-
-#define USE_POINTXYZILID  // or USE_POINTXYZILID
-
-#ifdef USE_POINTXYZ
-    using PointType = pcl::PointXYZ;
-#elif defined(USE_POINTXYZILID)
-    using PointType = PointXYZILID;
-#endif
+using PointType = pcl::PointXYZ;
 
 void checkSubscriptionConnection(
     const rclcpp::SubscriptionBase::SharedPtr& subscription,
@@ -85,13 +76,9 @@ public:
         }
 
         show_benchmark = this->get_parameter("show_benchmark").as_bool();
-        if(show_benchmark){
-            pub_tp = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/TP", 10);
-            pub_fn = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/FN", 10);
-            pub_fp = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/FP", 10);
-        }
    
         robot_frame = this->get_parameter("robot_frame").as_string();
+        lidar_to_ground = this->get_parameter("lidar_to_ground").as_double();
 
         pre_processor_config.cellSizeX = this->get_parameter("cellSizeX").as_double();
         pre_processor_config.cellSizeY = this->get_parameter("cellSizeY").as_double();
@@ -99,7 +86,6 @@ public:
         pre_processor_config.slopeThresholdDegrees = this->get_parameter("slopeThresholdDegrees").as_double();
         pre_processor_config.groundInlierThreshold = this->get_parameter("groundInlierThreshold").as_double();
         pre_processor_config.centroidSearchRadius = this->get_parameter("centroidSearchRadius").as_double();
-        
 
         post_processor_config = pre_processor_config;
         post_processor_config.cellSizeZ = 0.2;
@@ -112,8 +98,6 @@ public:
         buffer = std::make_unique<tf2_ros::Buffer>(this->get_clock());
         tf_listener = std::make_shared<tf2_ros::TransformListener>(*buffer);
 
-        precision = 0.0;
-        recall = 0.0;
         final_non_ground_points = std::make_shared<pcl::PointCloud<PointType>>(); 
         final_ground_points = std::make_shared<pcl::PointCloud<PointType>>(); 
     }
@@ -121,10 +105,9 @@ public:
 private:
 
     std::string robot_frame;
-
+    double lidar_to_ground;
     bool show_benchmark;
-    double precision, recall;
-    std::vector<double> runtime, recall_arr, prec_arr, recall_o_arr, prec_o_arr;
+    std::vector<double> runtime;
 
     std::shared_ptr<tf2_ros::Buffer> buffer;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener;
@@ -134,10 +117,7 @@ private:
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr 
         publisher_raw_points, 
         publisher_ground_points, 
-        publisher_obstacle_points, 
-        pub_tp, 
-        pub_fn, 
-        pub_fp;
+        publisher_obstacle_points;
 
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscriber_pointcloud;
 
@@ -152,36 +132,6 @@ private:
     typename pcl::PointCloud<PointType>::Ptr final_non_ground_points;
     typename pcl::PointCloud<PointType>::Ptr final_ground_points;
 
-    double computeGroundZInBase(
-        const rclcpp::Time& stamp,
-        const std::string& base_frame,
-        const std::string& velo_frame,
-        double lidar_to_ground)
-    {
-        // Transform: base <- velo
-        geometry_msgs::msg::TransformStamped tf =
-            buffer->lookupTransform(
-                base_frame,
-                velo_frame,
-                stamp,
-                tf2::durationFromSec(0.1));
-
-        Eigen::Isometry3d T =
-            tf2::transformToEigen(tf.transform);
-
-        // Ground point expressed in velodyne frame
-        // IMPORTANT:
-        //  - lidar_to_ground is SIGNED
-        //  - Use +Z or -Z depending on your sensor convention
-        Eigen::Vector3d p_velo(0.0, 0.0, lidar_to_ground);
-
-        // Transform into base frame
-        Eigen::Vector3d p_base = T * p_velo;
-
-        // Ground height in base_link
-        return p_base.z();
-    }
-
     void callback(const sensor_msgs::msg::PointCloud2::SharedPtr pointcloud_msg){
         segmentation(pointcloud_msg);
     }
@@ -194,10 +144,6 @@ private:
         sensor_msgs::msg::PointCloud2::SharedPtr raw_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr ground_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
         sensor_msgs::msg::PointCloud2::SharedPtr obstacle_points = std::make_shared<sensor_msgs::msg::PointCloud2>();
-
-        sensor_msgs::msg::PointCloud2::SharedPtr msg_TP = std::make_shared<sensor_msgs::msg::PointCloud2>();
-        sensor_msgs::msg::PointCloud2::SharedPtr msg_FP = std::make_shared<sensor_msgs::msg::PointCloud2>();
-        sensor_msgs::msg::PointCloud2::SharedPtr msg_FN = std::make_shared<sensor_msgs::msg::PointCloud2>();
 
         // Convert the ROS 2 PointCloud2 message to a PCL PointCloud
         typename pcl::PointCloud<PointType> input_cloud;
@@ -213,17 +159,29 @@ private:
         bool downsample = this->get_parameter("downsample").as_bool();
         double downsample_resolution = this->get_parameter("downsample_resolution").as_double();
 
-        double lidar_to_ground =
-            this->get_parameter("lidar_to_ground").as_double();
-
         std::string velo_frame = pointcloud_msg->header.frame_id;
+        // Transform: base <- velo
+        geometry_msgs::msg::TransformStamped tf;
+        try {
+            tf =  buffer->lookupTransform(robot_frame, velo_frame, pointcloud_msg->header.stamp, tf2::durationFromSec(0.1));
+        } catch (tf2::TransformException &ex) {
+            RCLCPP_ERROR(this->get_logger(), "Pointcloud Transform exception: %s", ex.what());
+            return;
+        }        
 
-        double z_ground_base =
-            computeGroundZInBase(
-                pointcloud_msg->header.stamp,
-                robot_frame,        // e.g. "arter/base_link"
-                velo_frame,         // e.g. "arter/velodyne"
-                lidar_to_ground);
+        Eigen::Isometry3d T = tf2::transformToEigen(tf.transform);
+
+        // Ground point expressed in velodyne frame
+        // IMPORTANT:
+        //  - lidar_to_ground is SIGNED
+        //  - Use +Z or -Z depending on your sensor convention
+        Eigen::Vector3d p_velo(0.0, 0.0, lidar_to_ground);
+
+        // Transform into base frame
+        Eigen::Vector3d p_base = T * p_velo;
+
+        // Ground height in base_link
+        double z_ground_base = p_base.z();
 
         pre_processor->setDistToGround(z_ground_base);
         post_processor->setDistToGround(z_ground_base);
@@ -234,16 +192,8 @@ private:
         typename pcl::PointCloud<PointType>::Ptr input_cloud_ptr;
 
         if (robot_frame != velo_frame){
-            try {
-                const geometry_msgs::msg::TransformStamped transformStamped = buffer->lookupTransform(
-                    robot_frame, velo_frame, pointcloud_msg->header.stamp,tf2::durationFromSec(0.1));
-		Eigen::Affine3f transformEigen = tf2::transformToEigen(transformStamped.transform).cast<float>();
-                pcl::transformPointCloud(input_cloud, transformed_cloud, transformEigen);
-
-            } catch (tf2::TransformException &ex) {
-                RCLCPP_ERROR(this->get_logger(), "Pointcloud Transform exception: %s", ex.what());
-                return;
-            }        
+            Eigen::Affine3f transformEigen = tf2::transformToEigen(tf.transform).cast<float>();
+            pcl::transformPointCloud(input_cloud, transformed_cloud, transformEigen);
             input_cloud_ptr = std::make_shared<typename pcl::PointCloud<PointType>>(transformed_cloud);
         }
         else{
@@ -300,28 +250,8 @@ private:
         typename pcl::PointCloud<PointType>::Ptr post_ground_points = post_result.first;
         typename pcl::PointCloud<PointType>::Ptr post_non_ground_points  = post_result.second;
 
-        double robot_radius = this->get_parameter("robot_radius").as_double();
-
-        Eigen::Vector4f min_radius(
-            -robot_radius,
-            -robot_radius,
-            static_cast<float>(z_ground_base),
-            1.0f);
-
-        Eigen::Vector4f max_radius(
-            robot_radius,
-            robot_radius,
-            static_cast<float>(z_ground_base + 1.0),
-            1.0f);
-
-        final_ground_points = processor.filterCloud(post_ground_points, downsample,
-                                                    downsample_resolution, min_radius, max_radius, true);
-
+        final_ground_points = post_ground_points;
         *final_non_ground_points = *pre_non_ground_points + *post_non_ground_points;
-
-        final_non_ground_points = processor.filterCloud(final_non_ground_points, downsample,
-                                                    downsample_resolution, min_radius, max_radius, true);
-        
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
         if (show_benchmark) {
@@ -329,57 +259,7 @@ private:
             double rt = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() * 0.001;
             runtime.push_back(rt);
             double rt_mean = std::accumulate(runtime.begin(), runtime.end(), 0.0) / runtime.size();
-            std::cout << "Avg Time difference = " << rt_mean << "[ms]" << ", " << cal_stdev(runtime) << std::endl;
-
-#ifdef USE_POINTXYZILID
-            // Estimation
-            double precision = 0.0, recall = 0.0;
-            static std::vector<int> TPFNs; // TP, FP, FN, TF order
-
-            calculate_precision_recall(*filtered_cloud_ptr, *final_ground_points, precision, recall, TPFNs);
-
-            //calculate_precision_recall_non_ground(*filtered_cloud_ptr, *final_non_ground_points, precision, recall, TPFNs);
-
-            if (precision >= 0 && recall >= 0) { // extra safety check
-                prec_arr.push_back(precision);
-                recall_arr.push_back(recall);
-
-                double recall_mean = std::accumulate(recall_arr.begin(), recall_arr.end(), 0.0) / recall_arr.size();
-                double prec_mean = std::accumulate(prec_arr.begin(), prec_arr.end(), 0.0) / prec_arr.size();
-
-                double f1_score = 0.0;
-                if ((prec_mean + recall_mean) > 0)
-                    f1_score = 2 * (prec_mean * recall_mean) / (prec_mean + recall_mean);
-
-                std::cout << "\033[1;32m Avg P: " << prec_mean << ", " << cal_stdev(prec_arr)
-                        << " | Avg R: " << recall_mean << ", " << cal_stdev(recall_arr)
-                        << " | Avg F1: " << f1_score << "\033[0m" << std::endl;
-            } else {
-                std::cout << "Warning: Invalid precision/recall values detected, skipping this entry.\n";
-            }
-
-            // Publish msg
-            pcl::PointCloud<PointType> TP, FP, FN, TN;
-
-            discern_ground(*final_ground_points, TP, FP);
-            discern_ground(*final_non_ground_points, FN, TN);
-
-            pcl::toROSMsg(TP, *msg_TP);
-            pcl::toROSMsg(FP, *msg_FP);
-            pcl::toROSMsg(FN, *msg_FN);
-
-            msg_TP->header.frame_id = robot_frame;
-            msg_TP->header.stamp = this->now();
-
-            msg_FP->header.frame_id = robot_frame;
-            msg_FP->header.stamp = this->now();
-            msg_FN->header.frame_id = robot_frame;
-            msg_FN->header.stamp = this->now();
-
-            pub_tp->publish(*msg_TP);
-            pub_fp->publish(*msg_FP);
-            pub_fn->publish(*msg_FN);
-#endif
+            std::cout << "Avg Time difference = " << rt_mean << "[ms]" << std::endl;
         }
 
         final_non_ground_points->width = final_non_ground_points->points.size();

@@ -31,7 +31,6 @@ set(dependencies
 add_executable(ground_segmentation_ros2_node src/ground_segmentation_ros2_node.cpp)
 target_include_directories(ground_segmentation_ros2_node PUBLIC
   ${pcl_conversions_INCLUDE_DIRS}
-  ${CMAKE_SOURCE_DIR}/include
 )
 
 ament_target_dependencies(ground_segmentation_ros2_node

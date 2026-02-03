@@ -14,7 +14,6 @@ The node:
   - Ground points
   - Obstacle (non-ground) points
   - Raw filtered input cloud
-- Optionally publishes **benchmark topics** (TP / FP / FN)
 
 ## Subscribed Topics
 
@@ -32,9 +31,6 @@ IMU synchronization is enabled via the parameter `use_imu_orientation`.
 | `/ground_segmentation/ground_points` | `sensor_msgs/PointCloud2` | Segmented ground points |
 | `/ground_segmentation/obstacle_points` | `sensor_msgs/PointCloud2` | Segmented non-ground points |
 | `/ground_segmentation/raw_points` | `sensor_msgs/PointCloud2` | Filtered input cloud |
-| `/ground_segmentation/TP` | `sensor_msgs/PointCloud2` | True positives (benchmark mode) |
-| `/ground_segmentation/FP` | `sensor_msgs/PointCloud2` | False positives (benchmark mode) |
-| `/ground_segmentation/FN` | `sensor_msgs/PointCloud2` | False negatives (benchmark mode) |
 
 ## Processing Pipeline
 
@@ -43,7 +39,7 @@ IMU synchronization is enabled via the parameter `use_imu_orientation`.
    - Optional voxel downsampling
 
 2. **Synthetic Ground Injection**
-   - Injects a circular ground seed beneath the robot
+   - Injects a ground seed beneath the robot
    - Ensures reliable ground region initialization
 
 3. **Frame Alignment**
@@ -72,23 +68,8 @@ IMU synchronization is enabled via the parameter `use_imu_orientation`.
 | `slopeThresholdDegrees` | Max slope for ground |
 | `groundInlierThreshold` | Plane fitting inlier threshold |
 | `centroidSearchRadius` | KD-tree expansion radius |
-| `dist_to_ground` | Robot base to ground distance |
-| `robot_radius` | Robot footprint radius |
+| `lidar_to_ground` | Lidar to ground distance |
 | `show_benchmark` | Enable precision/recall evaluation |
-
-## Point Types
-
-Compile-time selection via macros:
-
-```cpp
-#define USE_POINTXYZILID
-// or
-#define USE_POINTXYZ
-```
-
-- `PointXYZILID` enables semantic labels and benchmarking
-- `PointXYZ` for lightweight operation
-
 
 ### Build Instructions
 
@@ -98,32 +79,20 @@ colcon build --packages-up-to ground_segmentation_ros2 --cmake-args -DCMAKE_BUIL
 
 ## Benchmarking Mode
 
-When `show_benchmark=true` and using `PointXYZILID`:
-- Precision, recall, and F1-score are computed online
-- TP / FP / FN clouds are published
-- Runtime statistics are printed to console
+When `show_benchmark=true`:
 
-This mode is intended for **evaluation and dataset experiments**, not deployment.
+- Runtime statistics are printed to console
 
 ## Intended Use
 
 - Real-time ground segmentation for mobile robots
 - Safety-critical navigation and obstacle detection
 - Traversability analysis
-- Research and benchmarking (SemanticKITTI-compatible)
+- Research 
 
 ## Notes
 
 - Requires a valid TF tree between sensor, IMU, and robot frames
-- Synthetic ground points are removed before final output
 - Designed for CPU real-time execution
-
-## Benchmarking
-
-For quantitative evaluation, we use the benchmarking infrastructure provided by
-the **Ground Segmentation Benchmark (KAIST)**, including the `common.h`.
-
-Benchmark repository:  
-https://github.com/url-kaist/Ground-Segmentation-Benchmark
 
 © DFKI Robotics Innovation Center
