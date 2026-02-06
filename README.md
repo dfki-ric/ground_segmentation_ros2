@@ -73,11 +73,63 @@ IMU synchronization is enabled via the parameter `use_imu_orientation`.
 | `transform_tolerance` | Tolerance for fetching transforms from TF |
 | `show_benchmark` | Enable precision/recall evaluation |
 
+## Usage Instructions
+
+### System Requirements
+
+OS: Ubuntu 22.04, Ubuntu 24.04
+
+ROS2: Humble, Jazzy
+
 ### Build Instructions
 
 ```bash
 colcon build --packages-up-to ground_segmentation_ros2 --cmake-args -DCMAKE_BUILD_TYPE=RELEASE
 ```
+
+### Running the ROS 2 Node
+
+After building the package, launch the ground segmentation node using the provided ROS 2 launch file.
+
+```bash
+ros2 launch ground_segmentation_ros2 ground_segmentation.launch.py \
+  pointcloud_topic:=<POINTCLOUD_TOPIC> \
+  imu_topic:=<IMU_TOPIC> \
+  sim:=<true/false>
+```
+
+Replace `<POINTCLOUD_TOPIC>` and `<IMU_TOPIC>` with the topics published by your LiDAR and IMU drivers. 
+
+`sim` (boolean)
+Controls whether simulation time is used.
+
+Behavior:
+- `true` → uses `/clock` (simulation or bag playback)
+- `false` → uses system wall-clock time
+
+Example:
+```bash
+sim:=true
+```
+
+### Node Configuration
+
+- Parameters are loaded from:
+  ```
+  ground_segmentation_ros2/config/parameters.yaml
+  ```
+- Topic remapping is handled at launch time, allowing the node to remain independent of sensor-specific topic names.
+
+### Runtime Note: `libjawt.so`
+
+On some systems, the node may fail to start with:
+
+```
+error while loading shared libraries: libjawt.so: cannot open shared object file
+```
+
+### Cause
+The visualization stack (PCL → VTK) may depend on Java AWT when VTK is built with Java support. Install JDK 17 using `sudo apt-get install openjdk-17-jre`.
 
 ## Benchmarking Mode
 
