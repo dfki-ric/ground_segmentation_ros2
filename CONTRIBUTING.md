@@ -8,13 +8,13 @@ what you are trying to do.
 ## Pull Requests
 
 The preferred way to contribute to ground_segmentation_ros2 is to fork the
-[master repository](https://git.hb.dfki.de/dfki-perception/ground_segmentation_ros2.git) on GitHub, then submit a "pull request"
+[master repository](https://github.com/dfki-ric/ground_segmentation_ros2.git) on GitHub, then submit a "pull request"
 (PR):
 
 1. [Create an account](https://github.com/signup/free) on
    GitHub if you do not already have one.
 
-2. Fork the [project repository](https://git.hb.dfki.de/dfki-perception/ground_segmentation_ros2.git):
+2. Fork the [project repository](https://github.com/dfki-ric/ground_segmentation_ros2.git):
    click on the 'Fork' button near the top of the page. This creates a copy of
    the code under your account on the GitHub server.
 
