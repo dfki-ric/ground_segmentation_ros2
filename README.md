@@ -64,13 +64,13 @@ IMU synchronization is enabled via the parameter `use_imu_orientation`.
 |---------|-------------|
 | `robot_frame` | Target frame for segmentation |
 | `use_imu_orientation` | Enable IMU-based gravity alignment |
-| `cellSizeX`, `cellSizeY`, `cellSizeZ` | Grid resolution (Phase I) |
-| `cellSizeZPhase2`| Grid resolution in z (Phase II) |
-| `slopeThresholdDegrees` | Max slope for ground |
-| `groundInlierThreshold` | Plane fitting inlier threshold |
-| `centroidSearchRadius` | KD-tree expansion radius |
-| `lidar_to_ground` | Lidar to ground distance |
-| `transform_tolerance` | Tolerance for fetching transforms from TF |
+| `cellSizeX`, `cellSizeY`, `cellSizeZ` | Grid resolution (Phase I) (m)|
+| `cellSizeZPhase2`| Grid resolution in z (Phase II) (m)|
+| `slopeThresholdDegrees` | Max slope for ground (degrees)|
+| `groundInlierThreshold` | Plane fitting inlier threshold (m) |
+| `centroidSearchRadius` | KD-tree expansion radius (m) |
+| `lidar_to_ground` | Lidar to ground distance (m) |
+| `transform_tolerance` | Tolerance for fetching transforms from TF (sec) |
 | `show_benchmark` | Enable precision/recall evaluation |
 
 ## Usage Instructions
