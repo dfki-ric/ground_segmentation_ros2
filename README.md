@@ -19,8 +19,8 @@ The node:
 
 | Topic | Type | Description |
 |------|------|-------------|
-| `/ground_segmentation/input_pointcloud` | `sensor_msgs/PointCloud2` | Input LiDAR point cloud |
-| `/ground_segmentation/input_imu` | `sensor_msgs/Imu` | IMU orientation (optional) |
+| `/ground_segmentation/input_pointcloud` | `sensor_msgs/msg/PointCloud2` | Input LiDAR point cloud |
+| `/ground_segmentation/input_imu` | `sensor_msgs/msg/Imu` | IMU orientation (optional) |
 
 IMU synchronization is enabled via the parameter `use_imu_orientation`.
 
@@ -28,9 +28,9 @@ IMU synchronization is enabled via the parameter `use_imu_orientation`.
 
 | Topic | Type | Description |
 |------|------|-------------|
-| `/ground_segmentation/ground_points` | `sensor_msgs/PointCloud2` | Segmented ground points |
-| `/ground_segmentation/obstacle_points` | `sensor_msgs/PointCloud2` | Segmented non-ground points |
-| `/ground_segmentation/raw_points` | `sensor_msgs/PointCloud2` | Filtered input cloud |
+| `/ground_segmentation/ground_points` | `sensor_msgs/msg/PointCloud2` | Segmented ground points |
+| `/ground_segmentation/obstacle_points` | `sensor_msgs/msg/PointCloud2` | Segmented non-ground points |
+| `/ground_segmentation/raw_points` | `sensor_msgs/msg/PointCloud2` | Filtered input cloud |
 
 ## Processing Pipeline
 
