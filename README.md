@@ -149,4 +149,14 @@ When `show_benchmark=true`:
 - Requires a valid TF tree between sensor, IMU, and robot frames
 - Designed for CPU real-time execution
 
+## License
+
+BSD-3 Clause License.
+
+## Citation
+
+If you use this work, please cite:
+
+Muhammad Haider Khan Lodhi and Christoph Hertzberg, "GSeg3D: A High-Precision Grid-Based Algorithm for Safety-Critical Ground Segmentation in LiDAR Point Clouds" in *2025 7th International Conference on Robotics and Computer Vision (ICRCV)*, pp. 119-126, 2025. doi: [10.1109/ICRCV67407.2025.11349133](https://doi.org/10.1109/ICRCV67407.2025.11349133)
+
 © DFKI Robotics Innovation Center
