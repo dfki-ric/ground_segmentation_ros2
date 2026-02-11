@@ -60,6 +60,6 @@ in advance with deprecation warnings.
 Please see the issues for planned future changes.
 
 ## Funding
-The ground_segmentation_ros2 library was initiated and is currently developed at the Robotics Innovation Center of the German Research Center for Artificial Intelligence (DFKI) in Bremen. The development was started in the scope of the Robdekon2 (50RA1406), which has been funded from the German Federal Ministry for Research, Technology, and Space.
+The ground_segmentation library and ros2 wrapper was initiated and is currently developed at the Robotics Innovation Center of the German Research Center for Artificial Intelligence (DFKI) in Bremen. The development was started in the scope of the Robdekon2 (50RA1406), which has been funded from the German Federal Ministry for Research, Technology, and Space.
 
 <img src="https://robotik.dfki-bremen.de/fileadmin/_processed_/2/7/csm_BMFTR_de_7ddd8cf85c.jpg" height="150px" />

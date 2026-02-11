@@ -1,0 +1,33 @@
+cff-version: "1.2.0"
+
+title: "GSeg3D: A High-Precision Grid-Based Algorithm for Safety-Critical Ground Segmentation in LiDAR Point Clouds"
+
+authors:
+- family-names: Lodhi
+  given-names: Muhammad Haider Khan
+- family-names: Hertzberg
+  given-names: Christoph
+
+doi: 10.1109/ICRCV67407.2025.11349133
+
+message: If you use this software, please cite the associated IEEE conference paper.
+
+preferred-citation:
+  type: conference-paper
+  title: "GSeg3D: A High-Precision Grid-Based Algorithm for Safety-Critical Ground Segmentation in LiDAR Point Clouds"
+  authors:
+  - family-names: Lodhi
+    given-names: Muhammad Haider Khan
+    orcid: "https://orcid.org/0009-0008-1199-3489"
+  - family-names: Hertzberg
+    given-names: Christoph
+    orcid: "https://orcid.org/0009-0005-6467-0286"
+  year: 2025
+  conference:
+    name: "7th International Conference on Robotics and Computer Vision (ICRCV)"
+    location: "Hong Kong, China"
+    date-start: 2025-10-24
+    date-end: 2025-10-26
+  publisher: IEEE
+  doi: 10.1109/ICRCV67407.2025.11349133
+  url: "https://ieeexplore.ieee.org/document/11349133"
