@@ -1,3 +1,29 @@
+#Tuning Tips:
+# 1) Keep groundInlierThreshold < cellSizeZPhase2
+#    Recommended: groundInlierThreshold ≈ 0.4–0.6 * cellSizeZPhase2
+#
+# 2) If small obstacles disappear → decrease groundInlierThreshold
+#
+# 3) If ground becomes fragmented on rough terrain → increase groundInlierThreshold slightly
+#
+# 4) If slopes are classified as obstacles → increase slopeThresholdDegrees
+#
+# 5) If ramps become ground too easily → decrease slopeThresholdDegrees
+#
+# 6) Large cellSizeX/Y → smoother but less detailed ground model
+#    Smaller cellSizeX/Y → higher detail but more noise
+#
+# 7) cellSizeZPhase2 controls vertical resolution:
+#    Smaller → better obstacle separation
+#    Larger → smoother ground but risk of vertical merging
+#
+# 8) If LiDAR noise is high → consider:
+#    - enabling downsample
+#    - slightly increasing groundInlierThreshold
+#
+# 9) If vehicle operates on steep terrain → consider enabling IMU
+#    use_imu_orientation: true
+
 ground_segmentation:
   ros__parameters:
     # pre/post processing
