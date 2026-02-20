@@ -1,6 +1,6 @@
 # Ground Segmentation ROS 2 Node (GSeg3D)
 
-This file implements a **ROS 2 node** that wraps the [GSeg3D ground segmentation](https://git.hb.dfki.de/dfki-perception/ground_segmentation) algorithm and exposes it as a real-time perception component for robotic systems.
+This file implements a **ROS 2 node** that wraps the [GSeg3D ground segmentation](https://github.com/dfki-ric/ground_segmentation.git) algorithm and exposes it as a real-time perception component for robotic systems.
 
 The node subscribes to LiDAR point clouds (optionally synchronized with IMU data), performs **two-phase grid-based ground segmentation**, and publishes ground and obstacle point clouds for downstream navigation and perception modules.
 
@@ -81,9 +81,27 @@ OS: Ubuntu 22.04, Ubuntu 24.04
 
 ROS2: Humble, Jazzy
 
-### Build Instructions
+### Prerequisite
+
+Before building the ROS 2 wrapper, install dependencies and clone the core **ground_segmentation** library into your ROS 2 workspace:
 
 ```bash
+sudo apt update
+sudo apt install cmake libpcl-dev libeigen3-dev libgtest-dev libnanoflann-dev openjdk-17-jre
+```
+
+```bash
+cd ~/ros2_ws/src
+git clone https://github.com/dfki-ric/ground_segmentation.git
+```
+
+### Build Instructions
+
+Clone the wrapper into your ROS 2 workspace `src` folder and build it:
+
+```bash
+cd ~/ros2_ws/src
+git clone https://github.com/dfki-ric/ground_segmentation_ros2.git
 colcon build --packages-up-to ground_segmentation_ros2 --cmake-args -DCMAKE_BUILD_TYPE=RELEASE
 ```
 
