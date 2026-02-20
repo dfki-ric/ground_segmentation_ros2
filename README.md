@@ -102,7 +102,7 @@ Clone the wrapper into your ROS 2 workspace `src` folder and build it:
 ```bash
 cd ~/ros2_ws/src
 git clone git@github.com:dfki-ric/ground_segmentation_ros2.git
-cd ~/ros2_ws && source /opt/ros/YOUR_ROS_TYPE/setup.bash
+cd ~/ros2_ws && source /opt/ros/YOUR_ROS_DISTRO/setup.bash
 colcon build --packages-up-to ground_segmentation_ros2 --cmake-args -DCMAKE_BUILD_TYPE=RELEASE
 source install/setup.bash
 ```
@@ -113,7 +113,7 @@ After building the package, launch the ground segmentation node using the provid
 
 Note: 
 1) Launch argument `imu_topic` is optional and is used only when parameter `use_imu_orientation` is true.
-2) If launch file creahes due to a jwt or jvm error then apply fix mentioned [here](https://github.com/dfki-ric/ground_segmentation_ros2#runtime-note-libjawtso)
+2) If launch file crashes due to a jwt or jvm error then apply fix mentioned [here](https://github.com/dfki-ric/ground_segmentation_ros2#runtime-note-libjawtso)
 ```bash
 ros2 launch ground_segmentation_ros2 ground_segmentation.launch.py \
   pointcloud_topic:=<POINTCLOUD_TOPIC> \
