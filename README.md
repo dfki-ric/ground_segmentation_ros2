@@ -91,8 +91,8 @@ sudo apt install cmake libpcl-dev libeigen3-dev libgtest-dev libnanoflann-dev op
 ```
 
 ```bash
-cd ~/ros2_ws/src
-git clone https://github.com/dfki-ric/ground_segmentation.git
+mkdir -p ~/ros2_ws/src && cd ~/ros2_ws/src
+git clone git@github.com:dfki-ric/ground_segmentation.git
 ```
 
 ### Build Instructions
@@ -101,14 +101,19 @@ Clone the wrapper into your ROS 2 workspace `src` folder and build it:
 
 ```bash
 cd ~/ros2_ws/src
-git clone https://github.com/dfki-ric/ground_segmentation_ros2.git
+git clone git@github.com:dfki-ric/ground_segmentation_ros2.git
+cd ~/ros2_ws && source /opt/ros/YOUR_ROS_TYPE/setup.bash
 colcon build --packages-up-to ground_segmentation_ros2 --cmake-args -DCMAKE_BUILD_TYPE=RELEASE
+source install/setup.bash
 ```
 
 ### Running the ROS 2 Node
 
 After building the package, launch the ground segmentation node using the provided ROS 2 launch file.
 
+Note: 
+1) Launch argument `imu_topic` is optional and is used only when parameter `use_imu_orientation` is true.
+2) If launch file creahes due to a jwt or jvm error then apply fix mentioned [here](https://github.com/dfki-ric/ground_segmentation_ros2#runtime-note-libjawtso)
 ```bash
 ros2 launch ground_segmentation_ros2 ground_segmentation.launch.py \
   pointcloud_topic:=<POINTCLOUD_TOPIC> \
@@ -146,8 +151,21 @@ On some systems, the node may fail to start with:
 error while loading shared libraries: libjawt.so: cannot open shared object file
 ```
 
-### Cause
-The visualization stack (PCL → VTK) may depend on Java AWT when VTK is built with Java support. Install JDK 17 using `sudo apt-get install openjdk-17-jre`.
+#### FIX
+
+Ensure the JVM libraries are discoverable
+
+Option A (recommended for local development):
+```
+export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
+export LD_LIBRARY_PATH=$JAVA_HOME/lib:$JAVA_HOME/lib/server:$LD_LIBRARY_PATH
+```
+Option B (system-wide configuration):
+```
+echo "$JAVA_HOME/lib" | sudo tee /etc/ld.so.conf.d/java.conf
+echo "$JAVA_HOME/lib/server" | sudo tee -a /etc/ld.so.conf.d/java.conf
+sudo ldconfig
+```
 
 ## Benchmarking Mode
 
