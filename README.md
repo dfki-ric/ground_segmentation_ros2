@@ -162,6 +162,7 @@ export LD_LIBRARY_PATH=$JAVA_HOME/lib:$JAVA_HOME/lib/server:$LD_LIBRARY_PATH
 ```
 Option B (system-wide configuration):
 ```
+export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
 echo "$JAVA_HOME/lib" | sudo tee /etc/ld.so.conf.d/java.conf
 echo "$JAVA_HOME/lib/server" | sudo tee -a /etc/ld.so.conf.d/java.conf
 sudo ldconfig
