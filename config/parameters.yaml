@@ -24,6 +24,7 @@
 # 9) If vehicle operates on steep terrain → consider enabling IMU
 #    use_imu_orientation: true
 
+# Note: Config used with SemanticKITTI. Please update based on your own dataset.
 ground_segmentation:
   ros__parameters:
     # pre/post processing
@@ -36,7 +37,7 @@ ground_segmentation:
     minZ: -100.0
     downsample: false
     downsample_resolution: 0.1
-    lidar_to_ground: -1.73
+    lidar_to_ground: -1.78
     transform_tolerance: 0.1
 
     ##ground detection
@@ -45,9 +46,10 @@ ground_segmentation:
     cellSizeZ: 1.5
     cellSizeZPhase2: 0.2
     slopeThresholdDegrees: 24.0
-    groundInlierThreshold: 0.1
+    groundInlierThreshold: 0.2
     centroidSearchRadius: 5.0
     use_imu_orientation: false
+    maxGroundHeightDeviation: 0.1
 
     #debug
     show_benchmark: true

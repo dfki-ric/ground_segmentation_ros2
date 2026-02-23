@@ -87,6 +87,7 @@ public:
         pre_processor_config.slopeThresholdDegrees = this->get_parameter("slopeThresholdDegrees").as_double();
         pre_processor_config.groundInlierThreshold = this->get_parameter("groundInlierThreshold").as_double();
         pre_processor_config.centroidSearchRadius = this->get_parameter("centroidSearchRadius").as_double();
+        pre_processor_config.maxGroundHeightDeviation = this->get_parameter("maxGroundHeightDeviation").as_double();
 
         post_processor_config = pre_processor_config;
         post_processor_config.cellSizeZ = this->get_parameter("cellSizeZPhase2").as_double();
