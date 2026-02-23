@@ -41,11 +41,11 @@ ground_segmentation:
     transform_tolerance: 0.1
 
     ##ground detection
-    cellSizeX: 1.5
+    cellSizeX: 1.0
     cellSizeY: 1.0
-    cellSizeZ: 1.5
-    cellSizeZPhase2: 0.2
-    slopeThresholdDegrees: 24.0
+    cellSizeZ: 10.0
+    cellSizeZPhase2: 1.0
+    slopeThresholdDegrees: 20.0
     groundInlierThreshold: 0.2
     centroidSearchRadius: 5.0
     use_imu_orientation: false
