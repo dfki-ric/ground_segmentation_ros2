@@ -66,12 +66,14 @@ IMU synchronization is enabled via the parameter `use_imu_orientation`.
 | `use_imu_orientation` | Enable IMU-based gravity alignment |
 | `cellSizeX`, `cellSizeY`, `cellSizeZ` | Grid resolution (Phase I) (m)|
 | `cellSizeZPhase2`| Grid resolution in z (Phase II) (m)|
-| `slopeThresholdDegrees` | Max slope for ground (degrees)|
-| `groundInlierThreshold` | Plane fitting inlier threshold (m) |
+| `slopeThresholdDegrees` | Max slope for ground (degrees). Controls which planes are considered drivable.|
+| `groundInlierThreshold` | Plane fitting inlier threshold (m). Controls how far points may lie from the estimated plane. |
 | `centroidSearchRadius` | KD-tree expansion radius (m) |
 | `lidar_to_ground` | Lidar to ground distance (m) |
 | `transform_tolerance` | Tolerance for fetching transforms from TF (sec) |
 | `show_benchmark` | Enable precision/recall evaluation |
+| `maxGroundHeightDeviation` | Controls allowed centroid height difference in meters during phase 2 expansion. |
+
 
 ## Usage Instructions
 
