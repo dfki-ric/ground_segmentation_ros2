@@ -1,6 +1,5 @@
 #Tuning Tips:
 # 1) Keep groundInlierThreshold < cellSizeZPhase2
-#    Recommended: groundInlierThreshold ≈ 0.4–0.6 * cellSizeZPhase2
 #
 # 2) If small obstacles disappear → decrease groundInlierThreshold
 #
