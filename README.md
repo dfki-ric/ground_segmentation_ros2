@@ -4,6 +4,8 @@ This package implements a **ROS 2 node** that wraps the [GSeg3D ground segmentat
 
 The node subscribes to LiDAR point clouds (optionally synchronized with IMU data), performs **two-phase grid-based ground segmentation**, and publishes ground and obstacle point clouds for downstream navigation and perception modules.
 
+You can watch a video of GSeg3D's segmentation results on various datasets at the following [link](https://www.youtube.com/watch?v=GXLTOoJbOhQ).
+
 ## Overview
 
 The node:
