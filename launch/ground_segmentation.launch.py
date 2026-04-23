@@ -3,13 +3,21 @@ from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
+import os
 
 
 def launch_setup(context, *args, **kwargs):
 
-    parameters_file = PathJoinSubstitution(
-        [FindPackageShare("ground_segmentation_ros2"), "config", "parameters.yaml"]
-    )
+    # Get the params_file argument (user can override default)
+    params_file_arg = LaunchConfiguration("params_file").perform(context)
+    
+    # If no custom params file provided, use default from package
+    if params_file_arg == "default":
+        parameters_file = PathJoinSubstitution(
+            [FindPackageShare("ground_segmentation_ros2"), "config", "parameters.yaml"]
+        )
+    else:
+        parameters_file = params_file_arg
 
     ground_segmentation_ros2_node = Node(
         package="ground_segmentation_ros2",
@@ -17,7 +25,7 @@ def launch_setup(context, *args, **kwargs):
         parameters=[
             parameters_file,
             {
-                "use_sim_time": LaunchConfiguration("sim")
+                "use_sim_time": LaunchConfiguration("use_sim_time")
             }
         ],
         remappings=[
@@ -52,9 +60,18 @@ def generate_launch_description():
 
     declared_arguments.append(
         DeclareLaunchArgument(
-            "sim",
+            "use_sim_time",
             default_value="false",
             description="Use simulation time (set true for Gazebo / bag playback)",
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "params_file",
+            default_value="default",
+            description="Full path to the ground segmentation config file. "
+                        "Use 'default' for package default, or provide absolute path to custom config.",
         )
     )
 
