@@ -1,11 +1,9 @@
 <div align="center">
   <h1>Ground Segmentation ROS 2 Node</h1>
-  <a href="https://github.com/dfki-ric/ground_segmentation"><img src="https://img.shields.io/badge/GSeg3D-Core-2ea44f" /></a>
-  <a href="https://github.com/dfki-ric/ground_segmentation_ros2/blob/master/LICENSE.txt"><img src="https://img.shields.io/badge/License-BSD--3--Clause-blue" /></a>
-  <a href="https://doi.org/10.1109/ICRCV67407.2025.11349133"><img src="https://img.shields.io/badge/Paper-ICRCV%202025-22314E" /></a>
-  <br />
-  <br />
+
   <a href="https://github.com/dfki-ric/ground_segmentation">Core Library</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="https://github.com/dfki-ric/nav2_ground_consistency_costmap_plugin">Nav2 Plugin</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://doi.org/10.1109/ICRCV67407.2025.11349133">Paper</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
