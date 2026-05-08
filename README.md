@@ -110,7 +110,7 @@ sudo apt install cmake libpcl-dev libeigen3-dev libgtest-dev libnanoflann-dev
 
 ```bash
 mkdir -p ~/ros2_ws/src && cd ~/ros2_ws/src
-git clone https://github.com/dfki-ric/ground_segmentation_ros2.git
+git clone https://github.com/dfki-ric/ground_segmentation.git
 ```
 
 ### Build Instructions
@@ -119,7 +119,7 @@ Clone the wrapper into your ROS 2 workspace `src` folder and build it:
 
 ```bash
 cd ~/ros2_ws/src
-git clone git@github.com:dfki-ric/ground_segmentation_ros2.git
+git clone https://github.com/dfki-ric/ground_segmentation_ros2.git
 cd ~/ros2_ws
 source /opt/ros/YOUR_ROS_DISTRO/setup.bash
 colcon build --packages-up-to ground_segmentation_ros2 --cmake-args -DCMAKE_BUILD_TYPE=RELEASE
