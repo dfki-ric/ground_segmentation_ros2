@@ -13,31 +13,25 @@ find_package(Eigen3 REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(ground_segmentation REQUIRED)
-
-set(dependencies
-  geometry_msgs
-  rclcpp
-  sensor_msgs
-  std_msgs
-  std_srvs
-  tf2
-  tf2_geometry_msgs
-  tf2_ros
-  tf2_eigen
-  pcl_conversions
-  message_filters
-)
+find_package(message_filters REQUIRED)
 
 add_executable(ground_segmentation_ros2_node src/ground_segmentation_ros2_node.cpp)
 target_include_directories(ground_segmentation_ros2_node PUBLIC
   ${pcl_conversions_INCLUDE_DIRS}
 )
 
-ament_target_dependencies(ground_segmentation_ros2_node
-  ${dependencies}
-)
-
-target_link_libraries(ground_segmentation_ros2_node 
+target_link_libraries(ground_segmentation_ros2_node PUBLIC
+  ${geometry_msgs_TARGETS}
+  rclcpp::rclcpp
+  ${sensor_msgs_TARGETS}
+  ${std_msgs_TARGETS}
+  ${std_srvs_TARGETS}
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
+  tf2_ros::tf2_ros
+  tf2_eigen::tf2_eigen
+  pcl_conversions::pcl_conversions
+  message_filters::message_filters
   ${PCL_LIBRARIES}
   ground_segmentation::ground_segmentation
 )

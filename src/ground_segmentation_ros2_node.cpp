@@ -9,18 +9,18 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/common/transforms.h>
 
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_listener.hpp"
 #include <tf2_eigen/tf2_eigen.hpp>
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 
-#include "message_filters/time_synchronizer.h"
-#include "message_filters/subscriber.h"
-#include "message_filters/sync_policies/exact_time.h"
-#include "message_filters/sync_policies/approximate_time.h"
+#include "message_filters/time_synchronizer.hpp"
+#include "message_filters/subscriber.hpp"
+#include "message_filters/sync_policies/exact_time.hpp"
+#include "message_filters/sync_policies/approximate_time.hpp"
 
 #include <Eigen/Dense>
 #include <memory>
@@ -57,8 +57,8 @@ public:
         publisher_raw_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/raw_points", 10);
 
         if (this->get_parameter("use_imu_orientation").as_bool()){
-            subscriber_synced_pointcloud = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>(this, "/ground_segmentation/input_pointcloud");
-            subscriber_synced_imu = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Imu>>(this, "/ground_segmentation/input_imu");
+            subscriber_synced_pointcloud = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>(this, "/ground_segmentation/input_pointcloud", rclcpp::SensorDataQoS());
+            subscriber_synced_imu = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Imu>>(this, "/ground_segmentation/input_imu", rclcpp::SensorDataQoS());
  
             auto imu_sub_ptr = subscriber_synced_imu->getSubscriber();
             auto pc_sub_ptr  = subscriber_synced_pointcloud->getSubscriber();
