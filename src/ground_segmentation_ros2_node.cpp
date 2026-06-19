@@ -173,17 +173,10 @@ private:
 
         Eigen::Isometry3d T = tf2::transformToEigen(tf.transform);
 
-        // Ground point expressed in velodyne frame
-        // IMPORTANT:
-        //  - lidar_to_ground is SIGNED
-        //  - Use +Z or -Z depending on your sensor convention
-        Eigen::Vector3d p_velo(0.0, 0.0, lidar_to_ground);
-
-        // Transform into base frame
-        Eigen::Vector3d p_base = T * p_velo;
-
-        // Ground height in base_link
-        double z_ground_base = p_base.z();
+        // Ground height in robot frame.
+        // lidar_to_ground is the SIGNED vertical distance from the LiDAR origin
+        // to the ground along the robot frame's Z axis.
+        double z_ground_base = T.translation().z() + lidar_to_ground;
 
         pre_processor->setDistToGround(z_ground_base);
         post_processor->setDistToGround(z_ground_base);
