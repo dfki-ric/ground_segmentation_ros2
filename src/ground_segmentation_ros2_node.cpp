@@ -152,12 +152,12 @@ private:
         typename pcl::PointCloud<PointType> transformed_cloud;
         pcl::fromROSMsg(*pointcloud_msg, input_cloud);
 
-        double maxX = this->get_parameter("maxX").as_double();
-        double minX = this->get_parameter("minX").as_double();
-        double maxY = this->get_parameter("maxY").as_double();
-        double minY = this->get_parameter("minY").as_double();
-        double maxZ = this->get_parameter("maxZ").as_double();
-        double minZ = this->get_parameter("minZ").as_double();
+        float maxX = this->get_parameter("maxX").as_double();
+        float minX = this->get_parameter("minX").as_double();
+        float maxY = this->get_parameter("maxY").as_double();
+        float minY = this->get_parameter("minY").as_double();
+        float maxZ = this->get_parameter("maxZ").as_double();
+        float minZ = this->get_parameter("minZ").as_double();
         bool downsample = this->get_parameter("downsample").as_bool();
         double downsample_resolution = this->get_parameter("downsample_resolution").as_double();
 
