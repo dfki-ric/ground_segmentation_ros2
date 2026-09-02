@@ -43,7 +43,7 @@ ament_target_dependencies(ground_segmentation_ros2_node
   ${dependencies}
 )
 
-target_link_libraries(ground_segmentation_ros2_node 
+target_link_libraries(ground_segmentation_ros2_node
   ${PCL_LIBRARIES}
   ground_segmentation::ground_segmentation
 )
@@ -59,6 +59,8 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)
   set(ament_cmake_cpplint_FOUND TRUE)
+  # The sources do not follow the uncrustify style.
+  set(ament_cmake_uncrustify_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
 
