@@ -1,5 +1,11 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.12)
 project(ground_segmentation_ros2)
+
+# Silence PCL's nested find_package(FLANN) CMP0144 dev warning; set as
+# default since cmake_policy(SET) wouldn't propagate into that nested call.
+if(POLICY CMP0144)
+    set(CMAKE_POLICY_DEFAULT_CMP0144 NEW)
+endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(PCL REQUIRED)

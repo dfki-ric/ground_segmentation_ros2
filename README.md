@@ -85,7 +85,7 @@ IMU synchronization is enabled via the parameter `use_imu_orientation`.
 | `slopeThresholdDegrees` | Max slope for ground (degrees). Controls which planes are considered drivable. |
 | `groundInlierThreshold` | Plane fitting inlier threshold (m). Controls how far points may lie from the estimated plane. |
 | `centroidSearchRadius` | KD-tree expansion radius (m) |
-| `lidar_to_ground` | LiDAR-to-ground distance (m) |
+| `lidar_to_ground` | Vertical distance from LiDAR to ground, measured along the robot frame's Z axis (m). Use a negative value when the ground is below the sensor. Valid for any sensor mounting orientation or convention. |
 | `transform_tolerance` | Tolerance for fetching transforms from TF (sec) |
 | `show_benchmark` | Enable precision/recall evaluation |
 | `maxGroundHeightDeviation` | Controls allowed centroid height difference in meters during Phase II expansion. |

@@ -152,12 +152,12 @@ private:
         typename pcl::PointCloud<PointType> transformed_cloud;
         pcl::fromROSMsg(*pointcloud_msg, input_cloud);
 
-        double maxX = this->get_parameter("maxX").as_double();
-        double minX = this->get_parameter("minX").as_double();
-        double maxY = this->get_parameter("maxY").as_double();
-        double minY = this->get_parameter("minY").as_double();
-        double maxZ = this->get_parameter("maxZ").as_double();
-        double minZ = this->get_parameter("minZ").as_double();
+        float maxX = this->get_parameter("maxX").as_double();
+        float minX = this->get_parameter("minX").as_double();
+        float maxY = this->get_parameter("maxY").as_double();
+        float minY = this->get_parameter("minY").as_double();
+        float maxZ = this->get_parameter("maxZ").as_double();
+        float minZ = this->get_parameter("minZ").as_double();
         bool downsample = this->get_parameter("downsample").as_bool();
         double downsample_resolution = this->get_parameter("downsample_resolution").as_double();
 
@@ -173,17 +173,10 @@ private:
 
         Eigen::Isometry3d T = tf2::transformToEigen(tf.transform);
 
-        // Ground point expressed in velodyne frame
-        // IMPORTANT:
-        //  - lidar_to_ground is SIGNED
-        //  - Use +Z or -Z depending on your sensor convention
-        Eigen::Vector3d p_velo(0.0, 0.0, lidar_to_ground);
-
-        // Transform into base frame
-        Eigen::Vector3d p_base = T * p_velo;
-
-        // Ground height in base_link
-        double z_ground_base = p_base.z();
+        // Ground height in robot frame.
+        // lidar_to_ground is the SIGNED vertical distance from the LiDAR origin
+        // to the ground along the robot frame's Z axis.
+        double z_ground_base = T.translation().z() + lidar_to_ground;
 
         pre_processor->setDistToGround(z_ground_base);
         post_processor->setDistToGround(z_ground_base);
