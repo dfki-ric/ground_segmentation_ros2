@@ -1,39 +1,16 @@
 name: Build
 
+# No branch filter, so every branch is built. Add branches: [ "master" ] to both
+# triggers if building feature branches creates too much noise.
 on:
   push:
-    branches: [ "master", "rolling" ]
   pull_request:
-    branches: [ "master", "rolling" ]
 
 jobs:
-  # master still targets Jazzy only. rolling selects the message_filters::Subscriber
-  # constructor and the pcl_conversions CMake target by feature detection, so it is
-  # built against every distro it is meant to support.
-  distros:
-    runs-on: ubuntu-latest
-    outputs:
-      ros_distros: ${{ steps.pick.outputs.ros_distros }}
-    steps:
-      - name: Pick ROS distros from target branch
-        id: pick
-        shell: bash
-        run: |
-          # For pull requests use the target branch, for pushes the pushed branch.
-          ref="${{ github.base_ref || github.ref_name }}"
-          case "$ref" in
-            master)  distros='["jazzy"]' ;;
-            rolling) distros='["jazzy", "lyrical", "rolling"]' ;;
-            *)
-              echo "::error::No ROS distros mapped for branch '$ref'."
-              exit 1
-              ;;
-          esac
-          echo "Branch '$ref' builds against: $distros"
-          echo "ros_distros=$distros" >> "$GITHUB_OUTPUT"
-
+  # The sources select the message_filters::Subscriber constructor and the
+  # pcl_conversions CMake target by feature detection, so the same code is built
+  # against every supported distro.
   build:
-    needs: distros
     name: ${{ matrix.ros_distro }}
     runs-on: ubuntu-latest
     container:
@@ -41,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ros_distro: ${{ fromJSON(needs.distros.outputs.ros_distros) }}
+        ros_distro: [ jazzy, lyrical, rolling ]
 
     steps:
       - name: Checkout
