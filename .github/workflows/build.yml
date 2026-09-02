@@ -7,38 +7,41 @@ on:
     branches: [ "master", "rolling" ]
 
 jobs:
-  # master builds against Jazzy, rolling against Rolling. The rolling branch does not
-  # build on Jazzy: it links pcl_conversions::pcl_conversions (no such target in Jazzy)
-  # and passes an rclcpp::QoS to message_filters::Subscriber, which expects an
-  # rmw_qos_profile_t there. So each branch is built only on its own distro.
-  distro:
+  # master still targets Jazzy only. rolling selects the message_filters::Subscriber
+  # constructor and the pcl_conversions CMake target by feature detection, so it is
+  # built against every distro it is meant to support.
+  distros:
     runs-on: ubuntu-latest
     outputs:
-      ros_distro: ${{ steps.pick.outputs.ros_distro }}
+      ros_distros: ${{ steps.pick.outputs.ros_distros }}
     steps:
-      - name: Pick ROS distro from target branch
+      - name: Pick ROS distros from target branch
         id: pick
         shell: bash
         run: |
           # For pull requests use the target branch, for pushes the pushed branch.
           ref="${{ github.base_ref || github.ref_name }}"
           case "$ref" in
-            master)  distro=jazzy   ;;
-            rolling) distro=rolling ;;
+            master)  distros='["jazzy"]' ;;
+            rolling) distros='["jazzy", "lyrical", "rolling"]' ;;
             *)
-              echo "::error::No ROS distro mapped for branch '$ref'."
+              echo "::error::No ROS distros mapped for branch '$ref'."
               exit 1
               ;;
           esac
-          echo "Branch '$ref' builds against ROS 2 $distro."
-          echo "ros_distro=$distro" >> "$GITHUB_OUTPUT"
+          echo "Branch '$ref' builds against: $distros"
+          echo "ros_distros=$distros" >> "$GITHUB_OUTPUT"
 
   build:
-    needs: distro
-    name: ${{ needs.distro.outputs.ros_distro }}
+    needs: distros
+    name: ${{ matrix.ros_distro }}
     runs-on: ubuntu-latest
     container:
-      image: ros:${{ needs.distro.outputs.ros_distro }}-ros-base
+      image: ros:${{ matrix.ros_distro }}-ros-base
+    strategy:
+      fail-fast: false
+      matrix:
+        ros_distro: ${{ fromJSON(needs.distros.outputs.ros_distros) }}
 
     steps:
       - name: Checkout
@@ -62,18 +65,18 @@ jobs:
           apt-get update
           rosdep update
           rosdep install --from-paths src --ignore-src -y \
-            --rosdistro "${{ needs.distro.outputs.ros_distro }}"
+            --rosdistro "${{ matrix.ros_distro }}"
 
       - name: Build
         shell: bash
         run: |
-          source /opt/ros/${{ needs.distro.outputs.ros_distro }}/setup.bash
+          source /opt/ros/${{ matrix.ros_distro }}/setup.bash
           colcon build --event-handlers console_direct+ \
             --cmake-args -DCMAKE_BUILD_TYPE=Release
 
       - name: Test
         shell: bash
         run: |
-          source /opt/ros/${{ needs.distro.outputs.ros_distro }}/setup.bash
+          source /opt/ros/${{ matrix.ros_distro }}/setup.bash
           colcon test --event-handlers console_direct+
           colcon test-result --verbose

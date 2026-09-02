@@ -36,11 +36,18 @@ target_link_libraries(ground_segmentation_ros2_node PUBLIC
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros
   tf2_eigen::tf2_eigen
-  pcl_conversions::pcl_conversions
   message_filters::message_filters
   ${PCL_LIBRARIES}
   ground_segmentation::ground_segmentation
 )
+
+# Rolling exports a namespaced pcl_conversions target and sets no include dirs;
+# Jazzy does the opposite, so use whichever the installed version provides.
+if(TARGET pcl_conversions::pcl_conversions)
+  target_link_libraries(ground_segmentation_ros2_node PUBLIC
+    pcl_conversions::pcl_conversions
+  )
+endif()
 
 install(TARGETS ground_segmentation_ros2_node
   DESTINATION lib/${PROJECT_NAME})

@@ -57,8 +57,8 @@ public:
         publisher_raw_points = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_segmentation/raw_points", 10);
 
         if (this->get_parameter("use_imu_orientation").as_bool()){
-            subscriber_synced_pointcloud = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>(this, "/ground_segmentation/input_pointcloud", rclcpp::SensorDataQoS());
-            subscriber_synced_imu = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Imu>>(this, "/ground_segmentation/input_imu", rclcpp::SensorDataQoS());
+            subscriber_synced_pointcloud = makeSensorDataSubscriber<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>("/ground_segmentation/input_pointcloud");
+            subscriber_synced_imu = makeSensorDataSubscriber<message_filters::Subscriber<sensor_msgs::msg::Imu>>("/ground_segmentation/input_imu");
  
             auto imu_sub_ptr = subscriber_synced_imu->getSubscriber();
             auto pc_sub_ptr  = subscriber_synced_pointcloud->getSubscriber();
@@ -105,6 +105,25 @@ public:
     }
 
 private:
+
+    // message_filters::Subscriber took an rmw_qos_profile_t up to Jazzy and takes an
+    // rclcpp::QoS from Rolling onwards. Pick whichever the installed version accepts,
+    // rather than testing a distro or package version, so this keeps working once the
+    // old overload is gone.
+    template<typename SubscriberT>
+    std::shared_ptr<SubscriberT> makeSensorDataSubscriber(const std::string & topic)
+    {
+        if constexpr (std::is_constructible_v<
+                SubscriberT, decltype(this), const std::string &, const rclcpp::QoS &>)
+        {
+            return std::make_shared<SubscriberT>(this, topic, rclcpp::SensorDataQoS());
+        }
+        else
+        {
+            return std::make_shared<SubscriberT>(
+                this, topic, rclcpp::SensorDataQoS().get_rmw_qos_profile());
+        }
+    }
 
     std::string robot_frame;
     double lidar_to_ground,transform_tolerance;
