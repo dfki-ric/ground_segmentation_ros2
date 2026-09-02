@@ -1,0 +1,79 @@
+name: Build
+
+on:
+  push:
+    branches: [ "master", "rolling" ]
+  pull_request:
+    branches: [ "master", "rolling" ]
+
+jobs:
+  # master builds against Jazzy, rolling against Rolling. The rolling branch does not
+  # build on Jazzy: it links pcl_conversions::pcl_conversions (no such target in Jazzy)
+  # and passes an rclcpp::QoS to message_filters::Subscriber, which expects an
+  # rmw_qos_profile_t there. So each branch is built only on its own distro.
+  distro:
+    runs-on: ubuntu-latest
+    outputs:
+      ros_distro: ${{ steps.pick.outputs.ros_distro }}
+    steps:
+      - name: Pick ROS distro from target branch
+        id: pick
+        shell: bash
+        run: |
+          # For pull requests use the target branch, for pushes the pushed branch.
+          ref="${{ github.base_ref || github.ref_name }}"
+          case "$ref" in
+            master)  distro=jazzy   ;;
+            rolling) distro=rolling ;;
+            *)
+              echo "::error::No ROS distro mapped for branch '$ref'."
+              exit 1
+              ;;
+          esac
+          echo "Branch '$ref' builds against ROS 2 $distro."
+          echo "ros_distro=$distro" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: distro
+    name: ${{ needs.distro.outputs.ros_distro }}
+    runs-on: ubuntu-latest
+    container:
+      image: ros:${{ needs.distro.outputs.ros_distro }}-ros-base
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: src/ground_segmentation_ros2
+
+      # ground_segmentation is a plain-CMake package that is not released into the
+      # ROS index, so it is checked out into the same workspace and built by colcon
+      # alongside the wrapper. rosdep sees it in src/ and resolves it from there.
+      - name: Checkout ground_segmentation dependency
+        uses: actions/checkout@v4
+        with:
+          repository: dfki-ric/ground_segmentation
+          ref: master
+          path: src/ground_segmentation
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          apt-get update
+          rosdep update
+          rosdep install --from-paths src --ignore-src -y \
+            --rosdistro "${{ needs.distro.outputs.ros_distro }}"
+
+      - name: Build
+        shell: bash
+        run: |
+          source /opt/ros/${{ needs.distro.outputs.ros_distro }}/setup.bash
+          colcon build --event-handlers console_direct+ \
+            --cmake-args -DCMAKE_BUILD_TYPE=Release
+
+      - name: Test
+        shell: bash
+        run: |
+          source /opt/ros/${{ needs.distro.outputs.ros_distro }}/setup.bash
+          colcon test --event-handlers console_direct+
+          colcon test-result --verbose
