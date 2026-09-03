@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: src/ground_segmentation_ros2
 
@@ -30,7 +30,7 @@ jobs:
       # ROS index, so it is checked out into the same workspace and built by colcon
       # alongside the wrapper. rosdep sees it in src/ and resolves it from there.
       - name: Checkout ground_segmentation dependency
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: dfki-ric/ground_segmentation
           ref: master
